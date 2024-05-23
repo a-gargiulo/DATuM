@@ -1,0 +1,7 @@
+.venv/
+.idea/
+.mypy_cache/
+Figures/
+__pycache__/
+.DS_Store
+data/
