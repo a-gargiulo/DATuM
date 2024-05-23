@@ -102,5 +102,8 @@ Numpy
 Pyglet
 Trimesh
 
+## Data
+Data is available upon request to the author: a-gargiulo
+
 ## Example Files
 To run the example files
