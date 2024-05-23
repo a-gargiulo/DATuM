@@ -1,4 +1,5 @@
 .venv/
+.vs/
 .idea/
 .mypy_cache/
 Figures/
