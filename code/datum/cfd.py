@@ -7,10 +7,9 @@ from typing import Dict, Tuple
 import numpy as np
 import tecplot as tp
 
-from . import my_math
-from . import utility
-from . import log
+from . import log, my_math, utility
 from .parser import InputFile
+
 
 def get_shape_of_ijk_ordered_tecplot_file(file_path: str) -> Tuple[int, ...]:
     """Obtain the shape of the ijk-ordered data stored in Tecplot (.dat) files.

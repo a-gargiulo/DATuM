@@ -100,7 +100,7 @@ Fluent Data:                            /Users/galdo/Desktop/Fluent_BeVERLI/250k
 #    System    #
 ################
 
-PIV Data Root Folder:       /Users/galdo/Desktop/direct-analysis-turbulence-models/data/piv/experiment
-Geometry Data Root Folder:  /Users/galdo/Desktop/direct-analysis-turbulence-models/data/geometry
-CFD Data Root Folder:       /Users/galdo/Desktop/direct-analysis-turbulence-models/data/cfd
-Pressure Data Root Folder:  /Users/galdo/Desktop/direct-analysis-turbulence-models/data/pressure
+PIV Data Root Folder:       C:\Users\bzc6rs\Documents\01_Dev\DATuM\data\piv\experiment
+Geometry Data Root Folder:  C:\Users\bzc6rs\Documents\01_Dev\DATuM\data\geometry
+CFD Data Root Folder:       C:\Users\bzc6rs\Documents\01_Dev\DATuM\data\cfd
+Pressure Data Root Folder:  C:\Users\bzc6rs\Documents\01_Dev\DATuM\data\pressure

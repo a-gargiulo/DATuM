@@ -1,17 +1,16 @@
 """This module contains a library of functions for the computation of integral boundary
 layer parameters from profile data."""
+import pdb
 import re
 from typing import Callable, Dict, List, Union
 
 import numpy as np
 from scipy.interpolate import interp1d
 
-from . import utility
-from .parser import InputFile
+from . import plotting, utility
 from .my_types import ProfileDictSingle
+from .parser import InputFile
 from .spalding import spalding_profile
-from . import plotting
-import pdb
 
 
 def get_centerline_pressure() -> Dict[str, Dict[str, Union[float, np.ndarray]]]:
@@ -24,19 +23,19 @@ def get_centerline_pressure() -> Dict[str, Dict[str, Union[float, np.ndarray]]]:
     # pylint: disable=too-many-locals
     # Load pressure data
     input_data = InputFile().data
-    port_wall_pressure_file = utils.find_file(
+    port_wall_pressure_file = utility.find_file(
         input_data["system"]["pressure_data_root_folder"],
         input_data["pressure_data"]["port_wall"],
     )
-    hill_pressure_file = utils.find_file(
+    hill_pressure_file = utility.find_file(
         input_data["system"]["pressure_data_root_folder"],
         input_data["pressure_data"]["hill"],
     )
-    readme_file = utils.find_file(
+    readme_file = utility.find_file(
         input_data["system"]["pressure_data_root_folder"],
         input_data["pressure_data"]["readme"],
     )
-    properties_file = utils.construct_file_path(
+    properties_file = utility.construct_file_path(
         input_data["system"]["piv_plane_data_folder"],
         [],
         input_data["general"]["fluid_and_flow_properties"],
@@ -44,7 +43,7 @@ def get_centerline_pressure() -> Dict[str, Dict[str, Union[float, np.ndarray]]]:
     pressure_data_port_wall = np.loadtxt(port_wall_pressure_file, skiprows=1)
     pressure_data_hill = np.loadtxt(hill_pressure_file, skiprows=1)
 
-    properties = utils.load_json(properties_file)
+    properties = utility.load_json(properties_file)
     rho = properties["fluid"]["density"]
 
     # Obtain centerline pressure and properties

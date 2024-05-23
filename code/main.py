@@ -6,8 +6,8 @@ datum.print_title()
 piv = datum.load_matlab_data()
 datum.preprocess_data(piv)
 
-piv_no_interpolation = datum.load_matlab_data()
-datum.extract_profile_data(piv_no_interpolation, piv)
+# piv_no_interpolation = datum.load_matlab_data()
+# datum.extract_profile_data(piv_no_interpolation, piv)
 
 # Check Contour
 datum.plotting.plot_contour(

@@ -5,15 +5,13 @@ These parameters are used for mapping the BeVERLI stereo PIV data from the local
 Cartesian PIV coordinate system to the global BeVERLI coordinate system defined in the
 Virginia Tech Stability Wind Tunnel.
 """
-from typing import Tuple, List
+from typing import List, Tuple
 
 import numpy as np
 import scipy.integrate as spintegrate
 import scipy.interpolate as spinterpolate
 
-from . import log
-from . import plotting
-from . import utility
+from . import log, plotting, utility
 from .beverli import Beverli
 from .cfd import get_shape_of_ijk_ordered_tecplot_file
 from .my_math import compute_derivative_1d

@@ -13,22 +13,12 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 from scipy.interpolate import griddata
 
-from . import cfd
-from . import parser
-from . import log
-from . import plotting
-from . import reference
-from . import spalding
-from . import transformations
-from . import utility
-from . import boundary_layer
-from . import preprocessor
-from .piv import Piv
+from . import (boundary_layer, cfd, log, parser, plotting, preprocessor,
+               reference, spalding, transformations, uncertainty, utility)
 from .beverli import Beverli
 from .my_types import NestedDict
 from .parser import InputFile, PoseDataParser
-from . import uncertainty
-
+from .piv import Piv
 
 
 @log.log_process(message="Extract profile data", process_type="main")

@@ -1,6 +1,7 @@
 import pickle
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 data_path = "/Users/galdo/Desktop/direct-analysis-turbulence-models/data/piv/experiment/plane3/preprocessed/plane3_250k_FS_profiles.pkl"
 

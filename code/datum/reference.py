@@ -2,7 +2,7 @@
 experimental data, provided a corresponding tunnel conditions (.stat) file."""
 import os
 import re
-from typing import Dict, Union, Optional
+from typing import Dict, Optional, Union
 
 import numpy as np
 from scipy.optimize import fsolve

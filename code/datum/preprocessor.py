@@ -5,13 +5,8 @@ from typing import Dict
 
 import numpy as np
 
-from . import log
-from . import my_math
-from . import parser
-from . import pose
-from . import transformations
-from . import utility
-from .analysis import get_base_tensors, calculate_eddy_viscosities
+from . import log, my_math, parser, pose, transformations, utility
+from .analysis import calculate_eddy_viscosities, get_base_tensors
 from .cfd import get_tecplot_derivatives
 from .my_types import PivData
 from .piv import Piv

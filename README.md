@@ -70,6 +70,7 @@ source venv/bin/activate
 ```
 bash
 
+pip install numpy
 pip install matplotlib
 pip install scipy
 pip install "trimesh[all]"
@@ -107,3 +108,10 @@ Data is available upon request to the author: a-gargiulo
 
 ## Example Files
 To run the example files
+
+
+## Tecplot Environment
+For mac set environment variable for python DYLD_LIBRARY_PATH = /Applications/Tecplot 360 ... COntents/MacOS
+
+For windows just ensure that tecplot is in your system PATH
+ test if you can open tecplot from powershell or cmd by typing e.g., tec360.exe

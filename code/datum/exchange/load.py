@@ -3,13 +3,12 @@ import sys
 
 import scipy.io as scio
 
-from .. import log
-from .. import utility
+from .. import log, utility
 from ..parser import InputFile
 from ..piv import Piv
 
 
-@log.log_process("Load PIV data from Matlab files", "main")
+@log.log_process("Load BeVERLI Hill Stereo PIV data from Matlab files", "main")
 def load_matlab_data() -> Piv:
     """
     Load the raw BeVERLI stereo PIV data from Matlab (.mat) files.
@@ -132,4 +131,3 @@ def load_profiles():
         sys.exit(1)
 
     return profile_data
-

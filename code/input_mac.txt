@@ -1,0 +1,106 @@
+#################
+#    General    #
+#################
+
+Tunnel Entry (2/3):                     3
+Reynolds Number (250e3/325e3/650e3):    250e3
+Hill Orientation (deg):                 45
+Fluid and Flow Properties:              properties.json
+Tunnel Conditions:                      tunnel_conditions.stat
+
+#######################
+#    Pressure Data    #
+#######################
+Port Wall:                     averaged_Re250k_135deg_port_wall.txt
+Hill:                          averaged_Re250k_135deg_hill.txt
+Readme:                        averaged_Re250k_135deg_readme.txt
+
+##################
+#    PIV Data    #
+##################
+
+Plane Number:               3
+Plane Type (FS/SS):         FS
+Plane Is Diagonal (T/F):    False
+Calibration Image:          calibration_image.dat
+Pose Measurement:           pose_measurement.txt
+Coordinate Transformation:  coordinate_transform_params.json
+
+    ///////////////////////
+    /    Configuration    /
+    ///////////////////////
+    Flip Out of Plane Component (T/F):              True
+    Turbulence Dissipation Available (T/F):         True
+    Instantaneous Velocity Frame Available (T/F):   True
+
+
+#######################
+#    Hill Geometry    #
+#######################
+
+Type (CAD/Analytic):    CAD
+CAD Geometry:           BeVERLI_Hill_Surface.stl
+Analytic Geometry:      BeVERLI_Hill.mat
+
+
+#############
+#    CFD    #
+#############
+
+File Name:	Lvl1_Slice_Centerline_0.dat
+Zone Name:	Slice: Z=0
+
+######################
+#    Preprocessor    #
+######################
+
+Active (T/F): True
+
+
+    ///////////////////////////////////
+    /    Coordinate Transformation    /
+    ///////////////////////////////////
+
+    Interpolation Grid Size (pts):	500
+
+        +------------+
+        | Parameters |
+        +------------+
+        Compute Global Active (T/F):    True
+            >> Apply Convex Curvature Correction (T/F):    False
+            >> Use Measured Rotation Angle (T/F):          False
+
+        Compute Local Active (T/F):     True
+
+    ///////////////////////////////////////
+    /    Mean Velocity Gradient Tensor    /
+    ///////////////////////////////////////
+
+    Computation Active (T/F):           True
+    Use dWdX and dWdY from CFD (T/F):   False
+
+
+##################
+#    Profiles    #
+##################
+
+Extraction Active (T/F):                True
+Number of Profiles:                     1
+Number of Profile Points:               500
+Profile Height (m):                     0.2
+Coordinate System Type (shear/tunnel):  tunnel
+Add Reconstruction Points:              False
+Number of Reconstruction Points:        5
+Add CFD (T/F):                          False
+Fluent Case:                            /Users/galdo/Desktop/Fluent_BeVERLI/250k/GridStudy/SA/Level1/BeVERLI_45deg_NomFlat_Lvl1_Final.cas
+Fluent Data:                            /Users/galdo/Desktop/Fluent_BeVERLI/250k/GridStudy/SA/Level1/BeVERLI_45deg_NomFlat_Lvl1_Final.dat
+
+
+################
+#    System    #
+################
+
+PIV Data Root Folder:       /Users/galdo/Desktop/direct-analysis-turbulence-models/data/piv/experiment
+Geometry Data Root Folder:  /Users/galdo/Desktop/direct-analysis-turbulence-models/data/geometry
+CFD Data Root Folder:       /Users/galdo/Desktop/direct-analysis-turbulence-models/data/cfd
+Pressure Data Root Folder:  /Users/galdo/Desktop/direct-analysis-turbulence-models/data/pressure

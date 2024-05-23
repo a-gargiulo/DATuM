@@ -1,5 +1,7 @@
 from typing import Tuple
+
 import numpy as np
+
 from .my_types import ProfileDictSingle
 from .parser import PoseDataParser
 

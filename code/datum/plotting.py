@@ -152,7 +152,8 @@ def local_reference_selector(
         plt.show()
 
     print("Opening calibration plate image...")
-    cmap = mpl.cm.get_cmap("gray")
+      
+    cmap = mpl.colormaps.get_cmap("gray")
     _, axs = plt.subplots(1, 1, figsize=(8, 6))
     axs.pcolor(x_1, x_2, vals, cmap=cmap, vmin=0, vmax=4000)
     _ = Cursor(axs, useblit=True, color="gray", linewidth=1)

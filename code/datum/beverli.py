@@ -1,7 +1,7 @@
 """This module defines the :py:class:`datum.beverli.Beverli` class, which provides
 essential methods for querying the BeVERLI Hill geometry."""
 import sys
-from typing import Dict, List, Tuple, Union, Literal
+from typing import Dict, List, Literal, Tuple, Union
 
 import numpy as np
 import scipy.io as scio

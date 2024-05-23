@@ -1,0 +1,11 @@
+numpy==1.26.4
+scipy==1.13.1
+matplotlib=3.9.0
+trimesh==4.4.0
+plotly==5.22.0
+pytecplot==1.6.1
+
+isort
+black
+pylint
+trimesh[all]
