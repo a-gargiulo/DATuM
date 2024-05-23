@@ -1,4 +1,4 @@
-# Direct Analyzer of Turbulence Models
+# Direct Analysis Turbulence Models (DATuM)
 
 This repository houses an analyzer utilizing particle image velocimetry (PIV) and supplementary laser Doppler velocimetry (LDV) and computational fluid dynamics (CFD) data to directly investigate constitutive relations for turbulent aerodynamic flows.
 
