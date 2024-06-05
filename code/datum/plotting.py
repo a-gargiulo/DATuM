@@ -11,11 +11,11 @@ import plotly.graph_objects as go
 import trimesh
 from matplotlib import patches
 from matplotlib.widgets import Cursor
-
 from . import utility
 from .beverli import Beverli
 from .my_types import NestedDict, PoseMeasurement
 from .parser import InputFile
+import platform
 
 
 def get_figure_folder(depth: str) -> str:
@@ -63,7 +63,10 @@ def plot_global_pose(
     :param x_2_prof: The x:sub:`2` coordinate of the hill profile.
     :param secant: The characteristic secant parameters.
     """
-    plt.rcParams["font.family"] = "Avenir"
+    if platform.system() == "Windows":
+        plt.rcParams["font.family"] = "Franklin Gothic Book"
+    else:
+        plt.rcParams["font.family"] = "Avenir"
     plt.rcParams["font.size"] = "18"
     plt.rcParams["lines.linewidth"] = "0.5"
     plt.rcParams["axes.linewidth"] = "2"
@@ -153,7 +156,7 @@ def local_reference_selector(
 
     print("Opening calibration plate image...")
       
-    cmap = mpl.colormaps.get_cmap("gray")
+    cmap = plt.get_cmap("gray")
     _, axs = plt.subplots(1, 1, figsize=(8, 6))
     axs.pcolor(x_1, x_2, vals, cmap=cmap, vmin=0, vmax=4000)
     _ = Cursor(axs, useblit=True, color="gray", linewidth=1)
@@ -199,7 +202,7 @@ def check_wall_model(wall_model, data):
     plt.show()
 
 def point_selector(number_of_points, coordinates, quantity, properties):
-    cmap = mpl.cm.get_cmap(properties["colormap"])
+    cmap = plt.get_cmap(properties["colormap"])
     bounds = np.linspace(
         properties["contour_range"]["start"],
         properties["contour_range"]["end"],
@@ -234,7 +237,8 @@ def point_selector(number_of_points, coordinates, quantity, properties):
         )
 
     cbar = fig.colorbar(
-        mpl.cm.ScalarMappable(norm=norm, cmap=cmap), orientation="vertical"
+        mpl.cm.ScalarMappable(norm=norm, cmap=cmap), orientation="vertical",
+        cax=axs.inset_axes([1.15, 0, 0.075, 1])
     )
     cbar.set_ticks(
         np.linspace(
@@ -276,12 +280,15 @@ def plot_contour(
     :param properties: Nested dictionary containing the desired plot properties.
     :param outname: String representing the output figure's file name.
     """
-    plt.rcParams["font.family"] = "Avenir"
+    if platform.system() == "Windows":
+        plt.rcParams["font.family"] = "Franklin Gothic Book"
+    else:
+        plt.rcParams["font.family"] = "Avenir"
     plt.rcParams["font.size"] = "18"
     plt.rcParams["lines.linewidth"] = "2"
     plt.rcParams["axes.linewidth"] = "2"
 
-    cmap = mpl.cm.get_cmap(properties["colormap"])
+    cmap = plt.get_cmap(properties["colormap"])
     bounds = np.linspace(
         properties["contour_range"]["start"],
         properties["contour_range"]["end"],
@@ -316,8 +323,11 @@ def plot_contour(
             mpl.ticker.MultipleLocator(properties["ymajor_locator"])
         )
 
+    # divider = make_axes_locatable(axs)
+    # cax = divider.append_axes("right", size="5%", pad=0.05)
     cbar = fig.colorbar(
-        mpl.cm.ScalarMappable(norm=norm, cmap=cmap), orientation="vertical"
+        mpl.cm.ScalarMappable(norm=norm, cmap=cmap), orientation="vertical",
+        cax=axs.inset_axes([1.15, 0, 0.075, 1])
     )
     cbar.set_ticks(
         np.linspace(

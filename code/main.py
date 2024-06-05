@@ -1,4 +1,4 @@
-"""This module defines the main routine."""
+"""MAIN ROUTINE"""
 import datum
 
 datum.print_title()
@@ -6,26 +6,28 @@ datum.print_title()
 piv = datum.load_matlab_data()
 datum.preprocess_data(piv)
 
+# ------------------------------------------
+
 # piv_no_interpolation = datum.load_matlab_data()
 # datum.extract_profile_data(piv_no_interpolation, piv)
 
-# Check Contour
-datum.plotting.plot_contour(
-     piv.data["coordinates"],
-     piv.data["mean_velocity"]["U"],
-     properties={
-         "colormap": "jet",
-         "contour_range": {"start": 0, "end": 25, "num_of_contours": 100},
-         "zpos": 0,
-         "xlim": [-0.5, -0.4],
-         "ylim": [0.0, 0.1],
-         "xmajor_locator": 0.05,
-         "ymajor_locator": None,
-         "cbar_range": {"start": 0, "end": 25, "num_of_ticks": 6},
-         "cbar_label": r"$\overline{U}_1$ (m/s)",
-     },
-     outname="contour_mean_U1"
- )
+# # Check Contour
+# datum.plotting.plot_contour(
+#      piv.data["coordinates"],
+#      piv.data["mean_velocity"]["U"],
+#      properties={
+#          "colormap": "jet",
+#          "contour_range": {"start": 0, "end": 25, "num_of_contours": 100},
+#          "zpos": 0,
+#          "xlim": [-0.5, -0.4],
+#          "ylim": [0.0, 0.1],
+#          "xmajor_locator": 0.05,
+#          "ymajor_locator": None,
+#          "cbar_range": {"start": 0, "end": 25, "num_of_ticks": 6},
+#          "cbar_label": r"$\overline{U}_1$ (m/s)",
+#      },
+#      outname="contour_mean_U1"
+#  )
 # datum.print_title()
 # piv = datum.load_matlab_data()
 # piv.preprocess_data()
