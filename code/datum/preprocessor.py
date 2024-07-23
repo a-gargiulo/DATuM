@@ -1,4 +1,4 @@
-"""This module provides various pre-processing routines for the BeVERLI stereo PIV data."""
+"""This module provides pre-processing routines for the BeVERLI stereo PIV data."""
 import os
 import sys
 from typing import Dict
@@ -12,7 +12,7 @@ from .my_types import PivData
 from .piv import Piv
 
 
-@log.log_process(message="Preprocess data", process_type="main")
+@log.log_process(msg="Preprocess data", proc_type="main")
 def preprocess_data(piv_obj: Piv) -> None:
     """A comprehensive routine to preprocess the BeVERLI stereo PIV data in one go.
 
@@ -45,7 +45,7 @@ def preprocess_data(piv_obj: Piv) -> None:
 
 
 @log.log_process(
-    message="Obtain PIV coordinate transformation parameters", process_type="sub"
+    msg="Obtain PIV coordinate transformation parameters", proc_type="sub"
 )
 def get_coordinate_transformation_parameters(piv_obj: Piv) -> None:
     """Obtain the coordinate transformation parameters for the BeVERLI Hill stereo PIV
@@ -104,7 +104,7 @@ def get_coordinate_transformation_parameters(piv_obj: Piv) -> None:
         pose.obtain_local_pose(piv_obj)
 
 
-@log.log_process(message="Transform data", process_type="sub")
+@log.log_process(msg="Transform data", proc_type="sub")
 def transform_data(piv_obj: Piv) -> None:
     """Perform the Cartesian coordinate transformation from the local stereo PIV
     coordinate system to the global BeVERLI coordinate system.
@@ -117,7 +117,7 @@ def transform_data(piv_obj: Piv) -> None:
     transformations.scale_coordinates(piv_obj, scale_factor=1e-3)
 
 
-@log.log_process(message="Transform data w/o interpolation", process_type="sub")
+@log.log_process(msg="Transform data w/o interpolation", proc_type="sub")
 def transform_data_without_interpolation(piv_obj: Piv) -> None:
     """Perform the Cartesian coordinate transformation from the local stereo PIV
     coordinate system to the global BeVERLI coordinate system, without interpolation.
@@ -132,7 +132,7 @@ def transform_data_without_interpolation(piv_obj: Piv) -> None:
         piv_obj.data["coordinates"]["Z"] = piv_obj.data["coordinates"]["X"]
 
 
-@log.log_process(message="Calculate mean velocity gradient tensor", process_type="sub")
+@log.log_process(msg="Calculate mean velocity gradient tensor", proc_type="sub")
 def compute_velocity_gradient(piv_obj:Piv) -> None:
     """Compute the mean velocity gradient tensor from the BeVERLI Hill stereo PIV mean
     velocity data.
@@ -166,7 +166,7 @@ def compute_velocity_gradient(piv_obj:Piv) -> None:
     piv_obj.data["mean_velocity_gradient"] = mean_vel_grad
 
 
-@log.log_process("Computable components", "subsub")
+@log.log_process(msg="Computable components", proc_type="subsub")
 def get_computable_velocity_gradient_components(piv_obj: Piv) -> Dict[str, np.ndarray]:
     """Calculate the directly computable components of the mean velocity gradient tensor
     from the BeVERLI stereo PIV mean velocity data.
@@ -209,7 +209,7 @@ def get_strain_and_rotation_tensor(piv_obj: Piv) -> None:
     }
 
 
-@log.log_process("Calculate eddy viscosity", "sub")
+@log.log_process(msg="Calculate eddy viscosity", proc_type="sub")
 def get_eddy_viscosity(piv_obj: Piv) -> None:
     """Obtain the eddy viscosity.
 
