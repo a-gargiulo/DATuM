@@ -13,9 +13,9 @@ class Piv:
 
     :ivar _data: The BeVERLI Hill stereo PIV data.
     :ivar _transformation_parameters: The coordinate transformation parameters for
-        transforming the BeVERLI Hill stereo PIV data from the local Cartesian PIV
-        coordinate system to the global Cartesian coordinate system of the
-        corresponding experiment in the Virginia Tech Stability Wind Tunnel.
+        transforming the BeVERLI Hill stereo PIV data from their local Cartesian PIV
+        coordinate system to the global Cartesian coordinate system of the BeVERLI
+        experiment in the Virginia Tech Stability Wind Tunnel.
     """
 
     def __init__(
@@ -23,21 +23,21 @@ class Piv:
         data: Optional[NestedDict] = None,
         transformation_parameters: Optional[NestedDict] = None,
     ) -> None:
-        """Constructor for objects of the :py:class:`datum.piv.Piv` class."""
+        """Constructs an object of the :py:class:`datum.piv.Piv` class."""
         self._data = data
         self._transformation_parameters = transformation_parameters
 
     @property
     def data(self) -> PivData:
-        """Access to the `data` instance variable as class property.
+        """Accesses the `data` property.
 
-        :return: The BeVERLI Hill stereo PIV data.
+        :return: The BeVERLI Hill stereo PIV data currently stored.
         """
         return self._data
 
     @data.setter
     def data(self, new_data: NestedDict) -> None:
-        """Setter function of the `data` property.
+        """Sets the `data` property.
 
         :param new_data: The BeVERLI Hill stereo PIV data to be set.
         """
@@ -45,18 +45,19 @@ class Piv:
 
     @property
     def transformation_parameters(self) -> Optional[NestedDict]:
-        """Access to the `transformation_parameters` instance variable as class
-        property.
+        """Accesses the `transformation_parameters` property currently stored or loads
+        the parameters if the property is empty.
 
         :return: The coordinate transformation parameters for transforming the BeVERLI
-            Hill stereo PIV data from the local Cartesian PIV coordinate system to the
-            global Cartesian coordinate system of the corresponding experiment in the
-            Virginia Tech Stability Wind Tunnel.
+            Hill stereo PIV data from their local Cartesian PIV coordinate system to the
+            global Cartesian coordinate system of the BeVERLI experiment in the Virginia
+            Tech Stability Wind Tunnel.
         """
         if self._transformation_parameters is None:
             input_data = parser.InputFile().data
-            parameters_file_path = utility.find_file(
+            parameters_file_path = utility.construct_file_path(
                 input_data["system"]["piv_plane_data_folder"],
+                [],
                 input_data["piv_data"]["coordinate_transformation"],
             )
 
@@ -92,16 +93,16 @@ class Piv:
 
     @transformation_parameters.setter
     def transformation_parameters(self, new_data: NestedDict) -> None:
-        """Setter function of the `transformation_parameters` property.
+        """Sets the `transformation_parameters` property.
 
         :param new_data: Coordinate transformation parameters to be set.
         """
         self._transformation_parameters = new_data
 
-    def has_quantity(self, data_type: str) -> bool:
-        """Check if the BeVERLI Hill stereo PIV data contains a specified flow quantity.
+    def search(self, quantity: str) -> bool:
+        """Searches the BeVERLI Hill stereo PIV data for a specified flow quantity.
 
-        :param data_type: The flow quantity to be searched.
-        :return: Value indicating whether the specified quantity was found or not.
+        :param quantity: The flow quantity to be searched.
+        :return: Boolean indicating whether the specified quantity was found or not.
         """
-        return utility.search_nested_dict(self.data, data_type)
+        return utility.search_nested_dict(self.data, quantity)

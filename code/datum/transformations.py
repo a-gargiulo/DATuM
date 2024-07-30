@@ -65,7 +65,7 @@ def rotate_data(piv_obj) -> None:
 
     # Rotate data
     for quantity, components in data_to_rotate:
-        is_avail = piv_obj.has_quantity(quantity)
+        is_avail = piv_obj.search(quantity)
 
         if is_avail:
             rotate_flow_quantity(piv_obj, quantity, components, rotation_matrix)
@@ -269,7 +269,7 @@ def interpolate_data(piv_obj) -> None:
     coords = get_flattened_coordinates(piv_obj)
     for data_type, keys in data_to_interpolate:
         for key in keys:
-            is_avail = all([piv_obj.has_quantity(data_type), piv_obj.has_quantity(key)])
+            is_avail = all([piv_obj.search(data_type), piv_obj.search(key)])
             if is_avail:
                 data = get_flattened_data(piv_obj, data_type, key)
                 interp_data = interpolate(coords, data, (x1_q, x2_q))
