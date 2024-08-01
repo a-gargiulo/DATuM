@@ -1,10 +1,8 @@
 """MAIN ROUTINE"""
 import datum
 
-datum.print_title()
-
-piv = datum.load_matlab_data()
-datum.preprocess_data(piv)
+# piv = datum.load_matlab_data()
+# datum.preprocess_data(piv)
 
 # ------------------------------------------
 

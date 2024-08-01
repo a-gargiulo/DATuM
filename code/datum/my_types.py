@@ -1,5 +1,4 @@
-"""This module defines and isolates useful type hint aliases, used throughout the DATuM
-package."""
+"""Defines useful type hint aliases."""
 from typing import Dict, Union
 
 import numpy as np

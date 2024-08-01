@@ -1,9 +1,10 @@
-"""Module for logging messages to the standard output."""
+"""Provides logging functions."""
 from typing import Callable, List
+import functools
 
 
 def print_title() -> None:
-    """Print 'DATuM' title."""
+    """Prints 'DATuM' title."""
     title = (
         "------------------------------ Welcome to ------------------------------\n"
         "\n"
@@ -28,13 +29,13 @@ def log_process(msg: str, proc_type: str) -> Callable:
     execution.
 
     :param msg: The message to be printed.
-    :param proc_type: The type of routine (`main`, `sub`, or `subsub`).
+    :param proc_type: The type/level of routine (`main`, `sub`, or `subsub`).
 
     :return: Function decorator.
     """
-
     def decorator(func):
 
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             start_process_message(msg, proc_type)
             result = func(*args, **kwargs)
@@ -46,33 +47,8 @@ def log_process(msg: str, proc_type: str) -> Callable:
     return decorator
 
 
-def create_ascii_table(headers: List[str], data: List[List[str]]) -> None:
-    """Print an ASCII style table of some data.
-
-    :param headers: The header titles of the table.
-    :param data: The data. The inner lists represent the rows of the table.
-    """
-    col_widths = [max(len(str(item)) for item in col) for col in zip(headers, *data)]
-
-    table = ["-" * (width + 2) for width in col_widths]
-    table = "+" + "+".join(table) + "+"
-
-    header_row = ("| " + " | ".join(
-        header.center(width) for header, width in zip(headers, col_widths)) + " |")
-    table += ("\n" + header_row + "\n" + "+" +
-              "+".join(["-" * (width + 2) for width in col_widths]) + "+")
-
-    for row in data:
-        data_row = ("| " + " | ".join(
-            str(item).rjust(width) for item, width in zip(row, col_widths)) + " |")
-        table += ("\n" + data_row + "\n" + "+" +
-                  "+".join(["-" * (width + 2) for width in col_widths]) + "+\n\n")
-
-    print(table)
-
-
-def start_process_message(msg: str, proc_type: str = "main"):
-    """Print a message at the start of a routine.
+def start_process_message(msg: str, proc_type: str):
+    """Prints a message at the start of a routine.
 
     :param msg: The message to be printed.
     :param proc_type: The type of routine (`main`, `sub`, or `subsub`).
@@ -93,9 +69,35 @@ def start_process_message(msg: str, proc_type: str = "main"):
 
 
 def end_process_message(msg: str):
-    """Print a message at the end of a routine.
+    """Prints a message at the end of a routine.
 
     :param msg: The message to be printed.
     """
     fancy_msg = f"\t|\n\t| - - > {msg}\n\n"
     print(fancy_msg)
+
+
+def create_ascii_table(headers: List[str], data: List[List[str]]) -> None:
+    """Prints an ASCII style table of specified data.
+
+    :param headers: The header titles of the table.
+    :param data: The data to be printed, where the inner lists represent the rows of the
+        table.
+    """
+    col_widths = [max(len(str(item)) for item in col) for col in zip(headers, *data)]
+
+    table = ["-" * (width + 2) for width in col_widths]
+    table = "+" + "+".join(table) + "+"
+
+    header_row = ("| " + " | ".join(
+        header.center(width) for header, width in zip(headers, col_widths)) + " |")
+    table += ("\n" + header_row + "\n" + "+" +
+              "+".join(["-" * (width + 2) for width in col_widths]) + "+")
+
+    for row in data:
+        data_row = ("| " + " | ".join(
+            str(item).rjust(width) for item, width in zip(row, col_widths)) + " |")
+        table += ("\n" + data_row + "\n" + "+" +
+                  "+".join(["-" * (width + 2) for width in col_widths]) + "+\n\n")
+
+    print(table)

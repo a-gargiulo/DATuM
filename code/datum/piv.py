@@ -1,5 +1,5 @@
-"""This module defines the :py:class:`datum.piv.Piv` class, which encapsulates the
-BeVERLI Hill stereo PIV data."""
+"""Defines the :py:class:`datum.piv.Piv` class, which encapsulates the BeVERLI Hill
+stereo PIV data."""
 
 import os
 from typing import Optional
@@ -9,18 +9,11 @@ from .my_types import NestedDict, PivData
 
 
 class Piv:
-    """This class encapsulates the BeVERLI Hill stereo PIV data.
-
-    :ivar _data: The BeVERLI Hill stereo PIV data.
-    :ivar _transformation_parameters: The coordinate transformation parameters for
-        transforming the BeVERLI Hill stereo PIV data from their local Cartesian PIV
-        coordinate system to the global Cartesian coordinate system of the BeVERLI
-        experiment in the Virginia Tech Stability Wind Tunnel.
-    """
+    """Encapsulates the BeVERLI Hill stereo PIV data."""
 
     def __init__(
         self,
-        data: Optional[NestedDict] = None,
+        data: Optional[PivData] = None,
         transformation_parameters: Optional[NestedDict] = None,
     ) -> None:
         """Constructs an object of the :py:class:`datum.piv.Piv` class."""
@@ -28,15 +21,16 @@ class Piv:
         self._transformation_parameters = transformation_parameters
 
     @property
-    def data(self) -> PivData:
-        """Accesses the `data` property.
+    def data(self):
+        """The BeVERLI Hill stereo PIV data.
 
-        :return: The BeVERLI Hill stereo PIV data currently stored.
+        :rtype: :py:type:`datum.my_types.PivData`
+        :return: The BeVERLI Hill stereo PIV data.
         """
         return self._data
 
     @data.setter
-    def data(self, new_data: NestedDict) -> None:
+    def data(self, new_data: PivData):
         """Sets the `data` property.
 
         :param new_data: The BeVERLI Hill stereo PIV data to be set.
@@ -44,14 +38,14 @@ class Piv:
         self._data = new_data
 
     @property
-    def transformation_parameters(self) -> Optional[NestedDict]:
-        """Accesses the `transformation_parameters` property currently stored or loads
-        the parameters if the property is empty.
+    def transformation_parameters(self):
+        """The coordinate transformation parameters for transforming the BeVERLI Hill
+        stereo PIV data from their local Cartesian PIV coordinate system to the global
+        Cartesian coordinate system of the BeVERLI experiment in the Virginia Tech
+        Stability Wind Tunnel.
 
-        :return: The coordinate transformation parameters for transforming the BeVERLI
-            Hill stereo PIV data from their local Cartesian PIV coordinate system to the
-            global Cartesian coordinate system of the BeVERLI experiment in the Virginia
-            Tech Stability Wind Tunnel.
+        :rtype: :py:type:`datum.my_types.NestedDict`
+        :return: The transformation parameters.
         """
         if self._transformation_parameters is None:
             input_data = parser.InputFile().data
@@ -103,6 +97,6 @@ class Piv:
         """Searches the BeVERLI Hill stereo PIV data for a specified flow quantity.
 
         :param quantity: The flow quantity to be searched.
-        :return: Boolean indicating whether the specified quantity was found or not.
+        :return: Value indicating whether the specified quantity was found or not.
         """
         return utility.search_nested_dict(self.data, quantity)

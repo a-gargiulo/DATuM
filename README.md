@@ -2,6 +2,12 @@
 
 This repository houses an analyzer utilizing particle image velocimetry (PIV) and supplementary laser Doppler velocimetry (LDV) and computational fluid dynamics (CFD) data to directly investigate constitutive relations for turbulent aerodynamic flows.
 
+
+Will work for stereo piv data of the BeVERLI hill acquired in x-y planes or at 45 deg
+
+
+
+
 ## Table of Contents
 
 - [Installation](#installation)

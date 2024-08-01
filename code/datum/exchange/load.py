@@ -1,4 +1,4 @@
-"""Module for loading the BeVERLI Hill stereo PIV data."""
+"""Provides functions for loading the BeVERLI Hill stereo PIV data."""
 import sys
 
 import scipy.io as scio
@@ -9,12 +9,12 @@ from ..piv import Piv
 from ..utility import construct_file_path, find_file, load_pickle
 
 
-@log_process("Load `raw` BeVERLI Hill Stereo PIV data from Matlab files", "main")
+@log_process("Load `raw` BeVERLI Hill Stereo PIV data (.mat format)", "main")
 def load_matlab_data() -> Piv:
     """
-    Load the `raw` BeVERLI Hill stereo PIV data from Matlab (.mat) format.
+    Loads the `raw` BeVERLI Hill stereo PIV data (.mat format).
 
-    :return: Raw data.
+    :return: `Raw` BeVERLI Hill stereo PIV data.
     """
     input_data = InputFile().data
 
@@ -84,7 +84,7 @@ def load_matlab_data() -> Piv:
 
 
 def load_preprocessed_data() -> Piv:
-    """Load the `preprocessed` BeVERLI Hill stereo PIV data.
+    """Loads the `preprocessed` BeVERLI Hill stereo PIV data.
 
     :return: Preprocessed data.
     """

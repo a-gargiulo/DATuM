@@ -1,5 +1,5 @@
-"""This module introduces two classes: :py:class:`datum.parsing.InputDataParser` and
-:py:class:`datum.parsing.PoseDataParser`, responsible for the parsing and loading of
+"""Introduces two parser classes: :py:class:`datum.parser.InputFile` and
+:py:class:`datum.parser.PoseFile`, responsible for parsing and loading
 the input and pose measurement files, respectively."""
 import re
 import sys
@@ -10,12 +10,10 @@ from .my_types import InputData, PoseMeasurement
 
 
 class InputFile:
-    """A class for the parsing and caching of the user input data, so that it is
-    globally shared.
+    """Parses and caches the user input data as a singleton instance.
 
-    :cvar _instance: Singleton instance of the
-        :py:class:`datum.parsing.InputDataParser`.
-    :cvar _loaded: Boolean tracking if the data has been loaded.
+    :ivar data: The input file data.
+    :vartype data: InputData
     """
 
     _instance: Optional["InputData"] = None
@@ -31,7 +29,7 @@ class InputFile:
     #    PUBLIC    #
     ################
     def load_data(self) -> None:
-        """Load and cache input data."""
+        """Loads and caches input data."""
         if not InputFile._loaded:
             # pylint: disable=attribute-defined-outside-init
             # noinspection PyAttributeOutsideInit
@@ -44,10 +42,10 @@ class InputFile:
     ###################
     @staticmethod
     def _parse_file(filename: str) -> InputData:
-        """Read the input file.
+        """Reads the input file.
 
-        :param filename: String representing the system path to the input file.
-        :return: Nested dictionary containing the input data.
+        :param filename: System path to the input file.
+        :return: The parsed input data.
         """
         try:
             with open(filename, "r", encoding="utf-8") as file:
@@ -62,7 +60,7 @@ class InputFile:
         """Parse each line of the input file.
 
         :param file: The input file to parse.
-        :return: A nested dictionary containing the parsed input data.
+        :return: The parsed input data.
         """
         input_data = {}
         section_keys = [None, None, None]
@@ -103,9 +101,8 @@ class InputFile:
     def _parse_key_value(line: str) -> Tuple[str, Union[bool, float, int, str]]:
         """Parse key-value pair from a corresponding line of the input file.
 
-        :param line: String representing the line of the file containing the key-value
-            pair.
-        :return: Tuple representing the key-value pair.
+        :param line: The line of the file containing the key-value pair.
+        :return: The key-value pair.
         """
         key, value = map(str.strip, line.split(":", 1))
 
@@ -124,7 +121,7 @@ class InputFile:
     def _convert_string_to_value(value: str) -> Union[bool, float, int]:
         """Convert a string representation of a value into the corresponding data type.
 
-        :param value: String representing a value.
+        :param value: The value as a string.
         :return: The value in the correct data type.
         """
         if value.isdigit():
@@ -141,8 +138,8 @@ class InputFile:
     def _is_border(line: str) -> bool:
         """Check if the parsed file line represents a decorative border.
 
-        :param line: String representing the line to parse.
-        :return: Boolean value indicating whether the line is a decorative border.
+        :param line: The line to parse.
+        :return: Value indicating whether the line is a decorative border.
         """
         borders = [r"^#+$", r"^(\+|-)+$", r"^/+$"]
         if any(re.search(pattern, line) is not None for pattern in borders):
@@ -150,8 +147,7 @@ class InputFile:
         return False
 
     def _expand_system_paths(self) -> None:
-        """Add additional useful system paths to the nested dictionary containing the
-        input data."""
+        """Add additional useful system paths to the input data."""
         plane_number = self.data["piv_data"]["plane_number"]
         plane_type = self.data["piv_data"]["plane_type"]
         reynolds_number = self.data["general"]["reynolds_number"]
@@ -178,16 +174,16 @@ class InputFile:
 
 
 # pylint: disable=too-few-public-methods
-class PoseDataParser:
-    """A class for the loading of the pose data measurement collected for each BeVERLI
-    stereo PIV plane during the corresponding wind tunnel entries.
+class PoseFile:
+    """Parses and chaches the pose measurement data collected for each BeVERLI
+    stereo PIV plane during the corresponding experiment in the Virginia Tech Stability
+    Wind Tunnel.
 
-    :cvar _instance: Singleton instance of the
-        :py:class:`datum.parsing.PoseDataParser`.
-    :cvar _loaded: Boolean tracking if the data has been loaded.
+    :ivar data: The pose measurement data.
+    :vartype data: PoseMeasurement
     """
 
-    _instance: Optional["PoseDataParser"] = None
+    _instance: Optional["PoseMeasurement"] = None
     _loaded: bool = False
 
     def __new__(cls):
@@ -197,30 +193,29 @@ class PoseDataParser:
         return cls._instance
 
     def load_data(self) -> None:
-        """Load and cache input data."""
+        """Loads and caches the pose measurement data."""
         input_data = InputFile().data
         posefile = utility.find_file(
             input_data["system"]["piv_plane_data_folder"],
             input_data["piv_data"]["pose_measurement"],
         )
 
-        if not PoseDataParser._loaded:
+        if not PoseFile._loaded:
             # pylint: disable=attribute-defined-outside-init
             # noinspection PyAttributeOutsideInit
-            self.pose_measurement = PoseDataParser._parse_file(posefile)
-            PoseDataParser._loaded = True
+            self.data = PoseFile._parse_file(posefile)
+            PoseFile._loaded = True
 
     @staticmethod
     def _parse_file(filename: str) -> PoseMeasurement:
-        """Open and read the pose measurement file.
+        """Opens and reads the pose measurement file.
 
-        :param filename: String representing the system path to the pose measurement
-            file.
-        :return: A nested dictionary containing the pose measurement data.
+        :param filename: The system path to the pose measurement file.
+        :return: The pose measurement data.
         """
         try:
             with open(filename, "r", encoding="utf-8") as file:
-                pose_data = PoseDataParser._parse_file_line(file)
+                pose_data = PoseFile._parse_file_line(file)
             return pose_data
         except FileNotFoundError:
             print(f"--> The file {filename} was not found!\n")
@@ -228,10 +223,10 @@ class PoseDataParser:
 
     @staticmethod
     def _parse_file_line(file: TextIO) -> PoseMeasurement:
-        """Parse the specific DATuM input file.
+        """Parse each line of the pose measurement file.
 
-        :param file: An object containing the file data to be parsed.
-        :return: A dictionary containing the parsed pose measurement data.
+        :param file: The pose measurement file.
+        :return: The parsed pose measurement data.
         """
         pose_data = {}
         section_keys = [None, None]
@@ -250,7 +245,7 @@ class PoseDataParser:
                 section_keys[1] = line.strip("* ").replace(" ", "_").lower()
                 pose_data[section_keys[0]][section_keys[1]] = {}
             elif line:
-                key, value = PoseDataParser._parse_key_value(line)
+                key, value = PoseFile._parse_key_value(line)
 
                 section_ref = pose_data[section_keys[0]]
                 for key_part in section_keys[1:]:
@@ -262,11 +257,10 @@ class PoseDataParser:
 
     @staticmethod
     def _parse_key_value(line: str) -> Tuple[str, Union[float, int, str]]:
-        """Parse key-value pair from a corresponding line of the input file.
+        """Parses key-value pair from a corresponding line of the pose measurement file.
 
-        :param line: String representing the line of the file containing the key-value
-            pair.
-        :return: Tuple representing the key-value pair.
+        :param line: The line of the file containing the key-value pair.
+        :return: The key-value pair.
         """
         key, value = map(str.strip, line.split(":", 1))
 
@@ -277,15 +271,15 @@ class PoseDataParser:
         key = key.replace(" ", "_").lower()
 
         # Determine the appropriate data type for the value
-        value = PoseDataParser._convert_string_to_value(value.strip())
+        value = PoseFile._convert_string_to_value(value.strip())
 
         return key, value
 
     @staticmethod
     def _convert_string_to_value(value: str) -> float:
-        """Convert a string representation of a value into the corresponding data type.
+        """Converts a string representation of a value into the corresponding data type.
 
-        :param value: A string representing a value.
+        :param value: The value in string format.
         :return: The value in the correct data type.
         """
         if value.isdigit():
