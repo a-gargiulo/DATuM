@@ -3,13 +3,13 @@ from typing import Tuple
 import numpy as np
 
 from .my_types import ProfileDictSingle
-from .parser import PoseDataParser
+from .parser import PoseFile
 
 
 def calculate_random_and_rotation_uncertainty(
     profile: ProfileDictSingle, n_eff: int, coordinate_system_type: str
 ):
-    pose = PoseDataParser().pose_measurement
+    pose = PoseFile().pose_measurement
     prefactor = 1
     if pose["calibration_plate_angle"]["direct_measurement"]["angle"] == 0:
         prefactor = 0

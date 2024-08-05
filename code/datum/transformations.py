@@ -1,5 +1,6 @@
-"""This module provides functions for transforming the BeVERLI stereo PIV data from the
-local PIV coordinate system to the global BeVERLI coordinate system."""
+"""Provides functions for transforming the BeVERLI Hill stereo PIV data from the local
+PIV coordinate system to the global Cartesian coordinate system of the corresponding
+BeVERLI Hill experiment in the Virginia Tech Stability Wind Tunnel."""
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -12,7 +13,7 @@ from .parser import InputFile
 def get_rotation_matrix(
     rotation_angle_deg: float, rotation_axis: Tuple[float, float, float]
 ) -> np.ndarray:
-    """Get rotation matrix for an Euler rotation of a body about the origin of its
+    """Gets the rotation matrix for an Euler rotation of a body about the origin of its
     Cartesian coordinate system about a specified axis.
 
     :param rotation_angle_deg: Rotation angle measured in degrees.
@@ -37,7 +38,7 @@ def get_rotation_matrix(
 
 
 def calculate_unit_vector(data: Tuple[float, float, float]) -> np.ndarray:
-    """Normalize a vector.
+    """Normalizes a vector.
 
     :param data: Tuple of shape (3, ) representing the vector data.
     :return: The normalized vector as a NumPy ndarray of shape (3, ).
@@ -49,10 +50,10 @@ def calculate_unit_vector(data: Tuple[float, float, float]) -> np.ndarray:
 
 @log.log_process("Rotate data", "subsub")
 def rotate_data(piv_obj) -> None:
-    """Perform a comprehensive routine to rotate all BeVERLI stereo PIV data contained
-    in a :py:class:`datum.piv.Piv` object.
+    """Performs a comprehensive routine to rotate all BeVERLI Hill stereo PIV data
+    contained in a :py:class:`datum.piv.Piv` object.
 
-    :param piv_obj: Instance of the :py:class:`datum.piv.Piv` class.
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
     """
     rotation_matrix = obtain_rotation_matrix(piv_obj)
 

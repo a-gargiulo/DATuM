@@ -17,7 +17,7 @@ from . import (boundary_layer, cfd, log, parser, plotting, preprocessor,
                reference, spalding, transformations, uncertainty, utility)
 from .beverli import Beverli
 from .my_types import NestedDict
-from .parser import InputFile, PoseDataParser
+from .parser import InputFile, PoseFile
 from .piv import Piv
 
 
@@ -77,7 +77,7 @@ def extract_profiles(
 
     # Load user input data
     input_data = InputFile().data
-    pose_measurement = PoseDataParser().pose_measurement
+    pose_measurement = PoseFile().pose_measurement
 
     # Outputfile name
     plane_number = input_data["piv_data"]["plane_number"]
@@ -250,7 +250,7 @@ def extract_normal_profile(
     # pylint: disable=too-many-arguments
     # Extract user input data
     input_data = InputFile().data
-    pose_measurement = PoseDataParser().pose_measurement
+    pose_measurement = PoseFile().pose_measurement
 
     # Instance of the Beverli class
     hill = Beverli()
@@ -456,7 +456,7 @@ def select_profile_locations(
     :return: A list of tuples containing the x:sub:`1` and x:sub:`2` Cartesian
         coordinates of the profiles' points on the hill surface.
     """
-    pose_measurement = PoseDataParser().pose_measurement
+    pose_measurement = PoseFile().pose_measurement
     x_1_m = pose_measurement["calibration_plate_location"]["x_1"]
     x_3_m = pose_measurement["calibration_plate_location"]["x_3"]
 

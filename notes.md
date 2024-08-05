@@ -20,4 +20,10 @@ TO-DO: load_profiles
 
 [x] Completed
 
-The docstrings of the private methods are not perfect, but this is not too important.
+The docstrings of the private methods are not perfect, but this is not too important, as it will be omitted.
+
+## preprocessor.py
+
+[x] Completed
+
+##

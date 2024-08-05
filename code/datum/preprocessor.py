@@ -1,5 +1,4 @@
-"""This module provides pre-processing routines for the BeVERLI stereo PIV data."""
-import os
+"""Provides routines for pre-processing the BeVERLI Hill stereo PIV data."""
 import sys
 from typing import Dict
 
@@ -12,14 +11,14 @@ from .my_types import PivData
 from .piv import Piv
 
 
-@log.log_process(msg="Preprocess data", proc_type="main")
+@log.log_process("Preprocess data", "main")
 def preprocess_data(piv_obj: Piv) -> None:
-    """A comprehensive routine to preprocess the BeVERLI stereo PIV data in one go.
+    """Comprehensively pre-processes the BeVERLI Hill stereo PIV data.
 
-    :param piv_obj: Piv object containing the BeVERLI stereo PIV data.
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
     """
     input_data = parser.InputFile().data
-    output_file_path = get_output_file_path()
+    output_file_path = utility.get_output_file_path()
 
     if input_data["preprocessor"]["active"]:
         get_coordinate_transformation_parameters(piv_obj)
@@ -44,11 +43,9 @@ def preprocess_data(piv_obj: Piv) -> None:
         piv_obj.data = get_preprocessed_data()
 
 
-@log.log_process(
-    msg="Obtain PIV coordinate transformation parameters", proc_type="sub"
-)
+@log.log_process("Obtain PIV coordinate transformation parameters", "sub")
 def get_coordinate_transformation_parameters(piv_obj: Piv) -> None:
-    """Obtain the coordinate transformation parameters for the BeVERLI Hill stereo PIV
+    """Obtains the coordinate transformation parameters for the BeVERLI Hill stereo PIV
     data.
 
     :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
@@ -104,10 +101,11 @@ def get_coordinate_transformation_parameters(piv_obj: Piv) -> None:
         pose.obtain_local_pose(piv_obj)
 
 
-@log.log_process(msg="Transform data", proc_type="sub")
+@log.log_process("Transform data", "sub")
 def transform_data(piv_obj: Piv) -> None:
-    """Perform the Cartesian coordinate transformation from the local stereo PIV
-    coordinate system to the global BeVERLI coordinate system.
+    """Performs the Cartesian coordinate transformation from the local stereo PIV
+    coordinate system to the global Cartesian coordinate system fo the BeVERLI
+    experiment in the Virginia Tech Stability Wind Tunnel.
 
     :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
     """
@@ -119,8 +117,9 @@ def transform_data(piv_obj: Piv) -> None:
 
 @log.log_process(msg="Transform data w/o interpolation", proc_type="sub")
 def transform_data_without_interpolation(piv_obj: Piv) -> None:
-    """Perform the Cartesian coordinate transformation from the local stereo PIV
-    coordinate system to the global BeVERLI coordinate system, without interpolation.
+    """Performs the Cartesian coordinate transformation from the local stereo PIV
+    coordinate system to the global Cartesian coordinate system fo the BeVERLI
+    experiment in the Virginia Tech Stability Wind Tunnel.
 
     :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
     """
@@ -132,9 +131,9 @@ def transform_data_without_interpolation(piv_obj: Piv) -> None:
         piv_obj.data["coordinates"]["Z"] = piv_obj.data["coordinates"]["X"]
 
 
-@log.log_process(msg="Calculate mean velocity gradient tensor", proc_type="sub")
-def compute_velocity_gradient(piv_obj:Piv) -> None:
-    """Compute the mean velocity gradient tensor from the BeVERLI Hill stereo PIV mean
+@log.log_process("Calculate mean velocity gradient tensor", "sub")
+def compute_velocity_gradient(piv_obj: Piv) -> None:
+    """Computes the mean velocity gradient tensor from the BeVERLI Hill stereo PIV mean
     velocity data.
 
     :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
@@ -166,12 +165,12 @@ def compute_velocity_gradient(piv_obj:Piv) -> None:
     piv_obj.data["mean_velocity_gradient"] = mean_vel_grad
 
 
-@log.log_process(msg="Computable components", proc_type="subsub")
+@log.log_process("Computable components", "subsub")
 def get_computable_velocity_gradient_components(piv_obj: Piv) -> Dict[str, np.ndarray]:
-    """Calculate the directly computable components of the mean velocity gradient tensor
-    from the BeVERLI stereo PIV mean velocity data.
+    """Calculates the directly computable components of the mean velocity gradient
+    tensor from the BeVERLI Hill stereo PIV mean velocity data.
 
-    :param piv_obj: Instance of the :py:class:`datum.piv.Piv` class.
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
     :return: A dictionary containing NumPy ndarrays of shape (m, n), where m and n
         represent the number of available data points in the x:sub:`1`- and
         x:sub:`2`-direction. Each array represents a computable component of the mean
@@ -192,10 +191,11 @@ def get_computable_velocity_gradient_components(piv_obj: Piv) -> Dict[str, np.nd
     return components
 
 
+@log.log_process("Calculate strain and rotation tensors", "sub")
 def get_strain_and_rotation_tensor(piv_obj: Piv) -> None:
-    """Obtain the mean rate-of-strain and rotation tensor.
+    """Obtains the mean rate-of-strain and rotation tensors.
 
-    :param piv_obj: Instance of the :py:class:`datum.piv.Piv` class.
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
     """
     base_tensors = get_base_tensors(piv_obj)
     piv_obj.data["strain_tensor"] = {
@@ -209,11 +209,11 @@ def get_strain_and_rotation_tensor(piv_obj: Piv) -> None:
     }
 
 
-@log.log_process(msg="Calculate eddy viscosity", proc_type="sub")
+@log.log_process("Calculate eddy viscosity", "sub")
 def get_eddy_viscosity(piv_obj: Piv) -> None:
-    """Obtain the eddy viscosity.
+    """Obtains the eddy viscosity.
 
-    :param piv_obj: Instance of the :py:class:`datum.piv.Piv` class.
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
     """
     base_tensors = get_base_tensors(piv_obj)
     (piv_obj.data["turbulence_scales"]["NUT"]) = calculate_eddy_viscosities(
@@ -221,39 +221,18 @@ def get_eddy_viscosity(piv_obj: Piv) -> None:
     )
 
 
-def get_output_file_path() -> str:
-    """Utility to obtain the output file system path for the processed BeVERLI stereo
-    PIV data.
-
-    :return: A string representing the output file system path.
-    """
-    input_data = parser.InputFile().data
-
-    outfile_dir = os.path.join(
-        input_data["system"]["piv_plane_data_folder"], "preprocessed"
-    )
-    os.makedirs(outfile_dir, exist_ok=True)
-
-    file_name = (
-        f"plane{input_data['piv_data']['plane_number']}_"
-        f"{int(input_data['general']['reynolds_number'] / 1000.0)}k_"
-        f"{input_data['piv_data']['plane_type']}_preprocessed.pkl"
-    )
-
-    return os.path.join(outfile_dir, file_name)
-
-
 def get_preprocessed_data() -> PivData:
-    """Attempt to load pre-processed BeVERLI stereo PIV data if the user runs the
+    """Attempts to load pre-processed BeVERLI Hill stereo PIV data if the user runs the
     pre-processor with the `deactivated` flag.
 
-    :return: The pre-processed BeVERLI stereo PIV data.
+    :rtype: :py:data:`datum.my_types.PivData`
+    :return: The pre-processed BeVERLI Hill stereo PIV data.
     """
     print(
         "Data will not be preprocessed.\n\nSearching and loading preprocessed data...\n"
     )
     try:
-        data = utility.load_pickle(get_output_file_path())
+        data = utility.load_pickle(utility.get_output_file_path())
     except FileNotFoundError:
         print("No preprocessed data found!")
         sys.exit(1)

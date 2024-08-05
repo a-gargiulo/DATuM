@@ -6,6 +6,7 @@ import pickle
 import sys
 from typing import List, Optional
 
+from . import parser
 from .my_types import NestedDict
 
 
@@ -141,3 +142,25 @@ def write_pickle(file_path: str, dictionary: NestedDict) -> None:
     with open(file_path, "wb") as file:
         pickle.dump(dictionary, file)
     print(f"--> File '{os.path.basename(file_path)}' created.\n")
+
+
+def get_output_file_path() -> str:
+    """Obtains the output file system path for the processed BeVERLI Hill stereo
+    PIV data.
+
+    :return: A string representing the output file system path.
+    """
+    input_data = parser.InputFile().data
+
+    outfile_dir = os.path.join(
+        input_data["system"]["piv_plane_data_folder"], "preprocessed"
+    )
+    os.makedirs(outfile_dir, exist_ok=True)
+
+    file_name = (
+        f"plane{input_data['piv_data']['plane_number']}_"
+        f"{int(input_data['general']['reynolds_number'] / 1000.0)}k_"
+        f"{input_data['piv_data']['plane_type']}_preprocessed.pkl"
+    )
+
+    return os.path.join(outfile_dir, file_name)

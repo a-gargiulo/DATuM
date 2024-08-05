@@ -24,7 +24,7 @@ class Piv:
     def data(self):
         """The BeVERLI Hill stereo PIV data.
 
-        :rtype: :py:type:`datum.my_types.PivData`
+        :rtype: :py:data:`datum.my_types.PivData`
         :return: The BeVERLI Hill stereo PIV data.
         """
         return self._data
@@ -44,7 +44,7 @@ class Piv:
         Cartesian coordinate system of the BeVERLI experiment in the Virginia Tech
         Stability Wind Tunnel.
 
-        :rtype: :py:type:`datum.my_types.NestedDict`
+        :rtype: :py:data:`datum.my_types.NestedDict`
         :return: The transformation parameters.
         """
         if self._transformation_parameters is None:

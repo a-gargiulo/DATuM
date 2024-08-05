@@ -15,7 +15,7 @@ from . import log, plotting, utility
 from .beverli import Beverli
 from .cfd import get_shape_of_ijk_ordered_tecplot_file
 from .my_math import compute_derivative_1d
-from .parser import InputFile, PoseDataParser
+from .parser import InputFile, PoseFile 
 from .transformations import get_rotation_matrix, rotate_vector_quantity
 
 
@@ -30,7 +30,7 @@ def obtain_global_pose(piv_obj) -> None:
     piv_input = input_data["piv_data"]
     system_input = input_data["system"]
 
-    pose_measurement = PoseDataParser().pose_measurement
+    pose_measurement = PoseFile().pose_measurement
     angle_measured_deg = pose_measurement["calibration_plate_angle"][
         "direct_measurement"
     ]["angle"]
@@ -83,7 +83,7 @@ def obtain_local_pose(piv_obj) -> None:
     :param piv_obj: Instance of the :py:class:`datum.piv.Piv` class.
     """
     input_data = InputFile().data
-    pose_measurement = PoseDataParser().pose_measurement
+    pose_measurement = PoseFile().pose_measurement
 
     cal_img_path = utility.find_file(
         input_data["system"]["piv_plane_data_folder"],
@@ -134,7 +134,7 @@ def calculate_global_pose() -> Tuple[float, float, float]:
         Hill, along with its corresponding inclination angle. The coordinates are
         measured in meters, whereas the angle is measured in degrees.
     """
-    pose_measurement = PoseDataParser().pose_measurement
+    pose_measurement = PoseFile().pose_measurement
     hill = Beverli()
 
     # Get local cross-sectional x1-x2-hill-profile (incl. derivatives)
@@ -195,7 +195,7 @@ def obtain_secant_tangent_parameters(
         number of profile points.
     :return: List of shape (6, ) containing the secant parameters.
     """
-    pose_measurement = PoseDataParser().pose_measurement
+    pose_measurement = PoseFile().pose_measurement
     # Initialization
     hill_side = {-1: "windward", 1: "leeward"}
     plate_location = np.sign(pose_measurement["calibration_plate_location"]["x_1"])
@@ -349,7 +349,7 @@ def correct_secant_tangent_parameters(
     :return: List of floats representing the corrected secant parameters.
     """
     input_data = InputFile().data
-    pose_measurement = PoseDataParser().pose_measurement
+    pose_measurement = PoseFile().pose_measurement
 
     # Initialization
     plate_width_m = 0.106
