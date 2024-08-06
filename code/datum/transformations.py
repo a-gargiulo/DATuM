@@ -1,6 +1,7 @@
 """Provides functions for transforming the BeVERLI Hill stereo PIV data from the local
 PIV coordinate system to the global Cartesian coordinate system of the corresponding
 BeVERLI Hill experiment in the Virginia Tech Stability Wind Tunnel."""
+
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -13,12 +14,15 @@ from .parser import InputFile
 def get_rotation_matrix(
     rotation_angle_deg: float, rotation_axis: Tuple[float, float, float]
 ) -> np.ndarray:
-    """Gets the rotation matrix for an Euler rotation of a body about the origin of its
-    Cartesian coordinate system about a specified axis.
+    """Gets the rotation matrix for an Euler rotation of a body about a specified axis
+    of its Cartesian coordinate system.
 
     :param rotation_angle_deg: Rotation angle measured in degrees.
-    :param rotation_axis: Tuple of shape (3, ) describing the axis of rotation.
-    :return: Rotation matrix as NumPy ndarray of shape (3, 3).
+    :param rotation_axis: 3D vector components of the axis of rotation as a tuple of
+        shape (3, ).
+
+    :return: Rotation matrix as :py:type:`ndarray` of shape (3, 3).
+    :rtype: :py:type:`ndarray`
     """
     angle_rad = np.deg2rad(rotation_angle_deg)
     axis = calculate_unit_vector(rotation_axis)
@@ -38,10 +42,12 @@ def get_rotation_matrix(
 
 
 def calculate_unit_vector(data: Tuple[float, float, float]) -> np.ndarray:
-    """Normalizes a vector.
+    """Normalizes an input vector.
 
-    :param data: Tuple of shape (3, ) representing the vector data.
-    :return: The normalized vector as a NumPy ndarray of shape (3, ).
+    :param data: 3D vector components of an input vector.
+
+    :return: The normalized vector as :py:type:`ndarray` of shape (3, ).
+    :rtype: :py:type:`ndarray`
     """
     data = np.array(data, dtype=np.float64)
     data /= np.sqrt(np.dot(data, data))
@@ -50,12 +56,24 @@ def calculate_unit_vector(data: Tuple[float, float, float]) -> np.ndarray:
 
 @log.log_process("Rotate data", "subsub")
 def rotate_data(piv_obj) -> None:
-    """Performs a comprehensive routine to rotate all BeVERLI Hill stereo PIV data
-    contained in a :py:class:`datum.piv.Piv` object.
+    """Rotates the `original` BeVERLI Hill stereo PIV data from its local PIV coordinate
+    system to the Cartesian coordinate system used in the Virginia Tech Stability Wind
+    Tunnel.
+
+    The `original` data comprises coordinates, mean velocity, Reynolds stress tensor,
+    and an instantaneous velocity frame (if available). Additional derived quantities,
+    such as the mean rate-of-strain tensor, are computed directly in the (rotated)
+    coordinate system of the Virginia Tech Stability Wind Tunnel.
+
+    If you need to rotate a specific flow quantity to a coordinate system not handled by
+    this routine, consider the :py:meth:`datum.transformations.rotate_flow_quantity`
+    function.
+
+    The present routine directly edits the :py:type:`Piv` object that is passed to it.
 
     :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
     """
-    rotation_matrix = obtain_rotation_matrix(piv_obj)
+    rotation_matrix = _obtain_rotation_matrix(piv_obj)
 
     data_to_rotate = [
         ("coordinates", ["X", "Y"]),
@@ -72,7 +90,7 @@ def rotate_data(piv_obj) -> None:
             rotate_flow_quantity(piv_obj, quantity, components, rotation_matrix)
 
 
-def obtain_rotation_matrix(piv_obj):
+def _obtain_rotation_matrix(piv_obj):
     input_data = InputFile().data
 
     if input_data["piv_data"]["plane_is_diagonal"]:
@@ -95,16 +113,19 @@ def obtain_rotation_matrix(piv_obj):
 def rotate_flow_quantity(
     piv_obj, quantity: str, components: List[str], rotation_matrix: np.ndarray
 ) -> None:
-    """Rotate a single quantity of the BeVERLI stereo PIV data.
+    """Rotates a specified BeVERLI Hill stereo PIV flow quantity using a specified
+    rotation matrix.
 
-    :param piv_obj: Instance of the :py:class:`datum.piv.Piv` class.
-    :param quantity: String specifying the quantity to rotate.
-    :param components: A list specifying the components of the vector or tensor quantity to
-        rotate.
-    :param rotation_matrix: The rotation matrix used to rotate the data as NumPy ndarray
-        of shape (3, 3).
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
+    :param quantity: String specifying the flow quantity to rotate.
+    :param components: A list of strings specifying the components of the vector or
+        tensor quantity to rotate.
+    :param rotation_matrix: The rotation matrix used to rotate the data as
+        :py:type:`ndarray` of shape (3, 3).
+
+    This routine directly edits the :py:type:`Piv` object that is passed to it.
     """
-    if quantity == "reynolds_stress":
+    if len(components) == 9:
         tensor = prepare_tensor_quantity_for_rotation(piv_obj, quantity, components)
         rotated_tensor = rotate_tensor_quantity(tensor, rotation_matrix)
         set_rotated_tensor_quantity(piv_obj, quantity, components, rotated_tensor)
@@ -420,9 +441,7 @@ def rotate_profile(profile, rotation_matrix):
 
     velocity_vector_rotated = rotation_matrix @ velocity_vector
     re_stress_tensor_rotated = (
-        rotation_matrix
-        @ re_stress_tensor.transpose(2, 0, 1)
-        @ rotation_matrix.T
+        rotation_matrix @ re_stress_tensor.transpose(2, 0, 1) @ rotation_matrix.T
     ).transpose(1, 2, 0)
 
     if "strain_tensor" in profile:
@@ -522,6 +541,6 @@ def set_rotated_profiles(
             profile["rotation_tensor"][w_component] = rotation_tensor_rotated[
                 *indices, :
             ]
-            profile["normalized_rotation_tensor"][
-                o_component
-            ] = rotation_tensor_rotated[*indices, :]
+            profile["normalized_rotation_tensor"][o_component] = (
+                rotation_tensor_rotated[*indices, :]
+            )

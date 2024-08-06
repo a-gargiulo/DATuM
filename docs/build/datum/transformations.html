@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>transformations.py &mdash; DATuM 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="load.py" href="exchange/load.html" />
+    <link rel="prev" title="preprocessor.py" href="preprocessor.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DATuM
+          </a>
+              <div class="version">
+                1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">DATuM</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="my_types.html">my_types.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parser.html">parser.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piv.html">piv.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preprocessor.html">preprocessor.py</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">transformations.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.get_rotation_matrix"><code class="docutils literal notranslate"><span class="pre">get_rotation_matrix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.calculate_unit_vector"><code class="docutils literal notranslate"><span class="pre">calculate_unit_vector()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.rotate_data"><code class="docutils literal notranslate"><span class="pre">rotate_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.rotate_flow_quantity"><code class="docutils literal notranslate"><span class="pre">rotate_flow_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.rotate_vector_quantity"><code class="docutils literal notranslate"><span class="pre">rotate_vector_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.rotate_tensor_quantity"><code class="docutils literal notranslate"><span class="pre">rotate_tensor_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.prepare_vector_quantity_for_rotation"><code class="docutils literal notranslate"><span class="pre">prepare_vector_quantity_for_rotation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.prepare_tensor_quantity_for_rotation"><code class="docutils literal notranslate"><span class="pre">prepare_tensor_quantity_for_rotation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.set_rotated_vector_quantity"><code class="docutils literal notranslate"><span class="pre">set_rotated_vector_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.set_rotated_tensor_quantity"><code class="docutils literal notranslate"><span class="pre">set_rotated_tensor_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.interpolate_data"><code class="docutils literal notranslate"><span class="pre">interpolate_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.get_interpolation_grid"><code class="docutils literal notranslate"><span class="pre">get_interpolation_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.get_flattened_coordinates"><code class="docutils literal notranslate"><span class="pre">get_flattened_coordinates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.get_flattened_data"><code class="docutils literal notranslate"><span class="pre">get_flattened_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.set_interpolated_data"><code class="docutils literal notranslate"><span class="pre">set_interpolated_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.translate_data"><code class="docutils literal notranslate"><span class="pre">translate_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.get_translation_vector"><code class="docutils literal notranslate"><span class="pre">get_translation_vector()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.translate_coordinates"><code class="docutils literal notranslate"><span class="pre">translate_coordinates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.scale_coordinates"><code class="docutils literal notranslate"><span class="pre">scale_coordinates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.rotate_profile"><code class="docutils literal notranslate"><span class="pre">rotate_profile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.rotate_tensor_profile"><code class="docutils literal notranslate"><span class="pre">rotate_tensor_profile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datum.transformations.set_rotated_profiles"><code class="docutils literal notranslate"><span class="pre">set_rotated_profiles()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="exchange/load.html">load.py</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DATuM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">transformations.py</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/datum/transformations.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-datum.transformations">
+<span id="transformations-py"></span><h1>transformations.py<a class="headerlink" href="#module-datum.transformations" title="Link to this heading"></a></h1>
+<p>Provides functions for transforming the BeVERLI Hill stereo PIV data from the local
+PIV coordinate system to the global Cartesian coordinate system of the corresponding
+BeVERLI Hill experiment in the Virginia Tech Stability Wind Tunnel.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.get_rotation_matrix">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">get_rotation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rotation_angle_deg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_axis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.get_rotation_matrix" title="Link to this definition"></a></dt>
+<dd><p>Gets the rotation matrix for an Euler rotation of a body about a specified axis
+of its Cartesian coordinate system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rotation_angle_deg</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Rotation angle measured in degrees.</p></li>
+<li><p><strong>rotation_axis</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – 3D vector components of the axis of rotation as a tuple of
+shape (3, ).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Rotation matrix as <code class="xref py py-type docutils literal notranslate"><span class="pre">ndarray</span></code> of shape (3, 3).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-type docutils literal notranslate"><span class="pre">ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.calculate_unit_vector">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">calculate_unit_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.calculate_unit_vector" title="Link to this definition"></a></dt>
+<dd><p>Normalizes an input vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – 3D vector components of an input vector.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The normalized vector as <code class="xref py py-type docutils literal notranslate"><span class="pre">ndarray</span></code> of shape (3, ).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-type docutils literal notranslate"><span class="pre">ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.rotate_data">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">rotate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.rotate_data" title="Link to this definition"></a></dt>
+<dd><p>Rotates the <cite>original</cite> BeVERLI Hill stereo PIV data from its local PIV coordinate
+system to the Cartesian coordinate system used in the Virginia Tech Stability Wind
+Tunnel.</p>
+<p>The <cite>original</cite> data comprises coordinates, mean velocity, Reynolds stress tensor,
+and an instantaneous velocity frame (if available). Additional derived quantities,
+such as the mean rate-of-strain tensor, are computed directly in the (rotated)
+coordinate system of the Virginia Tech Stability Wind Tunnel.</p>
+<p>If you need to rotate a specific flow quantity to a coordinate system not handled by
+this routine, consider the <a class="reference internal" href="#datum.transformations.rotate_flow_quantity" title="datum.transformations.rotate_flow_quantity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">datum.transformations.rotate_flow_quantity()</span></code></a>
+function.</p>
+<p>The present routine directly edits the <code class="xref py py-type docutils literal notranslate"><span class="pre">Piv</span></code> object that is passed to it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>piv_obj</strong> – Object containing the BeVERLI Hill stereo PIV data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.rotate_flow_quantity">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">rotate_flow_quantity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.rotate_flow_quantity" title="Link to this definition"></a></dt>
+<dd><p>Rotates a specified BeVERLI Hill stereo PIV flow quantity using a specified
+rotation matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>piv_obj</strong> – Object containing the BeVERLI Hill stereo PIV data.</p></li>
+<li><p><strong>quantity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – String specifying the flow quantity to rotate.</p></li>
+<li><p><strong>components</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – A list of strings specifying the components of the vector or
+tensor quantity to rotate.</p></li>
+<li><p><strong>rotation_matrix</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – The rotation matrix used to rotate the data as
+<code class="xref py py-type docutils literal notranslate"><span class="pre">ndarray</span></code> of shape (3, 3).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.rotate_vector_quantity">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">rotate_vector_quantity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.rotate_vector_quantity" title="Link to this definition"></a></dt>
+<dd><p>Rotate a BeVERLI stereo PIV vector quantity based on the provided rotation
+matrix.</p>
+<p>This method takes a rotation matrix and a list of vector component matrices as
+input. It then calculates the rotated quantity and returns it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rotation_matrix</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – NumPy ndarray of shape (3, 3) representing the rotation
+matrix.</p></li>
+<li><p><strong>vector</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – List of NumPy ndarrays of shape (m, n), each containing a
+specific vector component, where m and n represent the number of available data
+points in the x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of NumPy ndarrays of shape (m, n) containing the rotated vector
+quantity’s components, where m and n represent the number of available data
+points in the x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.rotate_tensor_quantity">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">rotate_tensor_quantity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.rotate_tensor_quantity" title="Link to this definition"></a></dt>
+<dd><p>Rotate a BeVERLI stereo PIV tensor quantity based on the provided rotation
+matrix.</p>
+<p>This method takes a rotation matrix and a list of tensor component matrices as
+input. It then calculates the rotated quantity and returns it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rotation_matrix</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – NumPy ndarray of shape (3, 3) representing the rotation
+matrix.</p></li>
+<li><p><strong>tensor</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – List of lists of NumPy ndarrays of shape (m, n), each containing
+a specific vector component, where m and n represent the number of available data
+points in the x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of lists of NumPy ndarrays of shape (m, n) containing the rotated
+vector quantity’s components, where m and n represent the number of available
+data points in the x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.prepare_vector_quantity_for_rotation">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">prepare_vector_quantity_for_rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.prepare_vector_quantity_for_rotation" title="Link to this definition"></a></dt>
+<dd><p>Build the vector of a desired quantity from the corresponding components of the
+BeVERLI stereo PIV data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>piv_obj</strong> – Instance of the class <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p></li>
+<li><p><strong>quantity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – String specifying the vector quantity.</p></li>
+<li><p><strong>components</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – List of strings specifying the vector components.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of NumPy ndarrays of shape (m, n), each containing a specific vector
+component, where m and n represent the number of available data points in the
+x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.prepare_tensor_quantity_for_rotation">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">prepare_tensor_quantity_for_rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.prepare_tensor_quantity_for_rotation" title="Link to this definition"></a></dt>
+<dd><p>Build the tensor of a desired quantity from the corresponding components of the
+BeVERLI stereo PIV data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p></li>
+<li><p><strong>quantity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – String specifying the tensor quantity.</p></li>
+<li><p><strong>components</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – List of strings specifying the tensor components.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of lists of NumPy ndarrays of shape (m, n), containing specific
+tensor components, where m and n represent the number of available data
+points in the x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.set_rotated_vector_quantity">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">set_rotated_vector_quantity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotated_vector</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.set_rotated_vector_quantity" title="Link to this definition"></a></dt>
+<dd><p>Update the BeVERLI stereo PIV data with the rotated vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p></li>
+<li><p><strong>quantity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – String specifying the vector quantity.</p></li>
+<li><p><strong>components</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – List of strings specifying the vector components.</p></li>
+<li><p><strong>rotated_vector</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – List of NumPy ndarrays of shape (m, n), each representing a
+vector component, where m and n represent the number of available data points
+in the x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.set_rotated_tensor_quantity">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">set_rotated_tensor_quantity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotated_tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.set_rotated_tensor_quantity" title="Link to this definition"></a></dt>
+<dd><p>Update the BeVERLI stereo PIV data with the rotated tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p></li>
+<li><p><strong>quantity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – String specifying the tensor quantity.</p></li>
+<li><p><strong>components</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – List of strings specifying the tensor components.</p></li>
+<li><p><strong>rotated_tensor</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – List of lists of NumPy ndarrays of shape (m, n). Each array
+represents a tensor component, where m and n represent the number of available
+data points in the x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.interpolate_data">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">interpolate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.interpolate_data" title="Link to this definition"></a></dt>
+<dd><p>Perform a comprehensive routine to interpolate the BeVERLI stereo PIV data to a
+dense grid within the global BeVERLI coordinate system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.get_interpolation_grid">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">get_interpolation_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.get_interpolation_grid" title="Link to this definition"></a></dt>
+<dd><p>Build a structured, dense coordinate mesh for the interpolation of the BeVERLI
+stereo PIV data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple containing NumPy ndarrays of shape (m, n) that represent a mesh
+grid, where m and n represent the number of available data points in the
+x:sub:<cite>1</cite>- and x:sub:<cite>2</cite>-direction.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.get_flattened_coordinates">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">get_flattened_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.get_flattened_coordinates" title="Link to this definition"></a></dt>
+<dd><p>Retrieve an array of flattened spatial coordinates from the BeVERLI stereo PIV
+data, necessary for subsequent interpolation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NumPy ndarray of shape (m, 2) containing the flattened set of spatial
+coordinates for the desired quantity from the stereo PIV data, where m
+represents the number of total available data points.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.get_flattened_data">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">get_flattened_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.get_flattened_data" title="Link to this definition"></a></dt>
+<dd><p>Retrieve an array of flattened data of a specific vector or tensor quantity from
+the stereo PIV data, necessary for subsequent interpolation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p></li>
+<li><p><strong>data_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – A string specifying the desired quantity to interpolate.</p></li>
+<li><p><strong>key</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – A string indicating the desired vector or tensor component.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NumPy ndarrays of shape (n, ) containing the flattened set of values for
+the desired quantity’s component from the stereo PIV data, where n represents
+the number of total available data points.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.set_interpolated_data">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">set_interpolated_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolated_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.set_interpolated_data" title="Link to this definition"></a></dt>
+<dd><p>Update the PIV data with the interpolated data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p></li>
+<li><p><strong>data_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – A string specifying the particular vector or tensor quantity to
+update.</p></li>
+<li><p><strong>key</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – A string specifying the particular component of the vector or tensor
+quantity to update.</p></li>
+<li><p><strong>interpolated_data</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span>) – NumPy ndarrays of shape (n, ) representing the
+interpolated component, where n represents the number of total
+available data points.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.translate_data">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">translate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.translate_data" title="Link to this definition"></a></dt>
+<dd><p>Perform a comprehensive routine to translate the BeVERLI stereo PIV data from
+its local to the global BeVERLI coordinate system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.get_translation_vector">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">get_translation_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.get_translation_vector" title="Link to this definition"></a></dt>
+<dd><p>Obtain the translation vector from the available coordinate transformation
+parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>piv_obj</strong> – Instance of the <a class="reference internal" href="piv.html#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> class.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple of floats, representing the components of the translation vector.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.translate_coordinates">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">translate_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_1_shift</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_2_shift</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.translate_coordinates" title="Link to this definition"></a></dt>
+<dd><p>Perform the coordinate translation from the local PIV to the global BeVERLI
+coordinate system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coordinates</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]</span>) – Dictionary containing the stereo PIV coordinates.</p></li>
+<li><p><strong>x_1_shift</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Coordinate shift in the x_1 direction.</p></li>
+<li><p><strong>x_2_shift</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Coordinate shift in the x_2 direction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.scale_coordinates">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">scale_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">piv_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.scale_coordinates" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.rotate_profile">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">rotate_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.rotate_profile" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.rotate_tensor_profile">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">rotate_tensor_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.rotate_tensor_profile" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datum.transformations.set_rotated_profiles">
+<span class="sig-prename descclassname"><span class="pre">datum.transformations.</span></span><span class="sig-name descname"><span class="pre">set_rotated_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_vector_rotated</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_stress_tensor_rotated</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_tensor_rotated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_tensor_rotated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized_rotation_tensor_rotated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.transformations.set_rotated_profiles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="preprocessor.html" class="btn btn-neutral float-left" title="preprocessor.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="exchange/load.html" class="btn btn-neutral float-right" title="load.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Aldo Gargiulo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -5,3 +5,4 @@ piv.py
    :members:
    :private-members:
    :undoc-members:
+   :special-members: __init__

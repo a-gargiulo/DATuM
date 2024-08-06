@@ -16,7 +16,16 @@ class Piv:
         data: Optional[PivData] = None,
         transformation_parameters: Optional[NestedDict] = None,
     ) -> None:
-        """Constructs an object of the :py:class:`datum.piv.Piv` class."""
+        """Constructs a :py:class:`datum.piv.Piv` object.
+
+        :param data: The BeVERLI Hill stereo PIV data.
+        :type data: :py:data:`datum.my_types.PivData`
+        :param transformation_parameters: The coordinate transformation parameters for
+            transforming the BeVERLI Hill stereo PIV data from their local Cartesian PIV
+            coordinate system to the global Cartesian coordinate system of the BeVERLI
+            experiment in the Virginia Tech Stability Wind Tunnel.
+        :type transformation_parameters: :py:data:`datum.my_types.NestedDict`
+        """
         self._data = data
         self._transformation_parameters = transformation_parameters
 
@@ -24,8 +33,8 @@ class Piv:
     def data(self):
         """The BeVERLI Hill stereo PIV data.
 
-        :rtype: :py:data:`datum.my_types.PivData`
         :return: The BeVERLI Hill stereo PIV data.
+        :rtype: :py:data:`datum.my_types.PivData`
         """
         return self._data
 
@@ -44,8 +53,8 @@ class Piv:
         Cartesian coordinate system of the BeVERLI experiment in the Virginia Tech
         Stability Wind Tunnel.
 
-        :rtype: :py:data:`datum.my_types.NestedDict`
         :return: The transformation parameters.
+        :rtype: :py:data:`datum.my_types.NestedDict`
         """
         if self._transformation_parameters is None:
             input_data = parser.InputFile().data
@@ -97,6 +106,9 @@ class Piv:
         """Searches the BeVERLI Hill stereo PIV data for a specified flow quantity.
 
         :param quantity: The flow quantity to be searched.
-        :return: Value indicating whether the specified quantity was found or not.
+
+        :return: Boolean value indicating whether the specified quantity is contained in
+            the BeVERLI Hill stereo PIV data or not.
+        :rtype: :py:type:`bool`
         """
         return utility.search_nested_dict(self.data, quantity)

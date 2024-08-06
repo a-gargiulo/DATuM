@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to DATuM’s documentation! &mdash; DATuM 1.0 documentation</title>
+  <title>Welcome to DATuM’s Documentation! &mdash; DATuM 1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -18,6 +18,7 @@
         <script src="_static/documentation_options.js?v=f2a433a1"></script>
         <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -52,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="datum/parser.html">parser.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datum/piv.html">piv.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datum/preprocessor.html">preprocessor.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datum/transformations.html">transformations.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datum/exchange/load.html">load.py</a></li>
 </ul>
 
@@ -69,7 +71,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Welcome to DATuM’s documentation!</li>
+      <li class="breadcrumb-item active">Welcome to DATuM’s Documentation!</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -80,7 +82,9 @@
            <div itemprop="articleBody">
              
   <section id="welcome-to-datum-s-documentation">
-<h1>Welcome to DATuM’s documentation!<a class="headerlink" href="#welcome-to-datum-s-documentation" title="Link to this heading"></a></h1>
+<h1>Welcome to DATuM’s Documentation!<a class="headerlink" href="#welcome-to-datum-s-documentation" title="Link to this heading"></a></h1>
+<p>The present html pages document the <cite>PUBLIC</cite> API of DATuM, a code suite enabling the direct analysis of selected turbulence models, using the BeVERLI Hill [insert reference] stereoscopic PIV data.</p>
+<p>This code was written and is currently maintained by Aldo Gargiulo. Aldo Gargiulo is currently a postdoctoral research associate at the Reacting Flow Laboratory of the University of Virginia. Aldo Gargiulo wrote DATuM in the context of his Ph.D. dissertation at Virginia Tech under the supervision of Dr. Todd K. Lowe and Dr. Christopher J. Roy.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">DATuM</span></p>
 <ul>
@@ -102,6 +106,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="datum/piv.html">piv.py</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="datum/piv.html#datum.piv.Piv"><code class="docutils literal notranslate"><span class="pre">Piv</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datum/piv.html#datum.piv.Piv.__init__"><code class="docutils literal notranslate"><span class="pre">Piv.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datum/piv.html#datum.piv.Piv.data"><code class="docutils literal notranslate"><span class="pre">Piv.data</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datum/piv.html#datum.piv.Piv.transformation_parameters"><code class="docutils literal notranslate"><span class="pre">Piv.transformation_parameters</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datum/piv.html#datum.piv.Piv.search"><code class="docutils literal notranslate"><span class="pre">Piv.search()</span></code></a></li>
@@ -115,10 +120,33 @@
 <li class="toctree-l2"><a class="reference internal" href="datum/preprocessor.html#datum.preprocessor.transform_data"><code class="docutils literal notranslate"><span class="pre">transform_data()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="datum/preprocessor.html#datum.preprocessor.transform_data_without_interpolation"><code class="docutils literal notranslate"><span class="pre">transform_data_without_interpolation()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="datum/preprocessor.html#datum.preprocessor.compute_velocity_gradient"><code class="docutils literal notranslate"><span class="pre">compute_velocity_gradient()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="datum/preprocessor.html#datum.preprocessor.get_computable_velocity_gradient_components"><code class="docutils literal notranslate"><span class="pre">get_computable_velocity_gradient_components()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="datum/preprocessor.html#datum.preprocessor.get_strain_and_rotation_tensor"><code class="docutils literal notranslate"><span class="pre">get_strain_and_rotation_tensor()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="datum/preprocessor.html#datum.preprocessor.get_eddy_viscosity"><code class="docutils literal notranslate"><span class="pre">get_eddy_viscosity()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="datum/preprocessor.html#datum.preprocessor.get_preprocessed_data"><code class="docutils literal notranslate"><span class="pre">get_preprocessed_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datum/transformations.html">transformations.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.get_rotation_matrix"><code class="docutils literal notranslate"><span class="pre">get_rotation_matrix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.calculate_unit_vector"><code class="docutils literal notranslate"><span class="pre">calculate_unit_vector()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.rotate_data"><code class="docutils literal notranslate"><span class="pre">rotate_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.rotate_flow_quantity"><code class="docutils literal notranslate"><span class="pre">rotate_flow_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.rotate_vector_quantity"><code class="docutils literal notranslate"><span class="pre">rotate_vector_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.rotate_tensor_quantity"><code class="docutils literal notranslate"><span class="pre">rotate_tensor_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.prepare_vector_quantity_for_rotation"><code class="docutils literal notranslate"><span class="pre">prepare_vector_quantity_for_rotation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.prepare_tensor_quantity_for_rotation"><code class="docutils literal notranslate"><span class="pre">prepare_tensor_quantity_for_rotation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.set_rotated_vector_quantity"><code class="docutils literal notranslate"><span class="pre">set_rotated_vector_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.set_rotated_tensor_quantity"><code class="docutils literal notranslate"><span class="pre">set_rotated_tensor_quantity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.interpolate_data"><code class="docutils literal notranslate"><span class="pre">interpolate_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.get_interpolation_grid"><code class="docutils literal notranslate"><span class="pre">get_interpolation_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.get_flattened_coordinates"><code class="docutils literal notranslate"><span class="pre">get_flattened_coordinates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.get_flattened_data"><code class="docutils literal notranslate"><span class="pre">get_flattened_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.set_interpolated_data"><code class="docutils literal notranslate"><span class="pre">set_interpolated_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.translate_data"><code class="docutils literal notranslate"><span class="pre">translate_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.get_translation_vector"><code class="docutils literal notranslate"><span class="pre">get_translation_vector()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.translate_coordinates"><code class="docutils literal notranslate"><span class="pre">translate_coordinates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.scale_coordinates"><code class="docutils literal notranslate"><span class="pre">scale_coordinates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.rotate_profile"><code class="docutils literal notranslate"><span class="pre">rotate_profile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.rotate_tensor_profile"><code class="docutils literal notranslate"><span class="pre">rotate_tensor_profile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="datum/transformations.html#datum.transformations.set_rotated_profiles"><code class="docutils literal notranslate"><span class="pre">set_rotated_profiles()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="datum/exchange/load.html">load.py</a><ul>

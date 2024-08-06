@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="parser.html">parser.py</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">piv.py</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#datum.piv.Piv"><code class="docutils literal notranslate"><span class="pre">Piv</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#datum.piv.Piv.__init__"><code class="docutils literal notranslate"><span class="pre">Piv.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#datum.piv.Piv.data"><code class="docutils literal notranslate"><span class="pre">Piv.data</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#datum.piv.Piv.transformation_parameters"><code class="docutils literal notranslate"><span class="pre">Piv.transformation_parameters</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#datum.piv.Piv.search"><code class="docutils literal notranslate"><span class="pre">Piv.search()</span></code></a></li>
@@ -61,6 +62,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="preprocessor.html">preprocessor.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformations.html">transformations.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="exchange/load.html">load.py</a></li>
 </ul>
 
@@ -96,16 +98,33 @@ stereo PIV data.</p>
 <dt class="sig sig-object py" id="datum.piv.Piv">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datum.piv.</span></span><span class="sig-name descname"><span class="pre">Piv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.piv.Piv" title="Link to this definition"></a></dt>
 <dd><p>Encapsulates the BeVERLI Hill stereo PIV data.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datum.piv.Piv.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datum.piv.Piv.__init__" title="Link to this definition"></a></dt>
+<dd><p>Constructs a <a class="reference internal" href="#datum.piv.Piv" title="datum.piv.Piv"><code class="xref py py-class docutils literal notranslate"><span class="pre">datum.piv.Piv</span></code></a> object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="my_types.html#datum.my_types.PivData" title="datum.my_types.PivData"><code class="xref py py-data docutils literal notranslate"><span class="pre">datum.my_types.PivData</span></code></a>) – The BeVERLI Hill stereo PIV data.</p></li>
+<li><p><strong>transformation_parameters</strong> (<a class="reference internal" href="my_types.html#datum.my_types.NestedDict" title="datum.my_types.NestedDict"><code class="xref py py-data docutils literal notranslate"><span class="pre">datum.my_types.NestedDict</span></code></a>) – The coordinate transformation parameters for
+transforming the BeVERLI Hill stereo PIV data from their local Cartesian PIV
+coordinate system to the global Cartesian coordinate system of the BeVERLI
+experiment in the Virginia Tech Stability Wind Tunnel.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="datum.piv.Piv.data">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#datum.piv.Piv.data" title="Link to this definition"></a></dt>
 <dd><p>The BeVERLI Hill stereo PIV data.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="my_types.html#datum.my_types.PivData" title="datum.my_types.PivData"><code class="xref py py-data docutils literal notranslate"><span class="pre">datum.my_types.PivData</span></code></a></p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The BeVERLI Hill stereo PIV data.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The BeVERLI Hill stereo PIV data.</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="my_types.html#datum.my_types.PivData" title="datum.my_types.PivData"><code class="xref py py-data docutils literal notranslate"><span class="pre">datum.my_types.PivData</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -118,11 +137,11 @@ stereo PIV data from their local Cartesian PIV coordinate system to the global
 Cartesian coordinate system of the BeVERLI experiment in the Virginia Tech
 Stability Wind Tunnel.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="my_types.html#datum.my_types.NestedDict" title="datum.my_types.NestedDict"><code class="xref py py-data docutils literal notranslate"><span class="pre">datum.my_types.NestedDict</span></code></a></p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The transformation parameters.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The transformation parameters.</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="my_types.html#datum.my_types.NestedDict" title="datum.my_types.NestedDict"><code class="xref py py-data docutils literal notranslate"><span class="pre">datum.my_types.NestedDict</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -135,11 +154,12 @@ Stability Wind Tunnel.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>quantity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The flow quantity to be searched.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Boolean value indicating whether the specified quantity is contained in
+the BeVERLI Hill stereo PIV data or not.</p>
 </dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Value indicating whether the specified quantity was found or not.</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-type docutils literal notranslate"><span class="pre">bool</span></code></p>
 </dd>
 </dl>
 </dd></dl>

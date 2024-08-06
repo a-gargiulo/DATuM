@@ -50,6 +50,7 @@
 <li class="toctree-l1"><a class="reference internal" href="datum/parser.html">parser.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datum/piv.html">piv.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datum/preprocessor.html">preprocessor.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datum/transformations.html">transformations.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datum/exchange/load.html">load.py</a></li>
 </ul>
 
@@ -80,7 +81,8 @@
 <h1 id="index">Index</h1>
 
 <div class="genindex-jumpbox">
- <a href="#C"><strong>C</strong></a>
+ <a href="#_"><strong>_</strong></a>
+ | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
@@ -88,12 +90,25 @@
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
+ | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  
 </div>
+<h2 id="_">_</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datum/piv.html#datum.piv.Piv.__init__">__init__() (datum.piv.Piv method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datum/transformations.html#datum.transformations.calculate_unit_vector">calculate_unit_vector() (in module datum.transformations)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datum/preprocessor.html#datum.preprocessor.compute_velocity_gradient">compute_velocity_gradient() (in module datum.preprocessor)</a>
 </li>
@@ -135,23 +150,36 @@
         <li><a href="datum/preprocessor.html#module-datum.preprocessor">module</a>
 </li>
       </ul></li>
+      <li>
+    datum.transformations
+
+      <ul>
+        <li><a href="datum/transformations.html#module-datum.transformations">module</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="datum/preprocessor.html#datum.preprocessor.get_computable_velocity_gradient_components">get_computable_velocity_gradient_components() (in module datum.preprocessor)</a>
-</li>
       <li><a href="datum/preprocessor.html#datum.preprocessor.get_coordinate_transformation_parameters">get_coordinate_transformation_parameters() (in module datum.preprocessor)</a>
+</li>
+      <li><a href="datum/preprocessor.html#datum.preprocessor.get_eddy_viscosity">get_eddy_viscosity() (in module datum.preprocessor)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.get_flattened_coordinates">get_flattened_coordinates() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.get_flattened_data">get_flattened_data() (in module datum.transformations)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="datum/preprocessor.html#datum.preprocessor.get_eddy_viscosity">get_eddy_viscosity() (in module datum.preprocessor)</a>
+      <li><a href="datum/transformations.html#datum.transformations.get_interpolation_grid">get_interpolation_grid() (in module datum.transformations)</a>
 </li>
-      <li><a href="datum/preprocessor.html#datum.preprocessor.get_preprocessed_data">get_preprocessed_data() (in module datum.preprocessor)</a>
+      <li><a href="datum/transformations.html#datum.transformations.get_rotation_matrix">get_rotation_matrix() (in module datum.transformations)</a>
 </li>
       <li><a href="datum/preprocessor.html#datum.preprocessor.get_strain_and_rotation_tensor">get_strain_and_rotation_tensor() (in module datum.preprocessor)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.get_translation_vector">get_translation_vector() (in module datum.transformations)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -160,6 +188,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datum/parser.html#datum.parser.InputFile">InputFile (class in datum.parser)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datum/transformations.html#datum.transformations.interpolate_data">interpolate_data() (in module datum.transformations)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -197,6 +229,8 @@
 </li>
         <li><a href="datum/preprocessor.html#module-datum.preprocessor">datum.preprocessor</a>
 </li>
+        <li><a href="datum/transformations.html#module-datum.transformations">datum.transformations</a>
+</li>
       </ul></li>
   </ul></td>
 </tr></table>
@@ -216,11 +250,35 @@
 </li>
       <li><a href="datum/my_types.html#datum.my_types.PivData">PivData (in module datum.my_types)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datum/parser.html#datum.parser.PoseFile">PoseFile (class in datum.parser)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datum/transformations.html#datum.transformations.prepare_tensor_quantity_for_rotation">prepare_tensor_quantity_for_rotation() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.prepare_vector_quantity_for_rotation">prepare_vector_quantity_for_rotation() (in module datum.transformations)</a>
+</li>
       <li><a href="datum/preprocessor.html#datum.preprocessor.preprocess_data">preprocess_data() (in module datum.preprocessor)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datum/transformations.html#datum.transformations.rotate_data">rotate_data() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.rotate_flow_quantity">rotate_flow_quantity() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.rotate_profile">rotate_profile() (in module datum.transformations)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datum/transformations.html#datum.transformations.rotate_tensor_profile">rotate_tensor_profile() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.rotate_tensor_quantity">rotate_tensor_quantity() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.rotate_vector_quantity">rotate_vector_quantity() (in module datum.transformations)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -228,7 +286,19 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datum/transformations.html#datum.transformations.scale_coordinates">scale_coordinates() (in module datum.transformations)</a>
+</li>
       <li><a href="datum/piv.html#datum.piv.Piv.search">search() (datum.piv.Piv method)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.set_interpolated_data">set_interpolated_data() (in module datum.transformations)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datum/transformations.html#datum.transformations.set_rotated_profiles">set_rotated_profiles() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.set_rotated_tensor_quantity">set_rotated_tensor_quantity() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.set_rotated_vector_quantity">set_rotated_vector_quantity() (in module datum.transformations)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -238,11 +308,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datum/preprocessor.html#datum.preprocessor.transform_data">transform_data() (in module datum.preprocessor)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datum/preprocessor.html#datum.preprocessor.transform_data_without_interpolation">transform_data_without_interpolation() (in module datum.preprocessor)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datum/piv.html#datum.piv.Piv.transformation_parameters">transformation_parameters (datum.piv.Piv property)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.translate_coordinates">translate_coordinates() (in module datum.transformations)</a>
+</li>
+      <li><a href="datum/transformations.html#datum.transformations.translate_data">translate_data() (in module datum.transformations)</a>
 </li>
   </ul></td>
 </tr></table>
