@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
-from config import system, default_font, Button, colors
+from .config import system, default_font, Button, colors
 
 
 class Preprocessor:
@@ -9,11 +9,11 @@ class Preprocessor:
         self.root.title("Preprocessor")
         self.root.geometry("800x600")
         self.root.resizable(False, False)
-        self.root.configure(bg=colors["window_base"])
+        self.root.configure(bg=colors["base"])
         self.root.option_add("*Font", default_font)
         self.root.grid_columnconfigure(0, weight=1)
 
-        self.loader_frame = tk.Frame(self.root, bg=colors["window_base"])
+        self.loader_frame = tk.Frame(self.root, bg=colors["base"])
         self.loader_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="nsew")
         self.loader_frame.grid_columnconfigure(0, weight=1)
 

@@ -10,9 +10,9 @@ else:
 
 # Fonts
 if system == "Darwin":
-    default_font = ("Avenir", 14)
+    default_font = ("Avenir", 12)
 elif system == "Windows":
-    default_font = ("Franklin Gothic Book", 14)
+    default_font = ("Franklin Gothic Book", 12)
 
 colors = {
     "base": "#262626",
