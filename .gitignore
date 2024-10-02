@@ -1,0 +1,6 @@
+.flake8
+.venv
+__pycache__
+.DS_Store
+run.py
+
