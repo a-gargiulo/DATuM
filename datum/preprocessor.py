@@ -30,22 +30,32 @@ class Preprocessor:
         self.loader_option_label.grid(row=0, column=0, padx=5, pady=5, ipady=5, sticky="ew")
 
         self.checkbox_var = tk.IntVar()
-        self.checkbox = tk.Checkbutton(self.loader_option_frame, text="Turbulence Dissipation ON", variable=self.checkbox_var, command=self.toggle_state, bg="#413d46", fg="white")
+        self.checkbox = tk.Checkbutton(self.loader_option_frame, text="Turbulence Dissipation ENABLE", variable=self.checkbox_var, command=self.toggle_state, bg="#413d46", fg="white")
         self.checkbox.grid(row=1, column=0, sticky="w", padx=5)
 
         loader_data_label_fmt = (default_font[0], 12, "bold")
-        self.loader_data_label = tk.Label(self.loader_data_frame, text="Data", borderwidth=1, relief="solid", bg="#1e1e1e", fg="white", font=loader_data_label_fmt)
+        self.loader_data_label = tk.Label(self.loader_data_frame, text="Raw (Matlab) Data", borderwidth=1, relief="solid", bg="#1e1e1e", fg="white", font=loader_data_label_fmt)
         self.loader_data_label.grid(row=0, column=0, columnspan=3, padx=5, pady=5, ipady=5, sticky="ew")
 
-        self.create_file_loader(self.loader_data_frame, "Mean Velocity", 1)
-        self.create_file_loader(self.loader_data_frame, "Reynolds Stress", 2)
-        self.create_file_loader(self.loader_data_frame, "Turbulence Dissipation", 3)
-        self.create_file_loader(self.loader_data_frame, "Inst. Velocity Frame", 4)
+        self.create_file_loader(self.loader_data_frame, "Mean Velocity", 1, "normal")
+        self.create_file_loader(self.loader_data_frame, "Reynolds Stress", 2, "normal")
+        self.create_file_loader(self.loader_data_frame, "Turbulence Dissipation", 3, "disabled")
+        self.create_file_loader(self.loader_data_frame, "Inst. Velocity Frame", 4, "disabled")
 
-    def toggle_state():
-        pass
+    def toggle_state(self):
+        if self.checkbox_var.get():
+            self.load_button_turbulence_dissipation.config(state="normal")
+            self.status_label_turbulence_dissipation.config(state="normal")
+            self.listbox_turbulence_dissipation.config(state="normal")
+        else:
+            self.load_button_turbulence_dissipation.config(state="disabled")
+            self.status_label_turbulence_dissipation.config(state="disabled")
+            self.listbox_turbulence_dissipation.config(state="disabled")
 
-    def create_file_loader(self, frame, data_type, row):
+
+
+
+    def create_file_loader(self, frame, data_type, row, state):
         dt = data_type.lower().replace(' ', '_')
 
         button_font = (default_font[0], default_font[1], "bold")
@@ -54,18 +64,18 @@ class Preprocessor:
         elif system == "Windows":
             additional_button_params = {"width": 20}
 
-        setattr(self, f"load_button_{dt}", Button(frame, text=f"{data_type}", command=lambda: self.load_files(data_type, frame), font=button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_button_params))
+        setattr(self, f"load_button_{dt}", Button(frame, text=f"{data_type}", command=lambda: self.load_files(data_type, frame), state=state, font=button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_button_params))
 
         load_button = getattr(self, f"load_button_{dt}")
         load_button.grid(row=row, column=0, padx=5, pady=5, sticky="nsew")
         # load_button.grid_columnconfigure(0, weight=1)
 
-        setattr(self, f"listbox_{dt}", tk.Listbox(frame, width=20, height=1))
+        setattr(self, f"listbox_{dt}", tk.Listbox(frame, state=state, width=20, height=1))
         listbox = getattr(self, f"listbox_{dt}")
         listbox.grid(row=row, column=1, padx=5, pady=5, sticky="nsew")
         # listbox.grid_columnconfigure(1, weight=1)
 
-        setattr(self, f"status_label_{dt}", tk.Label(frame, text="Nothing Loaded", width=13, bg="#373737", fg="white"))
+        setattr(self, f"status_label_{dt}", tk.Label(frame, state=state, text="Nothing Loaded", width=13, bg="#373737", fg="white"))
         status_label = getattr(self, f"status_label_{dt}")
         status_label.grid(row=row, column=2, padx=5, pady=5, sticky="nsew")
         # status_label.grid_columnconfigure(2, weight=1)
