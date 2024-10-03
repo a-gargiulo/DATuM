@@ -13,34 +13,70 @@ class Preprocessor:
         self.root.option_add("*Font", default_font)
         self.root.grid_columnconfigure(0, weight=1)
 
+        # Geometry Frame
+        # --------------
+        geom_sec_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 15, "pady": 5, "sticky": "nsew"}
+        geom_sec_title_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        self.create_section("Geometry", 1, self.root, geom_sec_pos, geom_sec_title_pos)
+
+        # Loader Frame
+        # ------------
         self.loader_frame = tk.Frame(self.root, bg=colors["base"])
-        self.loader_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="nsew")
+        self.loader_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="nsew")
         self.loader_frame.grid_columnconfigure(0, weight=1)
 
-        self.loader_option_frame = tk.Frame(self.loader_frame, borderwidth=1, relief="solid", bg="#413d46")
-        self.loader_option_frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-        self.loader_option_frame.grid_columnconfigure(0, weight=1)
+        opt_sec_pos = {"row": 0, "column": 0, "padx": 5, "pady": 5, "sticky": "nsew"}
+        opt_title_pos = {"row": 0, "column": 0, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        self.create_section("Options", 2, self.loader_frame, opt_sec_pos, opt_title_pos)
+        self.options_frame.grid_columnconfigure(0, weight=1)
 
-        self.loader_data_frame = tk.Frame(self.loader_frame, borderwidth=1, relief="solid", bg="#373737")
-        self.loader_data_frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
-        self.loader_data_frame.grid_columnconfigure(0, weight=1)
-
-        loader_option_label_fmt = (default_font[0], 12, "bold")
-        self.loader_option_label = tk.Label(self.loader_option_frame, text="Options", font=loader_option_label_fmt, borderwidth=1, relief="solid", bg="#2a262f", fg="white")
-        self.loader_option_label.grid(row=0, column=0, padx=5, pady=5, ipady=5, sticky="ew")
+        data_sec_pos = {"row": 0, "column": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
+        data_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        self.create_section("Raw Matlab Data", 1, self.loader_frame, data_sec_pos, data_title_pos)
+        self.raw_matlab_data_frame.grid_columnconfigure(0, weight=1)
 
         self.checkbox_var = tk.IntVar()
-        self.checkbox = tk.Checkbutton(self.loader_option_frame, text="Turbulence Dissipation ENABLE", variable=self.checkbox_var, command=self.toggle_state, bg="#413d46", fg="white")
+        self.checkbox = tk.Checkbutton(self.options_frame, text="Turbulence Dissipation ENABLE", variable=self.checkbox_var, command=self.toggle_state, bg=colors["f2_content"], fg="white")
         self.checkbox.grid(row=1, column=0, sticky="w", padx=5)
 
-        loader_data_label_fmt = (default_font[0], 12, "bold")
-        self.loader_data_label = tk.Label(self.loader_data_frame, text="Raw (Matlab) Data", borderwidth=1, relief="solid", bg="#1e1e1e", fg="white", font=loader_data_label_fmt)
-        self.loader_data_label.grid(row=0, column=0, columnspan=3, padx=5, pady=5, ipady=5, sticky="ew")
+        self.create_file_loader(self.raw_matlab_data_frame, "Mean Velocity", 1, "normal")
+        self.create_file_loader(self.raw_matlab_data_frame, "Reynolds Stress", 2, "normal")
+        self.create_file_loader(self.raw_matlab_data_frame, "Turbulence Dissipation", 3, "disabled")
+        self.create_file_loader(self.raw_matlab_data_frame, "Inst. Velocity Frame", 4, "disabled")
 
-        self.create_file_loader(self.loader_data_frame, "Mean Velocity", 1, "normal")
-        self.create_file_loader(self.loader_data_frame, "Reynolds Stress", 2, "normal")
-        self.create_file_loader(self.loader_data_frame, "Turbulence Dissipation", 3, "disabled")
-        self.create_file_loader(self.loader_data_frame, "Inst. Velocity Frame", 4, "disabled")
+    def create_section(self, section_name, section_type, master_frame, section_pos, title_pos):
+        name = section_name.lower().replace(' ', '_')
+        setattr(
+            self,
+            f"{name}_frame",
+            tk.Frame(
+                master_frame,
+                bg=colors[f"f{section_type}_content"],
+                borderwidth=1,
+                relief="solid",
+            )
+        )
+        new_frame = getattr(self, f"{name}_frame")
+        new_frame.grid(**section_pos)
+        new_frame.grid_columnconfigure(0, weight=1)
+
+        section_title_fmt = (default_font[0], default_font[1] + 2, "bold")
+        setattr(
+            self,
+            f"{name}_title",
+            tk.Label(
+                new_frame,
+                text=section_name,
+                font=section_title_fmt,
+                borderwidth=1,
+                relief="solid",
+                bg=colors[f"f{section_type}_header"],
+                fg="white",
+            )
+        )
+        section_title = getattr(self, f"{name}_title")
+        section_title.grid(**title_pos)
+
 
     def toggle_state(self):
         if self.checkbox_var.get():
