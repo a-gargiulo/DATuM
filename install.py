@@ -4,7 +4,7 @@ import sys
 
 def install_dependencies():
     print("Installing dependencies...")
-    subprocess.check_call(["pip", "install", "-r", "assets/requirements.txt"])
+    subprocess.check_call(["pip", "install", "-r", "resources/requirements.txt"])
 
 def create_run_py():
     run_py_content = """import tkinter as tk
@@ -26,7 +26,7 @@ def clean():
 
     print("Uninstalling dependencies...")
     try:
-        subprocess.check_call(["pip", "uninstall", "-r", "assets/requirements.txt", "-y"])
+        subprocess.check_call(["pip", "uninstall", "-r", "resources/requirements.txt", "-y"])
     except subprocess.CalledProcessError as e:
         print(f"Error during uninstallation: {e}")
 

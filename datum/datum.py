@@ -21,7 +21,7 @@ class Datum:
         self.banner_frame = tk.Frame(self.root, bg=colors["base"])
         self.banner_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        self.original_banner = Image.open("./assets/banner.png")
+        self.original_banner = Image.open("./resources/images/banner.png")
         self.original_banner_width, self.original_banner_height = self.original_banner.size
 
         aspect_ratio = self.original_banner_width / self.original_banner_height
