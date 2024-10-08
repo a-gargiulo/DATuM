@@ -23,16 +23,19 @@ class Preprocessor:
 
         # Geometry Frame
         # --------------
-        geom_sec_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 15, "pady": 5, "sticky": "nsew"}
+        geom_sec_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 15, "pady": 5, "sticky": "nsew"}
         geom_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
         self.create_section("Geometry", 1, self.root, geom_sec_pos, geom_sec_title_pos)
         self.geometry_frame.grid_columnconfigure(0, weight=0)
         self.geometry_frame.grid_columnconfigure(1, weight=1)
-        self.geometry_frame.grid_columnconfigure(2, weight=1)
 
         self.bump_plot_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
         self.bump_plot_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=5, sticky="nsew")
         self.bump_plot_frame.grid_columnconfigure(0, weight=1)
+
+        self.general_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
+        self.general_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=5, sticky="nsew")
+        self.general_frame.grid_columnconfigure(0, weight=1)
 
         self.orientation_label = tk.Label(self.geometry_frame, text="Orientation [deg]", bg=colors["f1_content"], fg="white")
         self.orientation_label.grid(row=1, column=1, columnspan=1, sticky="e")
