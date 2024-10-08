@@ -23,18 +23,26 @@ class Preprocessor:
 
         # Geometry Frame
         # --------------
-        geom_sec_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 15, "pady": 5, "sticky": "nsew"}
-        geom_sec_title_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        geom_sec_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 15, "pady": 5, "sticky": "nsew"}
+        geom_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
         self.create_section("Geometry", 1, self.root, geom_sec_pos, geom_sec_title_pos)
         self.geometry_frame.grid_columnconfigure(0, weight=0)
         self.geometry_frame.grid_columnconfigure(1, weight=1)
+        self.geometry_frame.grid_columnconfigure(2, weight=1)
 
         self.bump_plot_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
         self.bump_plot_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=5, sticky="nsew")
         self.bump_plot_frame.grid_columnconfigure(0, weight=1)
 
-        self.orientation_entry = tk.Entry(self.geometry_frame, validate="key", validatecommand=(vcmd, '%P'))
-        self.orientation_entry.grid(row=1, column=1, columnspan=1)
+        self.orientation_label = tk.Label(self.geometry_frame, text="Orientation [deg]", bg=colors["f1_content"], fg="white")
+        self.orientation_label.grid(row=1, column=1, columnspan=1, sticky="e")
+        self.orientation_entry = tk.Entry(self.geometry_frame, validate="focusout", validatecommand=(vcmd, '%P'))
+        self.orientation_entry.grid(row=1, column=2, columnspan=1, padx=10, sticky="ew")
+
+        self.piv_plane_label = tk.Label(self.geometry_frame, text="PIV Plane Number", bg=colors["f1_content"], fg="white")
+        self.piv_plane_label.grid(row=2, column=1, columnspan=1, sticky="e")
+        self.piv_plane_entry = tk.Entry(self.geometry_frame)
+        self.piv_plane_entry.grid(row=2, column=2, columnspan=1, padx=10, sticky="ew")
 
         self.orientation = 0
         self.plot_graph()
@@ -57,10 +65,10 @@ class Preprocessor:
 
         self.create_file_loader(self.raw_matlab_data_frame, "Mean Velocity", 1, "normal")
         self.create_file_loader(self.raw_matlab_data_frame, "Reynolds Stress", 2, "normal")
-        self.create_file_loader(self.raw_matlab_data_frame, "Turbulence Dissipation", 3, "disabled")
+        self.create_file_loader(self.raw_matlab_data_frame, "Turb. Dissipation", 3, "disabled")
         self.create_file_loader(self.raw_matlab_data_frame, "Inst. Velocity Frame", 4, "disabled")
 
-        self.create_loader_checkbox(self.options_frame, "Turbulence Dissipation", 1)
+        self.create_loader_checkbox(self.options_frame, "Turb. Dissipation", 1)
         self.create_loader_checkbox(self.options_frame, "Inst. Velocity Frame", 2)
 
     def on_invalid_input(self):
@@ -74,6 +82,7 @@ class Preprocessor:
         try:
             # Try to convert the input to a float
             float(input_value)
+            self.orientation = float(input_value)
             self.plot_graph()
             return True
         except ValueError:
@@ -81,31 +90,45 @@ class Preprocessor:
             return False
 
     def on_closing(self):
-        self.canvas.get_tk_widget().grid_forget()  # Remove the canvas from the GUI
-        plt.close(self.fig)  # Close the figure to free up resources
+        if hasattr(self, 'fig'):
+            plt.close(self.fig)
+            del self.fig
+
+        if hasattr(self, 'canvas'):
+            self.canvas.get_tk_widget().grid_forget()  # Remove the canvas from the GUI
+            self.canvas.get_tk_widget().destroy()
+            del self.canvas
 
         self.root.destroy()
 
     def plot_graph(self):
+        if hasattr(self, 'fig') and hasattr(self, 'canvas'):
+            self.ax.clear()
+        else:
+            self.fig, self.ax = plt.subplots(figsize=(2,2))
+            self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
+            self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+
         bev = Beverli(self.orientation, "cad")
-        px, pz = bev.compute_perimeter(45)
-        self.fig, ax = plt.subplots(figsize=(2, 2))
+        px, pz = bev.compute_perimeter(self.orientation)
+
+        # self.fig, ax = plt.subplots(figsize=(2, 2))
         # Create a matplotlib figure
         # fig = plt.figure(figsize=(2,2))
         # ax = fig.add_axes([0.15, 0.15, 0.85, 0.85])
 
         # Plot the data
-        ax.plot(px, pz, label='y = x^2')
-        ax.set_title("Sample Plot")
-        ax.set_xlabel("X-axis")
-        ax.set_ylabel("Y-axis")
-        ax.legend()
+        self.ax.plot(px, pz, label='y = x^2')
+        self.ax.set_title("Sample Plot")
+        self.ax.set_xlabel("X-axis")
+        self.ax.set_ylabel("Y-axis")
+        self.ax.legend()
 
         # Embed the plot in the Tkinter window
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
+        # self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
         self.canvas.draw()
 
-        self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+        # self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
     def create_section(self, section_name, section_type, master_frame, section_pos, title_pos):
         name = section_name.lower().replace(' ', '_')
@@ -145,7 +168,7 @@ class Preprocessor:
         name = quantity.lower().replace(' ', '_')
         setattr(self, f"checkbox_{name}_var", tk.IntVar())
         checkvar = getattr(self, f"checkbox_{name}_var")
-        setattr(self, f"checkbox_{name}", tk.Checkbutton(frame, text=f"{quantity} ENABLE", variable=checkvar, command=lambda: self.toggle_state(quantity), bg=colors["f2_content"], fg="white"))
+        setattr(self, f"checkbox_{name}", tk.Checkbutton(frame, text=f"{quantity} ENABLE", variable=checkvar, command=lambda: self.toggle_state(quantity), bg=colors["f2_content"], fg="white", anchor="w"))
         checkbox = getattr(self, f"checkbox_{name}")
         checkbox.grid(row=row, column=0, sticky="w", padx=5)
 
