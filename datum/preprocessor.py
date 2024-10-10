@@ -6,6 +6,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from .config import system, default_font, Button, colors
 from .beverli import Beverli
+from .pose import Pose
+
 
 class Preprocessor:
     def __init__(self, master: tk.Tk):
@@ -24,28 +26,61 @@ class Preprocessor:
         # Geometry Frame
         # --------------
         geom_sec_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 15, "pady": 5, "sticky": "nsew"}
-        geom_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
-        self.create_section("Geometry", 1, self.root, geom_sec_pos, geom_sec_title_pos)
+        geom_sec_title_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        self.create_section("geometry", "Geometry", 1, self.root, geom_sec_pos, geom_sec_title_pos)
         self.geometry_frame.grid_columnconfigure(0, weight=0)
         self.geometry_frame.grid_columnconfigure(1, weight=1)
+        # self.geometry_frame.grid_rowconfigure(1, weight=1)
 
-        self.bump_plot_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
-        self.bump_plot_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=5, sticky="nsew")
-        self.bump_plot_frame.grid_columnconfigure(0, weight=1)
+        self.bump_plot_frame = tk.Frame(self.geometry_frame, borderwidth=2, relief="solid", bg=colors["f1_content"])
+        self.bump_plot_frame.grid(row=1, column=0, columnspan=1, rowspan=2, padx=5, pady=5, sticky="nsew")
 
-        self.general_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
-        self.general_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=5, sticky="nsew")
+        general_sec_pos = {"row": 1, "column": 1, "columnspan": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
+        general_sec_title_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        self.create_section("general", "BeVERLI Hill", 2, self.geometry_frame, general_sec_pos, general_sec_title_pos)
+        # self.general_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
+        # self.general_frame.grid(row=1, column=1, columnspan=2, padx=10, pady=5, sticky="nsew")
         self.general_frame.grid_columnconfigure(0, weight=1)
+        self.general_frame.grid_columnconfigure(1, weight=1)
+        # self.general_frame.grid_rowconfigure(0, weight=1)
+        # self.general_frame.grid_rowconfigure(1, weight=1)
+        # self.general_frame.grid_rowconfigure(2, weight=1)
 
-        self.orientation_label = tk.Label(self.geometry_frame, text="Orientation [deg]", bg=colors["f1_content"], fg="white")
-        self.orientation_label.grid(row=1, column=1, columnspan=1, sticky="e")
-        self.orientation_entry = tk.Entry(self.geometry_frame, validate="focusout", validatecommand=(vcmd, '%P'))
-        self.orientation_entry.grid(row=1, column=2, columnspan=1, padx=10, sticky="ew")
 
-        self.piv_plane_label = tk.Label(self.geometry_frame, text="PIV Plane Number", bg=colors["f1_content"], fg="white")
-        self.piv_plane_label.grid(row=2, column=1, columnspan=1, sticky="e")
-        self.piv_plane_entry = tk.Entry(self.geometry_frame)
-        self.piv_plane_entry.grid(row=2, column=2, columnspan=1, padx=10, sticky="ew")
+        self.orientation_label = tk.Label(self.general_frame, text="Hill Orientation [deg]:", bg=colors["f2_content"], fg="white")
+        self.orientation_label.grid(row=1, column=0, padx=5, sticky="e")
+        self.orientation_entry = tk.Entry(self.general_frame, validate="focusout", validatecommand=(vcmd, '%P'), fg=colors["f1_content"], bd=0, relief="solid", highlightthickness=0, highlightbackground=colors["f1_content"])
+        self.orientation_entry.grid(row=1, column=1, padx=5, sticky="ew")
+
+
+
+        piv_sec_pos = {"row": 2, "column": 1, "columnspan": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
+        piv_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        self.create_section("piv", "PIV Plane", 2, self.geometry_frame, piv_sec_pos, piv_sec_title_pos)
+        self.piv_frame.grid_columnconfigure(0, weight=1)
+        self.piv_frame.grid_columnconfigure(1, weight=1)
+        self.piv_frame.grid_columnconfigure(2, weight=1)
+
+
+        self.piv_plane_label = tk.Label(self.piv_frame, text="Output File Name:", bg=colors["f2_content"], fg="white")
+        self.piv_plane_label.grid(row=1, column=1, padx=5, columnspan=1, sticky="e")
+        self.piv_plane_entry = tk.Entry(self.piv_frame, bd=0, relief="solid", highlightthickness=0, highlightbackground=colors["f2_content"])
+        self.piv_plane_entry.grid(row=1, column=2, padx=5, sticky="ew")
+
+
+#         pose_button_font = (default_font[0], default_font[1], "bold")
+#         if system == "Darwin":
+#             additional_pose_button_params = {"width": 200, "borderless": 1}
+#         elif system == "Windows":
+#             additional_pose_button_params = {"width": 20}
+
+#         self.pose_button = Button(self.general_frame, text="Load Pose", command=self.open_pose, font=pose_button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_pose_button_params)
+#         self.pose_button.grid(row=2, column=0, padx=5, sticky="ew")
+
+#         self.pose_status_label = tk.Label(self.general_frame, text="Nothing Loaded", bg=colors["f1_content"], fg="white")
+#         self.pose_status_label.grid(row=2, column=1, padx=5, sticky="ew")
+
+
 
         self.orientation = 0
         self.plot_graph()
@@ -58,21 +93,23 @@ class Preprocessor:
 
         opt_sec_pos = {"row": 0, "column": 0, "padx": 5, "pady": 5, "sticky": "nsew"}
         opt_title_pos = {"row": 0, "column": 0, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
-        self.create_section("Options", 2, self.loader_frame, opt_sec_pos, opt_title_pos)
+        self.create_section("options", "Enable...", 2, self.loader_frame, opt_sec_pos, opt_title_pos)
         self.options_frame.grid_columnconfigure(0, weight=1)
 
         data_sec_pos = {"row": 0, "column": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
         data_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
-        self.create_section("Raw Matlab Data", 1, self.loader_frame, data_sec_pos, data_title_pos)
+        self.create_section("raw_matlab_data", "Raw (Matlab) Data", 1, self.loader_frame, data_sec_pos, data_title_pos)
         self.raw_matlab_data_frame.grid_columnconfigure(0, weight=1)
 
-        self.create_file_loader(self.raw_matlab_data_frame, "Mean Velocity", 1, "normal")
-        self.create_file_loader(self.raw_matlab_data_frame, "Reynolds Stress", 2, "normal")
-        self.create_file_loader(self.raw_matlab_data_frame, "Turb. Dissipation", 3, "disabled")
-        self.create_file_loader(self.raw_matlab_data_frame, "Inst. Velocity Frame", 4, "disabled")
+        self.create_file_loader(self.raw_matlab_data_frame, "Mean Velocity", 1, "disabled")
+        self.create_file_loader(self.raw_matlab_data_frame, "Reynolds Stress", 2, "disabled")
+        self.create_file_loader(self.raw_matlab_data_frame, "Turbulence Dissipation", 3, "disabled")
+        self.create_file_loader(self.raw_matlab_data_frame, "Instantaneous Velocity Frame", 4, "disabled")
 
-        self.create_loader_checkbox(self.options_frame, "Turb. Dissipation", 1)
-        self.create_loader_checkbox(self.options_frame, "Inst. Velocity Frame", 2)
+        self.create_loader_checkbox(self.options_frame, "Mean Velocity", 1)
+        self.create_loader_checkbox(self.options_frame, "Reynolds Stress", 2)
+        self.create_loader_checkbox(self.options_frame, "Turbulence Dissipation", 3)
+        self.create_loader_checkbox(self.options_frame, "Instantaneous Velocity Frame", 4)
 
     def on_invalid_input(self):
         messagebox.showerror("Invalid Input", "Please enter a valid float.")
@@ -108,7 +145,9 @@ class Preprocessor:
         if hasattr(self, 'fig') and hasattr(self, 'canvas'):
             self.ax.clear()
         else:
-            self.fig, self.ax = plt.subplots(figsize=(2,2))
+            self.fig = plt.figure(figsize=(3, 3))
+            self.ax = self.fig.add_axes([0.25, 0.25, 0.7, 0.65])
+            # self.fig, self.ax = plt.subplots(figsize=(2,2))
             self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
             self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
@@ -121,23 +160,28 @@ class Preprocessor:
         # ax = fig.add_axes([0.15, 0.15, 0.85, 0.85])
 
         # Plot the data
-        self.ax.plot(px, pz, label='y = x^2')
-        self.ax.set_title("Sample Plot")
-        self.ax.set_xlabel("X-axis")
-        self.ax.set_ylabel("Y-axis")
-        self.ax.legend()
+        self.ax.plot(px, pz, color="blue")
+        self.ax.set_xlabel(r"$x_1$ (m)")
+        self.ax.set_ylabel(r"$x_3$ (m)")
+        self.ax.set_xlim(-0.65, 0.65)
+        self.ax.set_ylim(0.65, -0.65)
+        self.ax.set_aspect('equal')
+
 
         # Embed the plot in the Tkinter window
         # self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
         self.canvas.draw()
 
         # self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+    def open_pose(self):
+        Pose(self.root)
 
-    def create_section(self, section_name, section_type, master_frame, section_pos, title_pos):
-        name = section_name.lower().replace(' ', '_')
+
+    def create_section(self, varname, section_title, section_type, master_frame, section_pos, title_pos):
+        # name = section_name.lower().replace(' ', '_')
         setattr(
             self,
-            f"{name}_frame",
+            f"{varname}_frame",
             tk.Frame(
                 master_frame,
                 bg=colors[f"f{section_type}_content"],
@@ -145,17 +189,17 @@ class Preprocessor:
                 relief="solid",
             )
         )
-        new_frame = getattr(self, f"{name}_frame")
+        new_frame = getattr(self, f"{varname}_frame")
         new_frame.grid(**section_pos)
         new_frame.grid_columnconfigure(0, weight=1)
 
         section_title_fmt = (default_font[0], default_font[1] + 2, "bold")
         setattr(
             self,
-            f"{name}_title",
+            f"{varname}_title",
             tk.Label(
                 new_frame,
-                text=section_name,
+                text=section_title,
                 font=section_title_fmt,
                 borderwidth=1,
                 relief="solid",
@@ -163,7 +207,7 @@ class Preprocessor:
                 fg="white",
             )
         )
-        section_title = getattr(self, f"{name}_title")
+        section_title = getattr(self, f"{varname}_title")
         section_title.grid(**title_pos)
 
 
@@ -171,7 +215,7 @@ class Preprocessor:
         name = quantity.lower().replace(' ', '_')
         setattr(self, f"checkbox_{name}_var", tk.IntVar())
         checkvar = getattr(self, f"checkbox_{name}_var")
-        setattr(self, f"checkbox_{name}", tk.Checkbutton(frame, text=f"{quantity} ENABLE", variable=checkvar, command=lambda: self.toggle_state(quantity), bg=colors["f2_content"], fg="white", anchor="w"))
+        setattr(self, f"checkbox_{name}", tk.Checkbutton(frame, text=f"{quantity}", variable=checkvar, command=lambda: self.toggle_state(quantity), bg=colors["f2_content"], fg="white", anchor="w"))
         checkbox = getattr(self, f"checkbox_{name}")
         checkbox.grid(row=row, column=0, sticky="w", padx=5)
 

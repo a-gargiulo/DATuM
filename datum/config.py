@@ -1,4 +1,5 @@
 import platform
+import matplotlib.pyplot as plt
 
 system = platform.system()
 
@@ -22,3 +23,14 @@ colors = {
     "f2_content": "#373737",
     "accent": "#bb86fc",
 }
+
+
+plt.rcParams.update({
+    "font.size": 14,
+    "axes.linewidth": 2,
+    "lines.linewidth": 2,
+    "xtick.direction": "in",
+    "xtick.major.width": 2,
+    "ytick.direction": "in",
+    "ytick.major.width": 2
+})
