@@ -13,15 +13,17 @@ class Preprocessor:
     def __init__(self, master: tk.Tk):
         self.root = tk.Toplevel(master)
         self.root.title("Preprocessor")
-        self.root.geometry("800x600")
+        self.root.geometry("800x800")
         self.root.resizable(False, False)
         self.root.configure(bg=colors["base"])
         self.root.option_add("*Font", default_font)
         self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         vcmd = self.root.register(self.validate_float)
+
 
         # Geometry Frame
         # --------------
@@ -36,21 +38,22 @@ class Preprocessor:
         self.bump_plot_frame.grid(row=1, column=0, columnspan=1, rowspan=2, padx=5, pady=5, sticky="nsew")
 
         general_sec_pos = {"row": 1, "column": 1, "columnspan": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
-        general_sec_title_pos = {"row": 0, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        general_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
         self.create_section("general", "BeVERLI Hill", 2, self.geometry_frame, general_sec_pos, general_sec_title_pos)
         # self.general_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
         # self.general_frame.grid(row=1, column=1, columnspan=2, padx=10, pady=5, sticky="nsew")
         self.general_frame.grid_columnconfigure(0, weight=1)
         self.general_frame.grid_columnconfigure(1, weight=1)
+        self.general_frame.grid_columnconfigure(2, weight=1)
         # self.general_frame.grid_rowconfigure(0, weight=1)
         # self.general_frame.grid_rowconfigure(1, weight=1)
         # self.general_frame.grid_rowconfigure(2, weight=1)
 
 
         self.orientation_label = tk.Label(self.general_frame, text="Hill Orientation [deg]:", bg=colors["f2_content"], fg="white")
-        self.orientation_label.grid(row=1, column=0, padx=5, sticky="e")
-        self.orientation_entry = tk.Entry(self.general_frame, validate="focusout", validatecommand=(vcmd, '%P'), fg=colors["f1_content"], bd=0, relief="solid", highlightthickness=0, highlightbackground=colors["f1_content"])
-        self.orientation_entry.grid(row=1, column=1, padx=5, sticky="ew")
+        self.orientation_label.grid(row=1, column=0, padx=5,  pady=5, sticky="nsew")
+        self.orientation_entry = tk.Entry(self.general_frame, validate="focusout", validatecommand=(vcmd, '%P'), fg=colors["f1_content"], bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f1_content"])
+        self.orientation_entry.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
 
 
 
@@ -62,23 +65,28 @@ class Preprocessor:
         self.piv_frame.grid_columnconfigure(2, weight=1)
 
 
-        self.piv_plane_label = tk.Label(self.piv_frame, text="Output File Name:", bg=colors["f2_content"], fg="white")
-        self.piv_plane_label.grid(row=1, column=1, padx=5, columnspan=1, sticky="e")
-        self.piv_plane_entry = tk.Entry(self.piv_frame, bd=0, relief="solid", highlightthickness=0, highlightbackground=colors["f2_content"])
-        self.piv_plane_entry.grid(row=1, column=2, padx=5, sticky="ew")
+        pose_button_font = (default_font[0], default_font[1], "bold")
+        if system == "Darwin":
+            additional_pose_button_params = {"width": 200, "borderless": 1}
+        elif system == "Windows":
+            additional_pose_button_params = {"width": 20}
+
+        self.pose_button = Button(self.piv_frame, text="Load/Calculate Tranformation Matrix", command=self.open_pose, font=pose_button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_pose_button_params)
+        self.pose_button.grid(row=1, column=0, columnspan=2,padx=5, pady=5, sticky="nsew")
+
+        self.pose_status_label = tk.Label(self.piv_frame, text="Nothing Loaded", bg=colors["f2_content"], fg="red")
+        self.pose_status_label.grid(row=1, column=2, padx=5, sticky="nsew")
 
 
-#         pose_button_font = (default_font[0], default_font[1], "bold")
-#         if system == "Darwin":
-#             additional_pose_button_params = {"width": 200, "borderless": 1}
-#         elif system == "Windows":
-#             additional_pose_button_params = {"width": 20}
+        # self.pose_listbox = tk.Listbox(self.piv_frame, width=20, height=1)
+        # self.pose_listbox.grid(row=2, column=1, padx=5, pady=5, sticky="nsew")
 
-#         self.pose_button = Button(self.general_frame, text="Load Pose", command=self.open_pose, font=pose_button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_pose_button_params)
-#         self.pose_button.grid(row=2, column=0, padx=5, sticky="ew")
 
-#         self.pose_status_label = tk.Label(self.general_frame, text="Nothing Loaded", bg=colors["f1_content"], fg="white")
-#         self.pose_status_label.grid(row=2, column=1, padx=5, sticky="ew")
+
+        self.piv_plane_label = tk.Label(self.piv_frame, text="Ouput File Name:", bg=colors["f2_content"], fg="white")
+        self.piv_plane_label.grid(row=3, column=0, padx=5, pady=5, columnspan=1, sticky="nsew")
+        self.piv_plane_entry = tk.Entry(self.piv_frame, bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f2_content"])
+        self.piv_plane_entry.grid(row=3, column=1, padx=5, pady=5, sticky="nsew")
 
 
 
@@ -87,29 +95,73 @@ class Preprocessor:
 
         # Loader Frame
         # ------------
-        self.loader_frame = tk.Frame(self.root, bg=colors["base"])
-        self.loader_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="nsew")
-        self.loader_frame.grid_columnconfigure(0, weight=1)
+        # self.loader_frame = tk.Frame(self.root, bg=colors["base"])
+        # self.loader_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="nsew")
+        # self.loader_frame.grid_columnconfigure(0, weight=1)
 
-        opt_sec_pos = {"row": 0, "column": 0, "padx": 5, "pady": 5, "sticky": "nsew"}
-        opt_title_pos = {"row": 0, "column": 0, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
-        self.create_section("options", "Enable...", 2, self.loader_frame, opt_sec_pos, opt_title_pos)
-        self.options_frame.grid_columnconfigure(0, weight=1)
 
-        data_sec_pos = {"row": 0, "column": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
-        data_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
-        self.create_section("raw_matlab_data", "Raw (Matlab) Data", 1, self.loader_frame, data_sec_pos, data_title_pos)
+        data_sec_pos = {"row": 2, "column": 0,  "columnspan": 2, "padx": 5, "pady": 5, "sticky": "nsew"}
+        data_title_pos = {"row": 0, "column": 0, "columnspan": 4, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
+        self.create_section("raw_matlab_data", "Raw (Matlab) Data", 1, self.root, data_sec_pos, data_title_pos)
         self.raw_matlab_data_frame.grid_columnconfigure(0, weight=1)
+        self.raw_matlab_data_frame.grid_columnconfigure(1, weight=1)
+        self.raw_matlab_data_frame.grid_columnconfigure(2, weight=1)
+        self.raw_matlab_data_frame.grid_columnconfigure(3, weight=1)
 
-        self.create_file_loader(self.raw_matlab_data_frame, "Mean Velocity", 1, "disabled")
-        self.create_file_loader(self.raw_matlab_data_frame, "Reynolds Stress", 2, "disabled")
-        self.create_file_loader(self.raw_matlab_data_frame, "Turbulence Dissipation", 3, "disabled")
-        self.create_file_loader(self.raw_matlab_data_frame, "Instantaneous Velocity Frame", 4, "disabled")
+        cfd_sec_pos = {"row": 3, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "sticky": "nsew"}
+        cfd_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "ipadx": 10, "sticky": "ew"}
+        self.create_section("cfd", "Mean Velocity Gradient Tensor", 2, self.root, cfd_sec_pos, cfd_title_pos)
+        self.cfd_frame.grid_columnconfigure(0, weight=1)
+        self.cfd_frame.grid_columnconfigure(1, weight=1)
+        self.cfd_frame.grid_columnconfigure(2, weight=1)
 
-        self.create_loader_checkbox(self.options_frame, "Mean Velocity", 1)
-        self.create_loader_checkbox(self.options_frame, "Reynolds Stress", 2)
-        self.create_loader_checkbox(self.options_frame, "Turbulence Dissipation", 3)
-        self.create_loader_checkbox(self.options_frame, "Instantaneous Velocity Frame", 4)
+        self.create_file_loader(self.raw_matlab_data_frame, "Mean Velocity", 1, "disabled", self.load_files)
+        self.create_file_loader(self.raw_matlab_data_frame, "Reynolds Stress", 2, "disabled", self.load_files)
+        self.create_file_loader(self.raw_matlab_data_frame, "Turbulence Dissipation", 3, "disabled", self.load_files)
+        self.create_file_loader(self.raw_matlab_data_frame, "Velocity Frame", 4, "disabled", self.load_files)
+
+
+
+
+        self.gradient_checkbox_var = tk.IntVar()
+        self.gradient_checkbox = tk.Checkbutton(self.cfd_frame, text="Enable Computation", variable=self.gradient_checkbox_var, command=self.toggle_gradient, bg=colors["f2_content"], fg=colors["accent"], anchor="w")
+        self.gradient_checkbox.grid(row=1, column=0, sticky="nsew")
+
+        slice_button_font = (default_font[0], default_font[1], "bold")
+        if system == "Darwin":
+            additional_slice_button_params = {"width": 200, "borderless": 1}
+        elif system == "Windows":
+            additional_slice_button_params = {"width": 10}
+
+        self.slice_button = Button(self.cfd_frame, text="Load CFD Slice", command=self.load_cfd_slice, font=slice_button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_slice_button_params, state="disabled")
+        self.slice_button.grid(row=2, column=0, columnspan=1,padx=5, pady=5, sticky="nsew")
+
+        self.slice_listbox = tk.Listbox(self.cfd_frame, width=20, height=1)
+        self.slice_listbox.grid(row=2, column=1, padx=5, pady=5, sticky="nsew")
+
+        self.slice_status_label = tk.Label(self.cfd_frame, text="Nothing Loaded", bg=colors["f2_content"], fg="red")
+        self.slice_status_label.grid(row=2, column=2, padx=5, sticky="nsew")
+
+
+
+        self.gradient_opt_checkbox_var = tk.IntVar()
+        self.gradient_opt_checkbox = tk.Checkbutton(self.cfd_frame, text=r"dUdZ and dVdZ from CFD", variable=self.gradient_opt_checkbox_var, command=self.toggle_gradient, bg=colors["f2_content"], fg=colors["accent"], anchor="w", state="disabled")
+        self.gradient_opt_checkbox.grid(row=1, column=1, sticky="nsew")
+
+
+
+
+
+
+
+
+
+
+
+#         self.create_loader_checkbox(self.options_frame, "Mean Velocity", 1)
+#         self.create_loader_checkbox(self.options_frame, "Reynolds Stress", 2)
+#         self.create_loader_checkbox(self.options_frame, "Turbulence Dissipation", 3)
+#         self.create_loader_checkbox(self.options_frame, "Velocity Frame", 4)
 
     def on_invalid_input(self):
         messagebox.showerror("Invalid Input", "Please enter a valid float.")
@@ -211,13 +263,13 @@ class Preprocessor:
         section_title.grid(**title_pos)
 
 
-    def create_loader_checkbox(self, frame, quantity, row):
-        name = quantity.lower().replace(' ', '_')
-        setattr(self, f"checkbox_{name}_var", tk.IntVar())
-        checkvar = getattr(self, f"checkbox_{name}_var")
-        setattr(self, f"checkbox_{name}", tk.Checkbutton(frame, text=f"{quantity}", variable=checkvar, command=lambda: self.toggle_state(quantity), bg=colors["f2_content"], fg="white", anchor="w"))
-        checkbox = getattr(self, f"checkbox_{name}")
-        checkbox.grid(row=row, column=0, sticky="w", padx=5)
+    # def create_loader_checkbox(self, frame, quantity, row):
+    #     name = quantity.lower().replace(' ', '_')
+    #     setattr(self, f"checkbox_{name}_var", tk.IntVar())
+    #     checkvar = getattr(self, f"checkbox_{name}_var")
+    #     setattr(self, f"checkbox_{name}", tk.Checkbutton(frame, text=f"{quantity}", variable=checkvar, command=lambda: self.toggle_state(quantity), bg=colors["f2_content"], fg=colors["accent"], anchor="w"))
+    #     checkbox = getattr(self, f"checkbox_{name}")
+    #     checkbox.grid(row=row, column=0, sticky="w", padx=5)
 
     def toggle_state(self, quantity):
         name = quantity.lower().replace(' ', '_')
@@ -238,7 +290,7 @@ class Preprocessor:
 
 
 
-    def create_file_loader(self, frame, data_type, row, state):
+    def create_file_loader(self, frame, data_type, row, state, function):
         dt = data_type.lower().replace(' ', '_')
 
         button_font = (default_font[0], default_font[1], "bold")
@@ -247,29 +299,35 @@ class Preprocessor:
         elif system == "Windows":
             additional_button_params = {"width": 20}
 
-        setattr(self, f"load_button_{dt}", Button(frame, text=f"{data_type}", command=lambda: self.load_files(data_type, frame), state=state, font=button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_button_params))
+        setattr(self, f"checkbox_{dt}_var", tk.IntVar())
+        checkvar = getattr(self, f"checkbox_{dt}_var")
+        setattr(self, f"checkbox_{dt}", tk.Checkbutton(frame, variable=checkvar, command=lambda: self.toggle_state(data_type), bg=colors["f1_content"], fg="black", anchor="w"))
+        checkbox = getattr(self, f"checkbox_{dt}")
+        checkbox.grid(row=row, column=0, sticky="w", padx=5)
+
+        setattr(self, f"load_button_{dt}", Button(frame, text=f"{data_type}", command=lambda: function(data_type, frame), state=state, font=button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_button_params))
 
         load_button = getattr(self, f"load_button_{dt}")
-        load_button.grid(row=row, column=0, padx=5, pady=5, sticky="nsew")
+        load_button.grid(row=row, column=1, padx=5, pady=5, sticky="nsew")
         # load_button.grid_columnconfigure(0, weight=1)
 
         setattr(self, f"listbox_{dt}", tk.Listbox(frame, state=state, width=20, height=1))
         listbox = getattr(self, f"listbox_{dt}")
-        listbox.grid(row=row, column=1, padx=5, pady=5, sticky="nsew")
+        listbox.grid(row=row, column=2, padx=5, pady=5, sticky="nsew")
         # listbox.grid_columnconfigure(1, weight=1)
 
-        setattr(self, f"status_label_{dt}", tk.Label(frame, state=state, text="Nothing Loaded", width=13, bg=colors["f1_content"], fg="white"))
+        setattr(self, f"status_label_{dt}", tk.Label(frame, state=state, text="Nothing Loaded", width=13, bg=colors["f1_content"], fg="red"))
         status_label = getattr(self, f"status_label_{dt}")
-        status_label.grid(row=row, column=2, padx=5, pady=5, sticky="nsew")
+        status_label.grid(row=row, column=3, padx=5, pady=5, sticky="nsew")
         # status_label.grid_columnconfigure(2, weight=1)
 
     def load_files(self, data_type, section_frame):
         # Open file dialog and get the selected file paths
-        file_paths = filedialog.askopenfilenames(
+        file_path = filedialog.askopenfilename(
             filetypes=[("Data Files", "*.mat"), ("All Files", "*.*")]
         )
 
-        if file_paths:
+        if file_path:
             # Get the corresponding listbox and status label for this data type
             listbox = getattr(self, f"listbox_{data_type.lower().replace(' ', '_')}")
             status_label = getattr(self, f"status_label_{data_type.lower().replace(' ', '_')}")
@@ -278,9 +336,30 @@ class Preprocessor:
             listbox.delete(0, tk.END)
 
             # Add new file paths to the listbox
-            for file_path in file_paths:
-                listbox.insert(tk.END, file_path)
+            listbox.insert(tk.END, file_path)
 
-            status_label.config(text="File Loaded")
+            status_label.config(text="File Loaded", fg="green")
         else:
-            status_label.config(text="Nothing Loaded")
+            listbox = getattr(self, f"listbox_{data_type.lower().replace(' ', '_')}")
+            status_label = getattr(self, f"status_label_{data_type.lower().replace(' ', '_')}")
+            listbox.delete(0, tk.END)
+            listbox.insert(tk.END, file_path)
+            status_label.config(text="Nothing Loaded", fg="red")
+
+
+    def toggle_gradient(self):
+        if self.gradient_checkbox_var.get():
+            self.gradient_opt_checkbox.config(state="normal")
+        else:
+            self.gradient_opt_checkbox.config(state="disabled")
+
+    def load_cfd_slice(self):
+        if self.gradient_opt_checkbox_var.get():
+            self.slice_button.config(state="normal")
+            self.slice_listbox.config(state="normal")
+            self.slice_status_label.config(state="normal")
+        else:
+            self.slice_button.config(state="disabled")
+            self.slice_listbox.config(state="disabled")
+            self.slice_status_label.config(state="disabled")
+
