@@ -2,9 +2,13 @@ import tkinter as tk
 
 from PIL import Image, ImageTk
 
-from .config import Button, colors, default_font, system
+from .utility.configure import system, colors, default_font
 from .preprocessor import Preprocessor
 
+if system == "Darwin":
+    from tkmacosx import Button
+elif system == "Windows":
+    from tkinter import Button
 
 class Datum:
     def __init__(self, root: tk.Tk):
@@ -45,7 +49,7 @@ class Datum:
             text="Preprocessor",
             command=self.open_preprocessor,
             bg=colors["accent"],
-            fg=colors["f1_content"],
+            fg=colors["s1_content"],
             font=(default_font[0], default_font[1], "bold"),
             **additional_button_params,
         )
