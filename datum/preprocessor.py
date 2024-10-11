@@ -13,7 +13,7 @@ class Preprocessor:
     def __init__(self, master: tk.Tk):
         self.root = tk.Toplevel(master)
         self.root.title("Preprocessor")
-        self.root.geometry("800x800")
+        self.root.geometry("800x625")
         self.root.resizable(False, False)
         self.root.configure(bg=colors["base"])
         self.root.option_add("*Font", default_font)
@@ -36,10 +36,13 @@ class Preprocessor:
 
         self.bump_plot_frame = tk.Frame(self.geometry_frame, borderwidth=2, relief="solid", bg=colors["f1_content"])
         self.bump_plot_frame.grid(row=1, column=0, columnspan=1, rowspan=2, padx=5, pady=5, sticky="nsew")
+        self.bump_plot_frame.grid_columnconfigure(0, weight=1)
+        self.bump_plot_frame.grid_rowconfigure(0, weight=1)
+        self.bump_plot_frame.grid_rowconfigure(1, weight=1)
 
         general_sec_pos = {"row": 1, "column": 1, "columnspan": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
         general_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
-        self.create_section("general", "BeVERLI Hill", 2, self.geometry_frame, general_sec_pos, general_sec_title_pos)
+        self.create_section("general", "General", 2, self.geometry_frame, general_sec_pos, general_sec_title_pos)
         # self.general_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
         # self.general_frame.grid(row=1, column=1, columnspan=2, padx=10, pady=5, sticky="nsew")
         self.general_frame.grid_columnconfigure(0, weight=1)
@@ -59,7 +62,7 @@ class Preprocessor:
 
         piv_sec_pos = {"row": 2, "column": 1, "columnspan": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
         piv_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
-        self.create_section("piv", "PIV Plane", 2, self.geometry_frame, piv_sec_pos, piv_sec_title_pos)
+        self.create_section("piv", "Pose & Transformation (Local PIV -> Global SWT)", 2, self.geometry_frame, piv_sec_pos, piv_sec_title_pos)
         self.piv_frame.grid_columnconfigure(0, weight=1)
         self.piv_frame.grid_columnconfigure(1, weight=1)
         self.piv_frame.grid_columnconfigure(2, weight=1)
@@ -78,15 +81,22 @@ class Preprocessor:
         self.pose_status_label.grid(row=1, column=2, padx=5, sticky="nsew")
 
 
+        self.checkbox_interp_var = tk.IntVar()
+        self.checkbox_interp = tk.Checkbutton(self.piv_frame, text="Interpolate to regular grid", variable=self.checkbox_interp_var, command=self.toggle_interp, bg=colors["f2_content"], fg="white", anchor="w")
+        self.checkbox_interp.grid(row=2, column=0, padx=5, sticky="nsew")
+
+
+        # self.interp_entry = tk.Entry(self.piv_frame, bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f2_content"])
+        # self.interp_entry.grid(row=2, column=1, padx=5, sticky="nsew")
         # self.pose_listbox = tk.Listbox(self.piv_frame, width=20, height=1)
         # self.pose_listbox.grid(row=2, column=1, padx=5, pady=5, sticky="nsew")
 
 
 
-        self.piv_plane_label = tk.Label(self.piv_frame, text="Ouput File Name:", bg=colors["f2_content"], fg="white")
-        self.piv_plane_label.grid(row=3, column=0, padx=5, pady=5, columnspan=1, sticky="nsew")
-        self.piv_plane_entry = tk.Entry(self.piv_frame, bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f2_content"])
-        self.piv_plane_entry.grid(row=3, column=1, padx=5, pady=5, sticky="nsew")
+        self.piv_plane_label = tk.Label(self.piv_frame, text="Number of interpolation grid points (square grid):", bg=colors["f2_content"], fg="white", state="disabled")
+        self.piv_plane_label.grid(row=3, column=0, padx=5, pady=5, columnspan=2, sticky="nsw")
+        self.piv_plane_entry = tk.Entry(self.piv_frame, bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f2_content"], state="disabled")
+        self.piv_plane_entry.grid(row=3, column=2, padx=5, pady=5, sticky="nsew")
 
 
 
@@ -100,7 +110,7 @@ class Preprocessor:
         # self.loader_frame.grid_columnconfigure(0, weight=1)
 
 
-        data_sec_pos = {"row": 2, "column": 0,  "columnspan": 2, "padx": 5, "pady": 5, "sticky": "nsew"}
+        data_sec_pos = {"row": 1, "column": 0,  "columnspan": 2, "padx": 5, "pady": 5, "sticky": "nsew"}
         data_title_pos = {"row": 0, "column": 0, "columnspan": 4, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
         self.create_section("raw_matlab_data", "Raw (Matlab) Data", 1, self.root, data_sec_pos, data_title_pos)
         self.raw_matlab_data_frame.grid_columnconfigure(0, weight=1)
@@ -108,7 +118,7 @@ class Preprocessor:
         self.raw_matlab_data_frame.grid_columnconfigure(2, weight=1)
         self.raw_matlab_data_frame.grid_columnconfigure(3, weight=1)
 
-        cfd_sec_pos = {"row": 3, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "sticky": "nsew"}
+        cfd_sec_pos = {"row": 2, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "sticky": "nsew"}
         cfd_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "ipadx": 10, "sticky": "ew"}
         self.create_section("cfd", "Mean Velocity Gradient Tensor", 2, self.root, cfd_sec_pos, cfd_title_pos)
         self.cfd_frame.grid_columnconfigure(0, weight=1)
@@ -124,7 +134,7 @@ class Preprocessor:
 
 
         self.gradient_checkbox_var = tk.IntVar()
-        self.gradient_checkbox = tk.Checkbutton(self.cfd_frame, text="Enable Computation", variable=self.gradient_checkbox_var, command=self.toggle_gradient, bg=colors["f2_content"], fg=colors["accent"], anchor="w")
+        self.gradient_checkbox = tk.Checkbutton(self.cfd_frame, text="Enable computation", variable=self.gradient_checkbox_var, command=self.toggle_gradient, bg=colors["f2_content"], fg="white", anchor="w", state="disabled")
         self.gradient_checkbox.grid(row=1, column=0, sticky="nsew")
 
         slice_button_font = (default_font[0], default_font[1], "bold")
@@ -136,25 +146,30 @@ class Preprocessor:
         self.slice_button = Button(self.cfd_frame, text="Load CFD Slice", command=self.load_cfd_slice, font=slice_button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_slice_button_params, state="disabled")
         self.slice_button.grid(row=2, column=0, columnspan=1,padx=5, pady=5, sticky="nsew")
 
-        self.slice_listbox = tk.Listbox(self.cfd_frame, width=20, height=1)
+        self.slice_listbox = tk.Listbox(self.cfd_frame, width=20, height=1, state="disabled")
         self.slice_listbox.grid(row=2, column=1, padx=5, pady=5, sticky="nsew")
 
-        self.slice_status_label = tk.Label(self.cfd_frame, text="Nothing Loaded", bg=colors["f2_content"], fg="red")
+        self.slice_status_label = tk.Label(self.cfd_frame, text="Nothing Loaded", bg=colors["f2_content"], fg="red", state="disabled")
         self.slice_status_label.grid(row=2, column=2, padx=5, sticky="nsew")
 
 
 
         self.gradient_opt_checkbox_var = tk.IntVar()
-        self.gradient_opt_checkbox = tk.Checkbutton(self.cfd_frame, text=r"dUdZ and dVdZ from CFD", variable=self.gradient_opt_checkbox_var, command=self.toggle_gradient, bg=colors["f2_content"], fg=colors["accent"], anchor="w", state="disabled")
+        self.gradient_opt_checkbox = tk.Checkbutton(self.cfd_frame, text=r"dUdZ and dVdZ from CFD", variable=self.gradient_opt_checkbox_var, command=self.toggle_cfd, bg=colors["f2_content"], fg="white", anchor="w", state="disabled")
         self.gradient_opt_checkbox.grid(row=1, column=1, sticky="nsew")
 
 
 
+        process_button_font = (default_font[0], default_font[1], "bold")
+        if system == "Darwin":
+            additional_process_button_params = {"width": 200, "borderless": 1}
+        elif system == "Windows":
+            additional_process_button_params = {"width": 20}
 
 
 
-
-
+        self.process_button = Button(self.root, text="Preprocess Data", command=self.preprocess_data, font=process_button_font, bg=colors["accent"], fg=colors["f1_content"], **additional_process_button_params)
+        self.process_button.grid(row=3, column=0, columnspan=2, pady=5, padx=10)
 
 
 
@@ -197,8 +212,8 @@ class Preprocessor:
         if hasattr(self, 'fig') and hasattr(self, 'canvas'):
             self.ax.clear()
         else:
-            self.fig = plt.figure(figsize=(3, 3))
-            self.ax = self.fig.add_axes([0.25, 0.25, 0.7, 0.65])
+            self.fig = plt.figure(figsize=(2.4, 2.2))
+            self.ax = self.fig.add_axes([0.3, 0.3, 0.75, 0.65])
             # self.fig, self.ax = plt.subplots(figsize=(2,2))
             self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
             self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
@@ -213,8 +228,8 @@ class Preprocessor:
 
         # Plot the data
         self.ax.plot(px, pz, color="blue")
-        self.ax.set_xlabel(r"$x_1$ (m)")
-        self.ax.set_ylabel(r"$x_3$ (m)")
+        self.ax.set_xlabel(r"$x_1$ (m)", labelpad=10)
+        self.ax.set_ylabel(r"$x_3$ (m)", labelpad=10)
         self.ax.set_xlim(-0.65, 0.65)
         self.ax.set_ylim(0.65, -0.65)
         self.ax.set_aspect('equal')
@@ -350,15 +365,46 @@ class Preprocessor:
     def toggle_gradient(self):
         if self.gradient_checkbox_var.get():
             self.gradient_opt_checkbox.config(state="normal")
+            if self.gradient_opt_checkbox_var.get():
+                self.slice_button.config(state="normal")
+                self.slice_listbox.config(state="normal")
+                self.slice_status_label.config(state="normal")
         else:
             self.gradient_opt_checkbox.config(state="disabled")
+            self.gradient_opt_checkbox_var.set(0)
+            self.slice_button.config(state="disabled")
+            self.slice_listbox.config(state="disabled")
+            self.slice_status_label.config(state="disabled")
 
-    def load_cfd_slice(self):
+    def toggle_cfd(self):
         if self.gradient_opt_checkbox_var.get():
             self.slice_button.config(state="normal")
             self.slice_listbox.config(state="normal")
             self.slice_status_label.config(state="normal")
         else:
+            self.slice_button.config(state="disabled")
+            self.slice_listbox.config(state="disabled")
+            self.slice_status_label.config(state="disabled")
+
+    def load_cfd_slice(self):
+        pass
+
+
+    def preprocess_data(self):
+        pass
+
+    def toggle_interp(self):
+        if self.checkbox_interp_var.get():
+            self.piv_plane_entry.config(state="normal")
+            self.piv_plane_label.config(state="normal")
+            self.gradient_checkbox.config(state="normal")
+        else:
+            self.piv_plane_entry.config(state="disabled")
+            self.piv_plane_label.config(state="disabled")
+            self.gradient_checkbox.config(state="disabled")
+            self.gradient_checkbox_var.set(0)
+            self.gradient_opt_checkbox.config(state="disabled")
+            self.gradient_opt_checkbox_var.set(0)
             self.slice_button.config(state="disabled")
             self.slice_listbox.config(state="disabled")
             self.slice_status_label.config(state="disabled")
