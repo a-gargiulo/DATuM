@@ -19,6 +19,9 @@ elif system == "Windows":
 # from .beverli import Beverli
 # from .pose import Pose
 
+W_WIDTH = 800
+W_HEIGHT = 600
+
 
 class Preprocessor:
     """The `Preprocessor` app."""
@@ -27,38 +30,38 @@ class Preprocessor:
         """Class constructor, setting up the GUI."""
         self.root = tk.Toplevel(master)
         self.root.title("Preprocessor")
-        self.root.geometry("800x600")
+        self.root.geometry(f"{W_WIDTH}x{W_HEIGHT}")
         self.root.resizable(False, False)
         self.root.configure(bg=colors["base"])
         self.root.option_add("*Font", default_font)
         # self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         # vcmd = self.root.register(self.validate_float)
 
-        self.root_canvas, self.scrollbar = (
-            value
-            for value in gui.create_scrollable_canvas(self.root, True, False, None, {"bg": colors["base"]}, None)
-            if value is not None
+        self.root_canvas, self.scrollbar, _ = gui.create_scrollable_canvas(
+            self.root, True, False, None, {"bg": colors["base"]}, None
         )
 
-        self.root_content_frame = tk.Frame(self.root_canvas)
-        # self.root_content_frame.grid_columnconfigure(0, weight=1)
-        # self.root_content_frame.grid_rowconfigure(0, weight=1)
-        self.root_canvas.create_window((0, 0), window=self.root_content_frame, anchor="nw")
 
-        # # Geometry Frame
-        # # --------------
-        # self.geometry_section, self.geometry_content = gui.create_section(
-        #     self.root_content_frame,
-        #     "Geometry",
-        #     {"row": 0, "column": 0, "columnspan": 2, "padx": 15, "pady": 5},
-        #     2,
-        #     {"bg": colors["s1_content"]},
-        #     {"bg": colors["s1_header"], "fg": "white"},
-        #     {"bg": colors["s1_content"]},
+        self.main_frame = tk.Frame(self.root_canvas, bg="red")
+        self.main_frame_window = self.root_canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
 
-        # )
 
-        # self.root_content_frame.grid(row=0, column=0, sticky="nsew")
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        self.main_frame.grid_columnconfigure(1, weight=1)
+
+        # Geometry Frame
+        # --------------
+        self.geometry_section, self.geometry_content = gui.create_section(
+            self.main_frame,
+            "Geometry",
+            {"row": 0, "column": 0, "columnspan": 2, "padx": 15, "pady": 5, "sticky": "nsew"},
+            2,
+            {"bg": colors["s1_content"]},
+            {"bg": colors["s1_header"], "fg": "white"},
+            {"bg": colors["s1_content"]},
+        )
+
+        # # self.root_content_frame.grid(row=0, column=0, sticky="nsew")
         # self.root_content_frame.grid_columnconfigure(0,weight=1)
 
         #         self.geometry_frame.grid_columnconfigure(0, weight=0)
@@ -66,8 +69,7 @@ class Preprocessor:
         #         # self.geometry_frame.grid_rowconfigure(1, weight=1)
 
         #         self.bump_plot_frame = tk.Frame(self.geometry_frame, borderwidth=2, relief="solid", bg=colors["f1_content"])
-        #         self.bump_plot_frame.grid(row=1, column=0, columnspan=1, rowspan=2, padx=5, pady=5, sticky="nsew")
-        #         self.bump_plot_frame.grid_columnconfigure(0, weight=1)
+        #         self.bump_plot_frame.grid(row=1, column=0, columnspan=1, rowspan=2, padx=5, pady=5, sticky="nsew") #         self.bump_plot_frame.grid_columnconfigure(0, weight=1)
         #         self.bump_plot_frame.grid_rowconfigure(0, weight=1)
         #         self.bump_plot_frame.grid_rowconfigure(1, weight=1)
 
@@ -187,7 +189,8 @@ class Preprocessor:
         # #         self.create_loader_checkbox(self.options_frame, "Turbulence Dissipation", 3)
         # #         self.create_loader_checkbox(self.options_frame, "Velocity Frame", 4)
 
-        self.root_content_frame.update_idletasks()
+        self.main_frame.update_idletasks()
+        self.root_canvas.itemconfig(self.main_frame_window, width=W_WIDTH-self.scrollbar.winfo_width(), height=W_HEIGHT)
         self.root_canvas.config(scrollregion=self.root_canvas.bbox("all"))
 
 
