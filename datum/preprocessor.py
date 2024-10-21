@@ -41,41 +41,38 @@ class Preprocessor:
             self.root, True, False, None, {"bg": colors["base"]}, None
         )
 
-
-        self.main_frame = tk.Frame(self.root_canvas, bg="red")
+        self.main_frame = tk.Frame(self.root_canvas, bg=colors["base"])
         self.main_frame_window = self.root_canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
 
-
-        self.main_frame.grid_columnconfigure(0, weight=1)
-        self.main_frame.grid_columnconfigure(1, weight=1)
 
         # Geometry Frame
         # --------------
         self.geometry_section, self.geometry_content = gui.create_section(
             self.main_frame,
             "Geometry",
-            {"row": 0, "column": 0, "columnspan": 2, "padx": 15, "pady": 5, "sticky": "nsew"},
+            {"row": 0, "column": 0, "columnspan": 2, "padx": 5, "pady": 5, "sticky": "nsew"},
             2,
             {"bg": colors["s1_content"]},
             {"bg": colors["s1_header"], "fg": "white"},
             {"bg": colors["s1_content"]},
         )
 
-        # # self.root_content_frame.grid(row=0, column=0, sticky="nsew")
-        # self.root_content_frame.grid_columnconfigure(0,weight=1)
+        self.bump_plot_frame = tk.Frame(self.geometry_content, borderwidth=2, relief="solid", bg=colors["s1_content"])
 
-        #         self.geometry_frame.grid_columnconfigure(0, weight=0)
-        #         self.geometry_frame.grid_columnconfigure(1, weight=1)
-        #         # self.geometry_frame.grid_rowconfigure(1, weight=1)
+        # self.bump_plot_frame.grid_columnconfigure(0, weight=1)
+        # self.bump_plot_frame.grid_rowconfigure(0, weight=1)
+        # self.bump_plot_frame.grid_rowconfigure(1, weight=1)
 
-        #         self.bump_plot_frame = tk.Frame(self.geometry_frame, borderwidth=2, relief="solid", bg=colors["f1_content"])
-        #         self.bump_plot_frame.grid(row=1, column=0, columnspan=1, rowspan=2, padx=5, pady=5, sticky="nsew") #         self.bump_plot_frame.grid_columnconfigure(0, weight=1)
-        #         self.bump_plot_frame.grid_rowconfigure(0, weight=1)
-        #         self.bump_plot_frame.grid_rowconfigure(1, weight=1)
+        self.general_section, self.general_content = gui.create_section(
+            self.geometry_content,
+            "General",
+            {"row": 0, "column": 1, "columnspan": 1, "padx": 5, "pady": 5, "sticky": "nsew"},
+            2,
+            {"bg": colors["s2_content"]},
+            {"bg": colors["s2_header"], "fg": "white"},
+            {"bg": colors["s2_content"]},
+        )
 
-        #         general_sec_pos = {"row": 1, "column": 1, "columnspan": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
-        #         general_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
-        #         self.create_section("general", "General", 2, self.geometry_frame, general_sec_pos, general_sec_title_pos)
         #         # self.general_frame = tk.Frame(self.geometry_frame, bg=colors["f1_content"])
         #         # self.general_frame.grid(row=1, column=1, columnspan=2, padx=10, pady=5, sticky="nsew")
         #         self.general_frame.grid_columnconfigure(0, weight=1)
@@ -85,8 +82,8 @@ class Preprocessor:
         #         # self.general_frame.grid_rowconfigure(1, weight=1)
         #         # self.general_frame.grid_rowconfigure(2, weight=1)
 
-        #         self.orientation_label = tk.Label(self.general_frame, text="Hill Orientation [deg]:", bg=colors["f2_content"], fg="white")
-        #         self.orientation_label.grid(row=1, column=0, padx=5,  pady=5, sticky="nsew")
+        self.orientation_label = tk.Label(self.general_content, text="Hill Orientation [deg]:", bg=colors["s2_content"], fg="white")
+        self.orientation_label.grid(row=0, column=0, padx=5,  pady=5, sticky="nsew")
         #         self.orientation_entry = tk.Entry(self.general_frame, validate="focusout", validatecommand=(vcmd, '%P'), fg=colors["f1_content"], bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f1_content"])
         #         self.orientation_entry.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
 
@@ -123,8 +120,8 @@ class Preprocessor:
         #         self.piv_plane_entry = tk.Entry(self.piv_frame, bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f2_content"], state="disabled")
         #         self.piv_plane_entry.grid(row=3, column=2, padx=5, pady=5, sticky="nsew")
 
-        #         self.orientation = 0
-        #         self.plot_graph()
+                # self.orientation = 0
+                # self.plot_graph()
 
         #         # Loader Frame
         #         # ------------
@@ -188,6 +185,12 @@ class Preprocessor:
         # #         self.create_loader_checkbox(self.options_frame, "Reynolds Stress", 2)
         # #         self.create_loader_checkbox(self.options_frame, "Turbulence Dissipation", 3)
         # #         self.create_loader_checkbox(self.options_frame, "Velocity Frame", 4)
+
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        self.main_frame.grid_columnconfigure(1, weight=1)
+        self.geometry_content.grid_columnconfigure(0, weight=1)
+        self.geometry_content.grid_columnconfigure(1, weight=1)
+        self.bump_plot_frame.grid(row=0, column=0, columnspan=1, padx=5, pady=5, rowspan=2, sticky="nsew")
 
         self.main_frame.update_idletasks()
         self.root_canvas.itemconfig(self.main_frame_window, width=W_WIDTH-self.scrollbar.winfo_width(), height=W_HEIGHT)
@@ -260,7 +263,7 @@ class Preprocessor:
 #         # self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
 #         self.canvas.draw()
 
-#         # self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+        # self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 #     def open_pose(self):
 #         Pose(self.root)
 

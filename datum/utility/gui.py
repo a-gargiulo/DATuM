@@ -54,7 +54,7 @@ def create_section(
     frame: tk.Frame,
     title: str,
     position: dict,
-    content_column_span: int = 1,
+    content_columnspan: int = 1,
     section_kwargs: Optional[dict] = None,
     section_title_kwargs: Optional[dict] = None,
     section_content_kwargs: Optional[dict] = None,
@@ -67,7 +67,7 @@ def create_section(
 
     section_title = tk.Label(section_frame, text=title, bd=1, relief="solid", **section_title_kwargs)
 
-    section_content_frame = tk.Frame(frame, bd=0, **section_content_kwargs)
+    section_content_frame = tk.Frame(section_frame, bd=0, **section_content_kwargs)
 
     # Layout
     section_frame.grid(**position)
@@ -76,6 +76,6 @@ def create_section(
 
     section_title.grid(row=0, column=0, padx=5, pady=5, ipady=5, sticky="ew")
 
-    section_content_frame.grid(row=1, column=0, columnspan=content_column_span, padx=5, pady=5, sticky="nsew")
+    section_content_frame.grid(row=1, column=0, columnspan=content_columnspan, padx=5, pady=5, sticky="nsew")
 
     return section_frame, section_content_frame
