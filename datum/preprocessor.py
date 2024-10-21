@@ -2,9 +2,9 @@
 
 import tkinter as tk
 
-# from tkinter import messagebox, filedialog
-# import matplotlib.pyplot as plt
-# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import messagebox, filedialog
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from .utility.configure import system, colors, default_font
 from .utility import gui
@@ -15,8 +15,7 @@ elif system == "Windows":
     from tkinter import Button
 
 
-# from .config import system, default_font, Button, colors
-# from .beverli import Beverli
+from .beverli import Beverli
 # from .pose import Pose
 
 W_WIDTH = 800
@@ -34,8 +33,8 @@ class Preprocessor:
         self.root.resizable(False, False)
         self.root.configure(bg=colors["base"])
         self.root.option_add("*Font", default_font)
-        # self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-        # vcmd = self.root.register(self.validate_float)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        vcmd = self.root.register(self.validate_float)
 
         self.root_canvas, self.scrollbar, _ = gui.create_scrollable_canvas(
             self.root, True, False, None, {"bg": colors["base"]}, None
@@ -83,9 +82,10 @@ class Preprocessor:
         #         # self.general_frame.grid_rowconfigure(2, weight=1)
 
         self.orientation_label = tk.Label(self.general_content, text="Hill Orientation [deg]:", bg=colors["s2_content"], fg="white")
+        self.orientation_entry = tk.Entry(self.general_content, validate="focusout", validatecommand=(vcmd, '%P'), fg=colors["s2_content"], bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["s2_content"])
+
         self.orientation_label.grid(row=0, column=0, padx=5,  pady=5, sticky="nsew")
-        #         self.orientation_entry = tk.Entry(self.general_frame, validate="focusout", validatecommand=(vcmd, '%P'), fg=colors["f1_content"], bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f1_content"])
-        #         self.orientation_entry.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+        self.orientation_entry.grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
 
         #         piv_sec_pos = {"row": 2, "column": 1, "columnspan": 1, "padx": 5, "pady": 5, "sticky": "nsew"}
         #         piv_sec_title_pos = {"row": 0, "column": 0, "columnspan": 3, "padx": 5, "pady": 5, "ipady": 5, "sticky": "ew"}
@@ -120,8 +120,8 @@ class Preprocessor:
         #         self.piv_plane_entry = tk.Entry(self.piv_frame, bd=1, relief="solid", highlightthickness=0, highlightbackground=colors["f2_content"], state="disabled")
         #         self.piv_plane_entry.grid(row=3, column=2, padx=5, pady=5, sticky="nsew")
 
-                # self.orientation = 0
-                # self.plot_graph()
+        self.orientation = 0
+        self.plot_graph()
 
         #         # Loader Frame
         #         # ------------
@@ -188,82 +188,70 @@ class Preprocessor:
 
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(1, weight=1)
-        self.geometry_content.grid_columnconfigure(0, weight=1)
+        self.geometry_content.grid_columnconfigure(0, weight=0)
         self.geometry_content.grid_columnconfigure(1, weight=1)
         self.bump_plot_frame.grid(row=0, column=0, columnspan=1, padx=5, pady=5, rowspan=2, sticky="nsew")
+        self.general_content.grid_columnconfigure(0, weight=1)
+        self.general_content.grid_columnconfigure(1, weight=1)
 
         self.main_frame.update_idletasks()
         self.root_canvas.itemconfig(self.main_frame_window, width=W_WIDTH-self.scrollbar.winfo_width(), height=W_HEIGHT)
         self.root_canvas.config(scrollregion=self.root_canvas.bbox("all"))
 
 
-#     def on_invalid_input(self):
-#         messagebox.showerror("Invalid Input", "Please enter a valid float.")
+    def on_invalid_input(self):
+        messagebox.showerror("Invalid Input", "Please enter a valid float.")
 
-#     def validate_float(self, input_value):
-#         if input_value == "":  # Allow empty input
-#             self.orientation = 0
-#             self.plot_graph()
-#             return True
-#         try:
-#             # Try to convert the input to a float
-#             float(input_value)
-#             self.orientation = float(input_value)
-#             self.plot_graph()
-#             return True
-#         except ValueError:
-#             self.on_invalid_input()
-#             return False
+    def validate_float(self, input_value):
+        if input_value == "":  # Allow empty input
+            self.orientation = 0
+            self.plot_graph()
+            return True
+        try:
+            # Try to convert the input to a float
+            float(input_value)
+            self.orientation = float(input_value)
+            self.plot_graph()
+            return True
+        except ValueError:
+            self.on_invalid_input()
+            return False
 
-#     def on_closing(self):
-#         if hasattr(self, 'fig'):
-#             plt.close(self.fig)
-#             del self.fig
+    def on_closing(self):
+        if hasattr(self, 'fig'):
+            plt.close(self.fig)
+            del self.fig
 
-#         if hasattr(self, 'canvas'):
-#             self.canvas.get_tk_widget().grid_forget()  # Remove the canvas from the GUI
-#             self.canvas.get_tk_widget().destroy()
-#             del self.canvas
+        if hasattr(self, 'bump_canvas'):
+            self.bump_canvas.get_tk_widget().grid_forget()  # Remove the canvas from the GUI
+            self.bump_canvas.get_tk_widget().destroy()
+            del self.bump_canvas
 
-#         if hasattr(self, 'main_canvas'):
-#             self.main_canvas.get_tk_widget().grid_forget()  # Remove the canvas from the GUI
-#             self.main_canvas.get_tk_widget().destroy()
-#             del self.main_canvas
+        self.root.destroy()
 
-#         self.main.destroy()
+    def plot_graph(self):
+        if hasattr(self, 'fig') and hasattr(self, 'bump_canvas'):
+            self.ax.clear()
+        else:
+            self.fig = plt.figure(figsize=(2.4, 2.2))
+            self.ax = self.fig.add_axes([0.3, 0.3, 0.75, 0.65])
+            self.bump_canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
+            self.bump_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
-#     def plot_graph(self):
-#         if hasattr(self, 'fig') and hasattr(self, 'canvas'):
-#             self.ax.clear()
-#         else:
-#             self.fig = plt.figure(figsize=(2.4, 2.2))
-#             self.ax = self.fig.add_axes([0.3, 0.3, 0.75, 0.65])
-#             # self.fig, self.ax = plt.subplots(figsize=(2,2))
-#             self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
-#             self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+        bev = Beverli(self.orientation, "cad")
+        px, pz = bev.compute_perimeter(self.orientation)
 
-#         bev = Beverli(self.orientation, "cad")
-#         px, pz = bev.compute_perimeter(self.orientation)
+        # Plot the data
+        self.ax.plot(px, pz, color="blue")
+        self.ax.set_xlabel(r"$x_1$ (m)", labelpad=10)
+        self.ax.set_ylabel(r"$x_3$ (m)", labelpad=10)
+        self.ax.set_xlim(-0.65, 0.65)
+        self.ax.set_ylim(0.65, -0.65)
+        self.ax.set_aspect('equal')
 
-#         # self.fig, ax = plt.subplots(figsize=(2, 2))
-#         # Create a matplotlib figure
-#         # fig = plt.figure(figsize=(2,2))
-#         # ax = fig.add_axes([0.15, 0.15, 0.85, 0.85])
+        # Embed the plot in the Tkinter window
+        self.bump_canvas.draw()
 
-#         # Plot the data
-#         self.ax.plot(px, pz, color="blue")
-#         self.ax.set_xlabel(r"$x_1$ (m)", labelpad=10)
-#         self.ax.set_ylabel(r"$x_3$ (m)", labelpad=10)
-#         self.ax.set_xlim(-0.65, 0.65)
-#         self.ax.set_ylim(0.65, -0.65)
-#         self.ax.set_aspect('equal')
-
-
-#         # Embed the plot in the Tkinter window
-#         # self.canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
-#         self.canvas.draw()
-
-        # self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 #     def open_pose(self):
 #         Pose(self.root)
 
