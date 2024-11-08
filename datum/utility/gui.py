@@ -1,5 +1,7 @@
 import tkinter as tk
-from typing import Callable, Optional, Tuple
+from typing import Any, Dict, Callable, Optional, Tuple
+
+from .configure import default_font, default_colors
 
 
 def create_scrollable_canvas(
@@ -49,33 +51,3 @@ def create_scrollable_canvas(
 
     return canvas, v_scrollbar, h_scrollbar
 
-
-def create_section(
-    frame: tk.Frame,
-    title: str,
-    position: dict,
-    content_columnspan: int = 1,
-    section_kwargs: Optional[dict] = None,
-    section_title_kwargs: Optional[dict] = None,
-    section_content_kwargs: Optional[dict] = None,
-) -> Tuple[tk.Frame, tk.Frame]:
-
-    section_kwargs = section_kwargs or {}
-    section_title_kwargs = section_title_kwargs or {}
-
-    section_frame = tk.Frame(frame, bd=1, relief="solid", **section_kwargs)
-
-    section_title = tk.Label(section_frame, text=title, bd=1, relief="solid", **section_title_kwargs)
-
-    section_content_frame = tk.Frame(section_frame, bd=0, **section_content_kwargs)
-
-    # Layout
-    section_frame.grid(**position)
-    section_frame.grid_columnconfigure(0, weight=1)
-    section_frame.grid_rowconfigure(1, weight=1)
-
-    section_title.grid(row=0, column=0, padx=5, pady=5, ipady=5, sticky="ew")
-
-    section_content_frame.grid(row=1, column=0, columnspan=content_columnspan, padx=5, pady=5, sticky="nsew")
-
-    return section_frame, section_content_frame

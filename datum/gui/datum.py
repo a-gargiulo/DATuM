@@ -1,0 +1,58 @@
+import tkinter as tk
+from typing import Tuple
+
+from PIL import Image, ImageTk
+
+from ..utility.configure import STYLES
+from .preprocessor_window import PreprocessorWindow
+from .widgets.button import Button
+
+
+# Constants
+WINDOW_TITLE = "DaTUM"
+WINDOW_SIZE = (600, 600)
+BANNER_IMG_PATH = "./datum/resources/images/banner.png"
+
+
+class Datum:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self._configure_root()
+
+        self.banner_frame = tk.Frame(self.root, bg=STYLES["color"]["base"])
+        self.banner_label, self.banner_image = self._create_banner(self.banner_frame, BANNER_IMG_PATH)
+        self.preprocessor_button = Button(self.root, text="Preprocessor", command=self.open_preprocessor)
+        self._layout_widgets()
+
+    def _configure_root(self):
+        """Configure main window settings."""
+        self.root.title(WINDOW_TITLE)
+        self.root.geometry(f"{WINDOW_SIZE[0]}x{WINDOW_SIZE[1]}")
+        self.root.resizable(False, False)
+        self.root.configure(bg=STYLES["color"]["base"])
+
+    def _layout_widgets(self):
+        """Configure layout of all widgets."""
+        self.root.grid_columnconfigure(0, weight=1)
+        self.banner_frame.grid(row=0, column=0, padx=STYLES["pad"]["medium"], pady=STYLES["pad"]["medium"], sticky="ew")
+        self.banner_frame.grid_columnconfigure(0, weight=1)
+        self.banner_label.grid(row=0, column=0, padx=0, pady=0)
+        self.preprocessor_button.grid(row=1, column=0, padx=0, pady=STYLES["pad"]["medium"])
+
+    def _create_banner(self, parent: tk.Frame, img_path: str) -> Tuple[tk.Label, ImageTk.PhotoImage]:
+        """Load and resize banner image, and create a label for it."""
+        banner_image = self._load_resized_image(img_path, int(WINDOW_SIZE[0] / 1.3))
+        banner_label = tk.Label(parent, image=banner_image, bg=STYLES["color"]["base"])
+        return banner_label, banner_image
+
+    def _load_resized_image(self, img_path: str, target_width: int) -> ImageTk.PhotoImage:
+        """Helper function to load and resize image while preserving aspect ratio."""
+        image = Image.open(img_path)
+        width, height = image.size
+        aspect_ratio = width / height
+        resized_image = image.resize((target_width, int(target_width / aspect_ratio)), Image.LANCZOS)
+        return ImageTk.PhotoImage(resized_image)
+
+    def open_preprocessor(self):
+        """Open the preprocessor window."""
+        PreprocessorWindow(self.root)
