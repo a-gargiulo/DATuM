@@ -5,9 +5,8 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from .widgets import Button, Entry, Label, Frame
+from .widgets import Button, Checkbutton, Entry, Label, Frame, Section, ScrollableCanvas
 from ...utility.configure import system, STYLES
-from ...utility.gui import Section, create_scrollable_canvas
 
 from ..core.beverli import Beverli
 # from .pose import Pose
@@ -24,64 +23,28 @@ class PreprocessorWindow:
         self._configure_root()
 
         # Widgets
-        self.root_canvas, self.scrollbar, _ = create_scrollable_canvas(
-            self.root, True, False, None, {"bg": default_colors["base"]}, None
-        )
-        self.main_frame = tk.Frame(self.root_canvas, bg=default_colors["base"])
-        main_frame_window_kwargs = {"window": self.main_frame, "anchor": "nw"}
-        self.main_frame_window = self.root_canvas.create_window((0, 0), **main_frame_window_kwargs)
+        # -------
+        scrollable_canvas = ScrollableCanvas(self.root, True, False)
+        self.main_frame = scrollable_canvas.get_frame()
 
-        # ----------------------------------------
-        # MAIN WINDOW CONTROL
-        # ----------------------------------------
-        self.root_canvas.bind_all("<MouseWheel>", self.on_vertical)
-        vcmd = self.root.register(self.validate_float)
+        self.geom_sect = Section(self.main_frame, "Geometry", 1)
+        self.bump_plt_frame = Frame(self.geom_sect.content, 1, bd=2, relief="solid")
+        self.general_sect = Section(self.geom_sect.content, "General", 2)
+        self.orientation_label = Label(self.general_sect.content, "Hill Orientation [deg]:", 2)
+        self.orientation_entry = Entry(self.general_sect.content, 2)
+        self.orientation_entry.config(validate="focusout", validatecommand=(self.vfcmd, "%P"))
+        self.transform_sect = Section(self.geom_sect.content, "Pose & Transformation (Local PIV -> Global SWT)")
+        self.pose_button = Button(self.transform_sect.content, "Load/Calculate Tranformation Matrix", self.open_pose)
+        self.pose_button.config(width=200 if system == "Darwin" else 20)
+        self.pose_status_label = Label(self.transform_sect.content, "Nothing Loaded", 2, fg="red")
+        self.checkbox_interp = Checkbutton(self.transform_sect.content, 2)
+        self.checkbox_interp.config(text="Interpolate data to regular grid", command=self.toggle_interp, anchor="w")
+        self.checkbox_interp_var = self.checkbox_interp.get_var()
+        self.interp_pts_label = Label(self.transform_sect.content, "Number of interp. grid points:", 2)
+        self.interp_pts_label.config(state="disabled")
+        self.interp_points_entry = Entry(self.transformation_content, 2, state="disabled")
 
-        # ----------------------------------------
-        # WIDGETS
-        # ----------------------------------------
-        self.gm_sect = Section(self.main_frame, "Geometry", 1)
-        self.bump_plot_frame = Frame(self.gm_sect.content, 1, bd=2, relief="solid")
-        self.gnrl_sect = Section(self.gm_sect.content, "General", 2)
-        self.orientation_label = Label(self.gnrl_sect.content, "Hill Orientation [deg]:", 2, fg="white")
-        self.orientation_entry = Entry(self.gnrl_sect.content, 2, validate="focusout", validatecommand=(vcmd, "%P"))
-        self.orientation_entry.insert(0, "0")
-        self.trans_sect = Section(self.gm_sect.content, "Pose & Transformation (Local PIV -> Global SWT)")
-        self.pose_button = Button(
-                self.trans_sect.content,
-                "Load/Calculate Tranformation Matrix",
-                self.open_pose,
-                width=200 if system == "Darwin" else 20,
-        )
-        self.pose_status_label = Label(self.trans_sect.content, "Nothing Loaded", 2, fg="red")
-
-        self.checkbox_interpolation_var = tk.IntVar()
-        self.checkbox_interpolation = tk.Checkbutton(
-            self.transformation_content,
-            text="Interpolate data to regular grid",
-            variable=self.checkbox_interpolation_var,
-            command=self.toggle_interpolation,
-            bg=colors["s2_content"],
-            fg="white",
-            anchor="w",
-        )
-
-        self.interp_points_label = tk.Label(
-            self.transformation_content,
-            text="Number of interpolation grid points (square grid):",
-            bg=colors["s2_content"],
-            fg="white",
-            state="disabled",
-        )
-        self.interp_points_entry = tk.Entry(
-            self.transformation_content,
-            bd=1,
-            relief="solid",
-            highlightthickness=0,
-            highlightbackground=colors["s2_content"],
-            state="disabled",
-        )
-
+        self.data_sect = Section(self.main_frame, "Raw (Matlab) Data", 2)
         self.data_section, self.data_content = gui.create_section(
             frame=self.main_frame,
             title="Raw (Matlab) Data",
@@ -177,17 +140,10 @@ class PreprocessorWindow:
         # UPDATES
         # ----------------------------------------
         self.orientation = 0
-
+        self.orientation_entry.insert(self.orientation, "0")
         self.plot_graph()
         self.adjust_layout()
-
-        self.main_frame.update_idletasks()
-        self.root_canvas.itemconfig(
-            self.main_frame_window,
-            width=W_WIDTH - self.scrollbar.winfo_width(),
-            height=self.main_frame.winfo_height(),
-        )
-        self.root_canvas.config(scrollregion=self.root_canvas.bbox("all"))
+        scrollable_canvas.configure_frame()
 
     def _configure_root(self):
         """Configure main window settings."""
@@ -197,11 +153,12 @@ class PreprocessorWindow:
         self.root.configure(bg=STYLES["color"]["base"])
         self.root.option_add("*Font", (STYLES["font"], STYLES["font_size"]))
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+        self.vfcmd = self.root.register(self._validate_float)
 
     def on_invalid_input(self):
         messagebox.showerror("Invalid Input", "Please enter a valid float.")
 
-    def validate_float(self, input_value):
+    def _validate_float(self, input_value):
         if input_value == "":  # Allow empty input
             self.orientation = 0
             self.plot_graph()
@@ -234,7 +191,7 @@ class PreprocessorWindow:
         else:
             self.fig = plt.figure(figsize=(2.5, 2.3))
             self.ax = self.fig.add_axes([0.3, 0.3, 0.75, 0.65])
-            self.bump_canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plot_frame)
+            self.bump_canvas = FigureCanvasTkAgg(self.fig, master=self.bump_plt_frame)
             self.bump_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
         bev = Beverli(self.orientation, "cad")
@@ -388,14 +345,14 @@ class PreprocessorWindow:
     def preprocess_data(self):
         pass
 
-    def toggle_interpolation(self):
+    def toggle_interp(self):
         if self.checkbox_interpolation_var.get():
             self.interp_points_entry.config(state="normal")
-            self.interp_points_label.config(state="normal")
+            self.interp_pts_label.config(state="normal")
             self.gradient_checkbox.config(state="normal")
         else:
             self.interp_points_entry.config(state="disabled")
-            self.interp_points_label.config(state="disabled")
+            self.interp_pts_label.config(state="disabled")
             self.gradient_checkbox.config(state="disabled")
             self.gradient_checkbox_var.set(0)
             self.gradient_opt_checkbox.config(state="disabled")
@@ -408,25 +365,25 @@ class PreprocessorWindow:
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(1, weight=1)
 
-        self.gm_sect.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
-        self.gm_sect.content.grid(columnspan=2)
-        self.gm_sect.content.grid_columnconfigure(0, weight=0)
-        self.gm_sect.content.grid_columnconfigure(1, weight=1)
+        self.geom_sect.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        self.geom_sect.content.grid(columnspan=2)
+        self.geom_sect.content.grid_columnconfigure(0, weight=0)
+        self.geom_sect.content.grid_columnconfigure(1, weight=1)
 
-        self.gnrl_sect.grid(row=0, column=1, columnspan=1, padx=(5, 0), pady=5, sticky="nsew")
-        self.gnrl_sect.content.grid(columnspan=2)
-        self.gnrl_sect.content.grid_columnconfigure(0, weight=0)
-        self.gnrl_sect.content.grid_columnconfigure(1, weight=1)
+        self.general_sect.grid(row=0, column=1, columnspan=1, padx=(5, 0), pady=5, sticky="nsew")
+        self.general_sect.content.grid(columnspan=2)
+        self.general_sect.content.grid_columnconfigure(0, weight=0)
+        self.general_sect.content.grid_columnconfigure(1, weight=1)
 
-        self.bump_plot_frame.grid(row=0, column=0, columnspan=1, padx=(0, 5), pady=5, rowspan=2, sticky="nsew")
+        self.bump_plt_frame.grid(row=0, column=0, columnspan=1, padx=(0, 5), pady=5, rowspan=2, sticky="nsew")
         self.orientation_label.grid(row=0, column=0, padx=5, pady=5, sticky="nsw")
         self.orientation_entry.grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
 
-        self.trans_sect.grid(row=1, column=1, columnspan=1, padx=(5, 0), pady= 5, sticky="nsew")
-        self.trans_sect.content.gride(columnspan=3)
-        self.trans_sect.content.grid_columnconfigure(0, weight=1)
-        self.trans_sect.content.grid_columnconfigure(1, weight=1)
-        self.trans_sect.content.grid_columnconfigure(2, weight=1)
+        self.transform_sect.grid(row=1, column=1, columnspan=1, padx=(5, 0), pady= 5, sticky="nsew")
+        self.transform_sect.content.gride(columnspan=3)
+        self.transform_sect.content.grid_columnconfigure(0, weight=1)
+        self.transform_sect.content.grid_columnconfigure(1, weight=1)
+        self.transform_sect.content.grid_columnconfigure(2, weight=1)
 
         self.pose_button.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
         self.pose_status_label.grid(row=0, column=2, padx=5, sticky="nsew")
@@ -438,7 +395,7 @@ class PreprocessorWindow:
         self.data_content.grid_columnconfigure(3, weight=1)
 
         # self.interpolation_entry.grid(row=2, column=1, padx=5, sticky="nsew")
-        self.interp_points_label.grid(row=2, column=0, padx=5, pady=5, columnspan=2, sticky="nsw")
+        self.interp_pts_label.grid(row=2, column=0, padx=5, pady=5, columnspan=2, sticky="nsw")
         self.interp_points_entry.grid(row=2, column=2, padx=5, pady=5, sticky="nsew")
 
         self.cfd_content.grid_columnconfigure(0, weight=1)
@@ -452,6 +409,3 @@ class PreprocessorWindow:
         self.slice_status_label.grid(row=1, column=2, padx=5, sticky="nsew")
 
         self.process_button.grid(row=4, column=0, columnspan=2, pady=5, padx=10)
-
-    def on_vertical(self, event):
-        self.root_canvas.yview_scroll(-1 * event.delta, "units")
