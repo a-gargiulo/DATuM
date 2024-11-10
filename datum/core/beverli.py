@@ -180,7 +180,7 @@ class Beverli:
             object.
         """
         # STL file path
-        stl_file_path = "./resources/geometry/cad/BeVERLI_Hill_Surface.stl"
+        stl_file_path = "./datum/resources/geometry/cad/BeVERLI_Hill_Surface.stl"
         hill_geometry = trimesh.load(stl_file_path)
 
         # Rotate hill and return
@@ -195,7 +195,7 @@ class Beverli:
             cloud.
         """
         # Construct analytic geometry path
-        mat_file_path =  "./resources/geometry/analytic/BeVERLI_Hill.mat"
+        mat_file_path =  "./datum/resources/geometry/analytic/BeVERLI_Hill.mat"
         # Load analytic geometry
         hill_geometry = scio.loadmat(mat_file_path)
 

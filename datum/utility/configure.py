@@ -1,16 +1,13 @@
 """This module contains global configuration parameters."""
-import platform
-import matplotlib.pyplot as plt
 
+import platform
+
+import matplotlib.pyplot as plt
 
 system = platform.system()
 
 STYLES = {
-    "pad": {
-        "small": 5,
-        "medium": 10,
-        "large": 20
-    },
+    "pad": {"small": 5, "medium": 10, "large": 20},
     "color": {
         "base": "#262626",
         "s1_header": "#2a262f",
@@ -20,9 +17,7 @@ STYLES = {
         "accent": "#bb86fc",
     },
     "font": "Avenir" if system == "Darwin" else "Segoe UI",
-    "font_size": {
-        "regular": 12 if system == "Darwin" else 12
-    }
+    "font_size": {"regular": 12 if system == "Darwin" else 12},
 }
 
 RC_PARAMS = {
@@ -32,7 +27,7 @@ RC_PARAMS = {
     "xtick.direction": "in",
     "xtick.major.width": 2,
     "ytick.direction": "in",
-    "ytick.major.width": 2
+    "ytick.major.width": 2,
 }
 
 

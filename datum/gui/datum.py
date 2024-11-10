@@ -5,7 +5,7 @@ from PIL import Image, ImageTk
 
 from ..utility.configure import STYLES
 from .preprocessor_window import PreprocessorWindow
-from .widgets.button import Button
+from .widgets import Button
 
 
 # Constants
