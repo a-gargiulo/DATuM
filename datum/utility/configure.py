@@ -17,7 +17,7 @@ STYLES = {
         "accent": "#bb86fc",
     },
     "font": "Avenir" if system == "Darwin" else "Segoe UI",
-    "font_size": {"regular": 12 if system == "Darwin" else 12},
+    "font_size": {"regular": 12 if system == "Darwin" else 10},
 }
 
 RC_PARAMS = {

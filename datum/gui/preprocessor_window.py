@@ -61,10 +61,10 @@ class PreprocessorWindow:
         self.interp_pts_entry = Entry(self.transform_sect.content, 2, state="disabled")
         self.data_sect = Section(self.main_frame, "Raw (Matlab) Data", 2)
         mat_type = [("Matlab Files", "*.mat"), ("All Files", "*.*")]
-        self.vel_loader = FileLoader(self.data_sect.content, "Mean Velocity", mat_type, 0)
-        self.stress_loader = FileLoader(self.data_sect.content, "Reynolds Stress", mat_type, 1)
+        self.vel_loader = FileLoader(self.data_sect.content, "Mean Velocity", mat_type, 2)
+        self.stress_loader = FileLoader(self.data_sect.content, "Reynolds Stress", mat_type, 2)
         self.dissp_loader = FileLoader(self.data_sect.content, "Turbulence Dissipation", mat_type, 2)
-        self.inst_vel_loader = FileLoader(self.data_sect.content, "Velocity Frame", mat_type, 3)
+        self.inst_vel_loader = FileLoader(self.data_sect.content, "Velocity Frame", mat_type, 2)
         self.cfd_sect = Section(self.main_frame, "Mean Velocity Gradient Tensor", 1)
         self.checkbox_gradient = Checkbutton(self.cfd_sect.content, 1)
         self.checkbox_gradient.config(text="Enable combutation", command=self._toggle_gradient, state="disabled")
@@ -132,11 +132,24 @@ class PreprocessorWindow:
         self.data_sect.grid(
             row=2, column=0, columnspan=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
-        self.data_sect.content.grid(columnspan=4)
         self.data_sect.content.grid_columnconfigure(0, weight=1)
-        self.data_sect.content.grid_columnconfigure(1, weight=1)
-        self.data_sect.content.grid_columnconfigure(2, weight=1)
-        self.data_sect.content.grid_columnconfigure(3, weight=1)
+        self.vel_loader.grid(
+            row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.stress_loader.grid(
+            row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.dissp_loader.grid(
+            row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.inst_vel_loader.grid(
+            row=3, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        # self.data_sect.content.grid(columnspan=4)
+        # self.data_sect.content.grid_columnconfigure(0, weight=1)
+        # self.data_sect.content.grid_columnconfigure(1, weight=1)
+        # self.data_sect.content.grid_columnconfigure(2, weight=1)
+        # self.data_sect.content.grid_columnconfigure(3, weight=1)
         self.cfd_sect.grid(
             row=3, column=0, columnspan=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )

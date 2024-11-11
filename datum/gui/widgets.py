@@ -1,9 +1,9 @@
-"""Define program specific widgets."""
+"""Define app-specific widgets."""
 
 import platform
 import tkinter as tk
 from tkinter import filedialog
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ..utility.configure import STYLES
 
@@ -14,8 +14,37 @@ else:
     BaseButton = tk.Button
 
 
+# Custom types
+LayoutFuncSC = Optional[
+    Callable[
+        [
+            Union[tk.Tk, tk.Toplevel, tk.Frame],
+            tk.Canvas,
+            Optional[tk.Scrollbar],
+            Optional[tk.Scrollbar],
+        ],
+        None,
+    ]
+]
+
+
 class Button(BaseButton):
-    def __init__(self, parent: tk.Widget, text: str, command: Callable[[], None], **kwargs):
+    """Define a custom `Button`."""
+
+    def __init__(
+        self,
+        parent: Union[tk.Tk, tk.Toplevel, tk.Widget],
+        text: str,
+        command: Callable[[], None],
+        **kwargs,
+    ):
+        """
+        Class constructor.
+
+        :param parent: The parent window or widget.
+        :param text: The button label.
+        :param command: The function/command to perform when the button is pressed.
+        """
         super().__init__(
             parent,
             text=text,
@@ -30,7 +59,17 @@ class Button(BaseButton):
 
 
 class Checkbutton(tk.Checkbutton):
-    def __init__(self, parent: tk.Widget, category: int, **kwargs):
+    """Define a custom `Checkbutton`."""
+
+    def __init__(
+        self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs
+    ):
+        """
+        Class constructor.
+
+        :param parent: The parent window or widget.
+        :param category: The style category applied to the `Checkbutton`.
+        """
         self.checkbox_var = tk.IntVar()
         super().__init__(
             parent,
@@ -42,21 +81,67 @@ class Checkbutton(tk.Checkbutton):
         )
 
     def get_var(self) -> tk.IntVar:
+        """
+        Get the variable associated with the `Checkbutton`.
+
+        return: The variable associated with the `Checkbutton`.
+        """
         return self.checkbox_var
 
 
 class Frame(tk.Frame):
-    def __init__(self, parent: tk.Widget, category: int, **kwargs):
+    """Define a custom `Frame`."""
+
+    def __init__(
+        self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs
+    ):
+        """
+        Class constructor.
+
+        :param parent: The parent window or widget.
+        :param category: The style category applied to the `Frame`.
+        """
         super().__init__(parent, bg=STYLES["color"][f"s{category}_content"], **kwargs)
 
 
 class Label(tk.Label):
-    def __init__(self, parent: tk.Widget, text: str, category: int, **kwargs):
-        super().__init__(parent, text=text, bg=STYLES["color"][f"s{category}_content"], fg="white", **kwargs)
+    """Define a custom `Label`."""
+
+    def __init__(
+        self,
+        parent: Union[tk.Tk, tk.Toplevel, tk.Widget],
+        text: str,
+        category: int,
+        **kwargs,
+    ):
+        """
+        Class constructor.
+
+        :param parent: The parent window or widget.
+        :param text: The label.
+        :param category: The style category applied to the `Label`.
+        """
+        super().__init__(
+            parent,
+            text=text,
+            bg=STYLES["color"][f"s{category}_content"],
+            fg="white",
+            **kwargs,
+        )
 
 
 class Entry(tk.Entry):
-    def __init__(self, parent: tk.Widget, category: int, **kwargs):
+    """Define a custom `Entry`."""
+
+    def __init__(
+        self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs
+    ):
+        """
+        Class constructor.
+
+        :param parent: The parent window or widget.
+        :param category: The style category applied to the `Entry`.
+        """
         super().__init__(
             parent,
             bg="white",
@@ -69,8 +154,29 @@ class Entry(tk.Entry):
 
 
 class Section(tk.Frame):
-    def __init__(self, parent: tk.Frame, title: str, category: int, **kwargs: Dict[str, Any]):
-        super().__init__(parent, bg=STYLES["color"][f"s{category}_content"], bd=1, relief="solid", **kwargs)
+    """App-specific widget that creates a nicely formatted section."""
+
+    def __init__(
+        self,
+        parent: Union[tk.Tk, tk.Toplevel, tk.Frame],
+        title: str,
+        category: int,
+        **kwargs: Any,
+    ):
+        """
+        Class constructor.
+
+        :param parent: The parent window or frame.
+        :param title: The title of the section.
+        :param category: The style category applied to the `Section`.
+        """
+        super().__init__(
+            parent,
+            bg=STYLES["color"][f"s{category}_content"],
+            bd=1,
+            relief="solid",
+            **kwargs,
+        )
 
         self.label = tk.Label(
             self,
@@ -90,19 +196,27 @@ class Section(tk.Frame):
             ipady=STYLES["pad"]["small"],
             sticky="ew",
         )
-        self.content.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.content.grid(
+            row=1,
+            column=0,
+            padx=STYLES["pad"]["small"],
+            pady=STYLES["pad"]["small"],
+            sticky="nsew",
+        )
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
 
 class ScrollableCanvas:
+    """Obtain a scrollable frame."""
+
     def __init__(
         self,
-        parent: tk.Frame,
+        parent: Union[tk.Tk, tk.Toplevel, tk.Frame],
         vertical: bool = True,
         horizontal: bool = True,
-        layout: Optional[Callable[[tk.Frame, tk.Canvas, Optional[tk.Scrollbar], Optional[tk.Scrollbar]], None]] = None,
+        layout: LayoutFuncSC = None,
         canvas_kwargs: Optional[Dict[str, Any]] = None,
         scrollbar_kwargs: Optional[Dict[str, Any]] = None,
         frame_kwargs: Optional[Dict[str, Any]] = None,
@@ -120,20 +234,32 @@ class ScrollableCanvas:
         frame_kwargs = frame_kwargs or {}
 
         self.parent = parent
-        self.canvas = tk.Canvas(self.parent, bg=STYLES["color"]["base"], bd=0, highlightthickness=0, **canvas_kwargs)
+        self.canvas = tk.Canvas(
+            self.parent,
+            bg=STYLES["color"]["base"],
+            bd=0,
+            highlightthickness=0,
+            **canvas_kwargs,
+        )
 
         self.v_scrollbar = None
         self.h_scrollbar = None
 
         if vertical:
             self.v_scrollbar = tk.Scrollbar(
-                self.parent, orient=tk.VERTICAL, command=self.canvas.yview, **scrollbar_kwargs
+                self.parent,
+                orient=tk.VERTICAL,
+                command=self.canvas.yview,
+                **scrollbar_kwargs,
             )
             self.canvas.configure(yscrollcommand=self.v_scrollbar.set)
 
         if horizontal:
             self.h_scrollbar = tk.Scrollbar(
-                self.parent, orient=tk.HORIZONTAL, command=self.canvas.xview, **scrollbar_kwargs
+                self.parent,
+                orient=tk.HORIZONTAL,
+                command=self.canvas.xview,
+                **scrollbar_kwargs,
             )
             self.canvas.configure(xscrollcommand=self.h_scrollbar.set)
 
@@ -143,7 +269,9 @@ class ScrollableCanvas:
             self._default_layout()
 
         self.frame = tk.Frame(self.canvas, bg=STYLES["color"]["base"], **frame_kwargs)
-        self.frame_window = self.canvas.create_window((0, 0), window=self.frame, anchor="nw")
+        self.frame_window = self.canvas.create_window(
+            (0, 0), window=self.frame, anchor="nw"
+        )
         self.frame.bind("<Configure>", self._update_scroll_region)
 
         if vertical:
@@ -152,7 +280,6 @@ class ScrollableCanvas:
             self.parent.bind("<Shift-MouseWheel>", self._on_horizontal_scroll)
 
     def _default_layout(self):
-        """Default layout if no custom layout is provided."""
         self.parent.grid_columnconfigure(0, weight=1)
         self.parent.grid_columnconfigure(1, weight=0)
         self.parent.grid_rowconfigure(0, weight=1)
@@ -166,18 +293,13 @@ class ScrollableCanvas:
             self.h_scrollbar.grid(row=1, column=0, sticky="ew")
 
     def _update_scroll_region(self, event=None):
-        """Update the scroll region to include the entire canvas area."""
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
     def _on_vertical_scroll(self, event):
-        """Scroll vertically based on mouse wheel."""
         self.canvas.yview_scroll(-1 * event.delta, "units")
-        # self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def _on_horizontal_scroll(self, event):
-        """Scroll horizontally when Shift + MouseWheel is used."""
         self.canvas.xview_scroll(-1 * event.delta, "units")
-        # self.canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def configure_frame(self):
         """Update frame dimensions based on canvas and scrollbar sizes."""
@@ -211,42 +333,96 @@ class ScrollableCanvas:
         return self.frame
 
 
-class FileLoader:
+class FileLoader(tk.Frame):
+    """A widget providing a file loading context."""
+
     def __init__(
         self,
-        parent: tk.Frame,
+        parent: Union[tk.Tk, tk.Toplevel, tk.Frame],
         title: str,
         filetypes: List[Tuple[str, str]],
-        row: int,
+        category: int,
+        isCheckable: bool = True,
+        **kwargs: Any,
     ):
+        """
+        Class constructor.
+
+        :param parent: The parent window or frame.
+        :param title: The label.
+        :param filetypes: The allowed file types.
+        :param category: The style category applied to the `Section`.
+        :param isCheckable: Boolean indicating whether the file loader should be linked to a checkbox.
+        """
         self.parent = parent
         self.title = title
         self.filetypes = filetypes
-        self.row = row
+        self.category = category
+        self.isCheckable = isCheckable
+
+        super().__init__(parent, bg=STYLES["color"][f"s{category}_content"], **kwargs)
+
         self._create_widgets()
         self._layout_widgets()
 
     def _create_widgets(self):
-        self.checkbox = Checkbutton(self.parent, 2)
+        self.checkbox = Checkbutton(self, 2)
         self.checkbox_var = self.checkbox.get_var()
         self.checkbox.config(command=self._toggle_state)
-        self.load_button = Button(self.parent, self.title, self._load_files, state="disabled")
+        self.load_button = Button(
+            self,
+            self.title,
+            self._load_files,
+            state="disabled" if self.isCheckable else "normal",
+        )
         self.load_button.config(width=200 if is_mac else 20)
-        self.listbox = tk.Listbox(self.parent, state="disabled", width=20, height=1)
-        self.status_label = Label(self.parent, "Nothing Loaded", 2, state="disabled")
+        self.listbox = tk.Listbox(
+            self,
+            state="disabled" if self.isCheckable else "normal",
+            width=20,
+            height=1,
+        )
+        self.status_label = Label(self, "Nothing Loaded", 2, state="disabled" if self.isCheckable else "normal")
         self.status_label.config(width=13, fg="red")
 
     def _layout_widgets(self):
-        self.checkbox.grid(row=self.row, column=0, sticky="w", padx=STYLES["pad"]["small"])
+        idx = 1
+        if self.isCheckable:
+            idx = 0
+            self.checkbox.grid(
+                row=0,
+                column=0,
+                sticky="w",
+                padx=STYLES["pad"]["small"],
+            )
+
         self.load_button.grid(
-            row=self.row, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+            row=0,
+            column=1 - idx,
+            padx=STYLES["pad"]["small"],
+            pady=STYLES["pad"]["small"],
+            sticky="nsew",
         )
         self.listbox.grid(
-            row=self.row, column=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+            row=0,
+            column=2 - idx,
+            padx=STYLES["pad"]["small"],
+            pady=STYLES["pad"]["small"],
+            sticky="nsew",
         )
         self.status_label.grid(
-            row=self.row, column=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+            row=0,
+            column=3 - idx,
+            padx=STYLES["pad"]["small"],
+            pady=STYLES["pad"]["small"],
+            sticky="nsew",
         )
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, weight=1)
+        if self.isCheckable:
+            self.grid_columnconfigure(3, weight=1)
+
 
     def _load_files(self):
         file_path = filedialog.askopenfilename(filetypes=self.filetypes)
