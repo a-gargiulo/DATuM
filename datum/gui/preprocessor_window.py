@@ -1,4 +1,4 @@
-"""Module defining the preprocessor window."""
+"""Preprocessor Application"""
 
 import tkinter as tk
 from tkinter import messagebox
@@ -8,8 +8,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from ..core.beverli import Beverli
 from ..utility.configure import STYLES, system
-from .widgets import Button, Checkbutton, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
-
+from .pose_window import PoseWindow
+from .widgets import (Button, Checkbutton, Entry, FileLoader, Frame, Label,
+                      ScrollableCanvas, Section)
 
 # Constants
 WINDOW_TITLE = "Preprocessor"
@@ -17,7 +18,7 @@ WINDOW_SIZE = (800, 600)
 
 
 class PreprocessorWindow:
-    def __init__(self, master: tk.Tk) -> None:
+    def __init__(self, master: tk.Tk):
         self.root = tk.Toplevel(master)
         self._configure_root()
         self._create_widgets()
@@ -34,7 +35,6 @@ class PreprocessorWindow:
         self.root.option_add("*Font", (STYLES["font"], STYLES["font_size"]["regular"]))
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
         self.vfcmd = self.root.register(self._validate_float)
-        self.root.grid_columnconfigure(0, weight=1)
 
     def _create_widgets(self):
         """Create all widget entities."""
@@ -218,8 +218,8 @@ class PreprocessorWindow:
         if hasattr(self, "bump_fig") and hasattr(self, "bump_canvas"):
             self.bump_ax.clear()
         else:
-            self.bump_fig = plt.figure(figsize=(2.5, 2.3))
-            self.bump_ax = self.bump_fig.add_axes([0.3, 0.3, 0.75, 0.65])
+            self.bump_fig = plt.figure(figsize=(2.5, 2.4))
+            self.bump_ax = self.bump_fig.add_axes([0.28, 0.3, 0.75, 0.65])
             self.bump_canvas = FigureCanvasTkAgg(self.bump_fig, master=self.bump_plt_frame)
             self.bump_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
@@ -237,7 +237,7 @@ class PreprocessorWindow:
         pass
 
     def open_pose(self):
-        pass
+        PoseWindow(self.root)
 
     def preprocess_data(self):
         pass
