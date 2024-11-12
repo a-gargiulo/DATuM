@@ -305,15 +305,18 @@ class ScrollableCanvas:
         """Update frame dimensions based on canvas and scrollbar sizes."""
         self.frame.update_idletasks()
 
+        width = self.frame.winfo_reqwidth()
+        height = self.frame.winfo_reqheight()
+
         if self.v_scrollbar and not self.h_scrollbar:
-            width = (self.parent.winfo_width() - self.v_scrollbar.winfo_width(),)
-            height = (self.frame.winfo_height(),)
+            width = self.parent.winfo_width() - self.v_scrollbar.winfo_width()
+            height = max(height, self.parent.winfo_height())
         elif not self.v_scrollbar and self.h_scrollbar:
-            width = (self.frame.winfo_width(),)
-            height = (self.parent.winfo_height() - self.h_scrollbar.winfo_height(),)
+            width = max(width, self.parent.winfo_width())
+            height = self.parent.winfo_height() - self.h_scrollbar.winfo_height()
         elif self.v_scrollbar and self.h_scrollbar:
-            width = (self.frame.winfo_width() - self.v_scrollbar.winfo_height(),)
-            height = (self.frame.winfo_height() - self.h_scrollbar.winfo_height(),)
+            width = max(width, self.parent.winfo_width() - self.v_scrollbar.winfo_height())
+            height = max(height, self.parent.winfo_height() - self.h_scrollbar.winfo_height())
         else:
             width = self.parent.winfo_width()
             height = self.parent.winfo_height()
@@ -382,7 +385,7 @@ class FileLoader(tk.Frame):
             width=20,
             height=1,
         )
-        self.status_label = Label(self, "Nothing Loaded", 2, state="disabled" if self.isCheckable else "normal")
+        self.status_label = Label(self, "Nothing Loaded", self.category, state="disabled" if self.isCheckable else "normal")
         self.status_label.config(width=13, fg="red")
 
     def _layout_widgets(self):
@@ -423,7 +426,6 @@ class FileLoader(tk.Frame):
         if self.isCheckable:
             self.grid_columnconfigure(3, weight=1)
 
-
     def _load_files(self):
         file_path = filedialog.askopenfilename(filetypes=self.filetypes)
 
@@ -440,3 +442,7 @@ class FileLoader(tk.Frame):
         self.load_button.config(state=state)
         self.listbox.config(state=state)
         self.status_label.config(state=state)
+
+    def get_listbox_content(self):
+        """Get current path."""
+        return self.listbox.get(0, tk.END)

@@ -1,3 +1,4 @@
+"""The main application window."""
 import tkinter as tk
 from typing import Tuple
 
@@ -15,7 +16,14 @@ BANNER_IMG_PATH = "./datum/resources/images/banner.png"
 
 
 class Datum:
+    """Class for the main application window."""
+
     def __init__(self, root: tk.Tk):
+        """
+        Class constructor.
+
+        :param root: The main application handle.
+        """
         self.root = root
         self._configure_root()
 
@@ -25,14 +33,12 @@ class Datum:
         self._layout_widgets()
 
     def _configure_root(self):
-        """Configure main window settings."""
         self.root.title(WINDOW_TITLE)
         self.root.geometry(f"{WINDOW_SIZE[0]}x{WINDOW_SIZE[1]}")
         self.root.resizable(False, False)
         self.root.configure(bg=STYLES["color"]["base"])
 
     def _layout_widgets(self):
-        """Configure layout of all widgets."""
         self.root.grid_columnconfigure(0, weight=1)
         self.banner_frame.grid(row=0, column=0, padx=STYLES["pad"]["medium"], pady=STYLES["pad"]["medium"], sticky="ew")
         self.banner_frame.grid_columnconfigure(0, weight=1)
@@ -40,13 +46,11 @@ class Datum:
         self.preprocessor_button.grid(row=1, column=0, padx=0, pady=STYLES["pad"]["medium"])
 
     def _create_banner(self, parent: tk.Frame, img_path: str) -> Tuple[tk.Label, ImageTk.PhotoImage]:
-        """Load and resize banner image, and create a label for it."""
         banner_image = self._load_resized_image(img_path, int(WINDOW_SIZE[0] / 1.3))
         banner_label = tk.Label(parent, image=banner_image, bg=STYLES["color"]["base"])
         return banner_label, banner_image
 
     def _load_resized_image(self, img_path: str, target_width: int) -> ImageTk.PhotoImage:
-        """Helper function to load and resize image while preserving aspect ratio."""
         image = Image.open(img_path)
         width, height = image.size
         aspect_ratio = width / height

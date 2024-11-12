@@ -228,11 +228,12 @@ class PreprocessorWindow:
         self.slice_status_label.config(state=state)
 
     def plot_bump(self):
+        """Plot the bump contour."""
         if hasattr(self, "bump_fig") and hasattr(self, "bump_canvas"):
             self.bump_ax.clear()
         else:
             self.bump_fig = plt.figure(figsize=(2.5, 2.4))
-            self.bump_ax = self.bump_fig.add_axes([0.28, 0.3, 0.75, 0.65])
+            self.bump_ax = self.bump_fig.add_axes((0.28, 0.3, 0.75, 0.65))
             self.bump_canvas = FigureCanvasTkAgg(self.bump_fig, master=self.bump_plt_frame)
             self.bump_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
