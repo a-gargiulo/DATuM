@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from . import utility
+from ..utility import apputils
 from .my_types import NestedDict, PivData
 
 
@@ -58,6 +58,6 @@ class Piv:
         :return: Boolean value indicating whether the specified quantity was found or not.
         """
         if self.data:
-            return utility.search_nested_dict(self.data, quantity)
+            return apputils.search_nested_dict(self.data, quantity)
         else:
             return False

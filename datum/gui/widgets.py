@@ -385,7 +385,9 @@ class FileLoader(tk.Frame):
             width=20,
             height=1,
         )
-        self.status_label = Label(self, "Nothing Loaded", self.category, state="disabled" if self.isCheckable else "normal")
+        self.status_label_var = tk.StringVar()
+        self.status_label_var.set("Nothing Loaded")
+        self.status_label = Label(self, "", self.category, state="disabled" if self.isCheckable else "normal", textvariable=self.status_label_var)
         self.status_label.config(width=13, fg="red")
 
     def _layout_widgets(self):
@@ -433,9 +435,13 @@ class FileLoader(tk.Frame):
 
         if file_path:
             self.listbox.insert(tk.END, file_path)
-            self.status_label.config(text="File Loaded", fg="green")
+            self.status_label_var.set("File Loaded")
+            # self.status_label.config(text="File Loaded", fg="green")
+            self.status_label.config(fg="green")
         else:
-            self.status_label.config(text="Nothing Loaded", fg="red")
+            # self.status_label.config(text="Nothing Loaded", fg="red")
+            self.status_label_var.set("Nothing Loaded")
+            self.status_label.config(fg="red")
 
     def _toggle_state(self):
         state = "normal" if self.checkbox_var.get() else "disabled"
@@ -446,3 +452,7 @@ class FileLoader(tk.Frame):
     def get_listbox_content(self):
         """Get current path."""
         return self.listbox.get(0, tk.END)
+
+    def get_status_var(self):
+        """Get status of loader."""
+        return self.status_label_var

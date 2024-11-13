@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from ..core.beverli import Beverli
+from ..core.piv import Piv
 from ..utility.configure import STYLES, system
 from .pose_window import PoseWindow
-from .widgets import (Button, Checkbutton, Entry, FileLoader, Frame, Label,
-                      ScrollableCanvas, Section)
+from .widgets import Button, Checkbutton, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
+
 
 # Constants
 WINDOW_TITLE = "Preprocessor"
@@ -19,12 +20,18 @@ WINDOW_SIZE = (800, 600)
 
 class PreprocessorWindow:
     def __init__(self, master: tk.Tk):
+        """Initialize GUI and resources.
+
+        :param master: The parent window.
+        """
         self.root = tk.Toplevel(master)
         self._configure_root()
         self._create_widgets()
         self._layout_widgets()
         self.plot_bump()
         self.scrollable_canvas.configure_frame()
+
+        self.piv = Piv()
 
     def _configure_root(self):
         """Configure main window settings."""
@@ -133,15 +140,11 @@ class PreprocessorWindow:
             row=2, column=0, columnspan=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
         self.data_sect.content.grid_columnconfigure(0, weight=1)
-        self.vel_loader.grid(
-            row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
-        )
+        self.vel_loader.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.stress_loader.grid(
             row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
-        self.dissp_loader.grid(
-            row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
-        )
+        self.dissp_loader.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.inst_vel_loader.grid(
             row=3, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
@@ -251,7 +254,7 @@ class PreprocessorWindow:
         pass
 
     def open_pose(self):
-        PoseWindow(self.root)
+        PoseWindow(self.root, self.piv)
 
     def preprocess_data(self):
         pass

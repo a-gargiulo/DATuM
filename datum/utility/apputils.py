@@ -1,12 +1,12 @@
-"""Define useful utility functions."""
-# import json
-# import os
+"""Define useful application utility functions."""
+import json
+import os
 # import pickle
 # import sys
-# from typing import List, Optional
+from typing import Optional
 
 # from . import parser
-from .my_types import NestedDict
+from ..core.my_types import NestedDict
 
 
 # def construct_file_path(root_folder: str, subfolders: List[str], file_name: str) -> str:
@@ -83,30 +83,30 @@ def search_nested_dict(dictionary: NestedDict, keyword: str) -> bool:
 #         sys.exit(1)
 
 
-# def load_json(file_path: str) -> NestedDict:
-#     """Load a json formatted file.
+def read_json(file_path: str) -> Optional[NestedDict]:
+    """Read a json file.
 
-#     :param file_path: System path to the json file.
-#     :return: A nested dictionary containing the file's content.
-#     """
-#     try:
-#         with open(file_path, "r", encoding="utf-8") as file:
-#             file_content = file.read()
-#             data = json.loads(file_content)
-#         if len(data) == 0:
-#             raise ValueError(
-#                 f"The provided '{os.path.basename(file_path)}' contains no data.\n\n"
-#             )
-#         return data
-#     except ValueError as val_error:
-#         print("--> ERROR:", val_error)
-#         sys.exit(1)
-#     except FileNotFoundError:
-#         print(
-#             f"--> ERROR: The file '{os.path.basename(file_path)}' does not exist.\n\n"
-#         )
-#         sys.exit(1)
+    :param file_path: The path to the json file.
 
+    :return: A nested dictionary containing the file's content.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            file_content = file.read()
+            data = json.loads(file_content)
+        if len(data) == 0:
+            raise ValueError(
+                f"The provided '{os.path.basename(file_path)}' contains no data.\n\n"
+            )
+        return data
+    except ValueError as val_error:
+        print("--> ERROR:", val_error)
+        return None
+    except FileNotFoundError:
+        print(
+            f"--> ERROR: The file '{os.path.basename(file_path)}' does not exist.\n\n"
+        )
+        return None
 
 # def write_json(file_path: str, dictionary: NestedDict) -> None:
 #     """Write a dictionary to a json formatted file.
