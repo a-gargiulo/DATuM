@@ -78,7 +78,7 @@ class PoseWindow:
         self.calplate_loader.status_label_var.trace(
             "w",
             lambda *args: (
-                self.create_local_pose_selector(self.mode_selector_var.get(), *args)
+                self._create_local_pose_selector(self.mode_selector_var.get(), *args)
                 if self.calplate_loader.status_label_var.get() == "File Loaded"
                 and self.global_loader.status_label_var.get() == "File Loaded"
                 else None
@@ -94,9 +94,25 @@ class PoseWindow:
         self.global_loader.status_label_var.trace(
             "w",
             lambda *args: (
-                self.create_local_pose_selector(self.mode_selector_var.get(), *args)
+                self._create_local_pose_selector(self.mode_selector_var.get(), *args)
                 if self.calplate_loader.status_label_var.get() == "File Loaded"
                 and self.global_loader.status_label_var.get() == "File Loaded"
+                else None
+            ),
+        )
+        self.meas_loader = FileLoader(
+            self.opt_sect.content,
+            "Pose Measurement:",
+            [("Pose Measurement", "*.txt"), ("All Files", "*.*")],
+            1,
+            False,
+        )
+        self.meas_loader.status_label_var.trace(
+            "w",
+            lambda *args: (
+                self._run_global_pose_calculator(self.mode_selector_var.get(), *args)
+                if self.calplate_loader.status_label_var.get() == "File Loaded"
+                and self.meas_loader.status_label_var.get() == "File Loaded"
                 else None
             ),
         )
@@ -111,6 +127,8 @@ class PoseWindow:
         self.ypick_entry_label = Label(self.picker_monitors, "x2 [mm]:", 2)
         self.ypick_var = tk.StringVar()
         self.ypick_entry = Entry(self.picker_monitors, 2, textvariable=self.ypick_var, state="readonly")
+        self.global_sect = Section(self.main_frame, "Global Pose", 2)
+        self.global_plt = Frame(self.global_sect.content, 2, bd=2, relief="solid")
 
     def _layout_widgets(self, calc_lvl: str):
         lvl = calc_lvl.lower()
@@ -121,43 +139,29 @@ class PoseWindow:
         elif lvl == "local":
             self._layout_widgets_local()
 
-    def _layout_widgets_default(self):
+    def _reset_layout(self):
         self.calplate_loader.reset()
         self.calplate_loader.grid_forget()
         self.global_loader.reset()
         self.global_loader.grid_forget()
-
         self.xpick_var.set("")
         self.ypick_var.set("")
         self.local_sect.grid_forget()
 
+    def _layout_widgets_default(self):
+        self._reset_layout()
         self.main_frame.grid_columnconfigure(0, weight=1)
-
-        self.opt_sect.grid(
-            row=0,
-            column=0,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
-            sticky="nsew",
-        )
+        self.opt_sect.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.opt_sect.content.grid_columnconfigure(0, weight=1)
         self.opt_sect.content.grid_columnconfigure(1, weight=1)
-
         self.mode_selector_label.grid(
             row=0,
             column=0,
             padx=STYLES["pad"]["small"],
             pady=STYLES["pad"]["small"],
-            sticky="w",
+            sticky="w"
         )
-        self.mode_selector.grid(
-            row=0,
-            column=1,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
-            sticky="ew",
-        )
-
+        self.mode_selector.grid(row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="ew")
         self.submit_button.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
         self.scrollable_canvas.configure_frame()
 
@@ -179,21 +183,30 @@ class PoseWindow:
             pady=STYLES["pad"]["small"],
             sticky="nsew",
         )
-
         self.submit_button.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
+        self.scrollable_canvas.configure_frame()
 
     def _layout_widgets_global(self):
         self._layout_widgets_default()
-        # self.load_transform_button.grid_forget()
-        # self.main_frame.grid_rowconfigure(1, weight=1)
+        self.calplate_loader.grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=STYLES["pad"]["small"],
+            pady=STYLES["pad"]["small"],
+            sticky="nsew",
 
-        # self.local_sect.grid(
-        #     row=1,
-        #     column=0,
-        #     padx=STYLES["pad"]["small"],
-        #     pady=STYLES["pad"]["small"],
-        #     sticky="nsew",
-        # )
+        )
+        self.meas_loader.grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=STYLES["pad"]["small"],
+            pady=STYLES["pad"]["small"],
+            sticky="nsew",
+        )
+        self.submit_button.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
+        self.scrollable_canvas.configure_frame()
 
     def _on_mode_selection(self, *args):
         selected_option = self.mode_selector_var.get()
@@ -204,13 +217,8 @@ class PoseWindow:
         else:
             lvl = "global"
         self._layout_widgets(lvl)
-        self.scrollable_canvas.configure_frame()
 
-    def _submit_file(self):
-        pass
-
-    def plot_calplate(self, case: str):
-        """Plot the calibration plate image."""
+    def _plot_calplate(self, case: str):
         if hasattr(self, "cal_fig") and hasattr(self, "cal_canvas"):
             self.cal_ax.clear()
         else:
@@ -224,7 +232,6 @@ class PoseWindow:
         # TODO: a fixed value for skiprows is too specific. Generalize later.
         cal_img = np.loadtxt(cal_img_path, skiprows=4)
         dims = tputils.get_ijk(cal_img_path)
-
         img_coords_mm = np.array([np.reshape(cal_img[:, i], (dims[1], dims[0])) for i in range(2)])
         img_vals = np.reshape(cal_img[:, 2], (dims[1], dims[0]))
 
@@ -246,16 +253,10 @@ class PoseWindow:
             sys.exit(1)
 
         img_coords_mm = transform.rotate_planar_vector_field(img_coords_mm, rotation_matrix)
-
-        # extent = (img_coords_mm[0].min(), img_coords_mm[0].max(), img_coords_mm[1].min(), img_coords_mm[1].max())
-        # self.cal_ax.imshow(img_vals, extent=extent)
         cmap = plt.get_cmap("gray")
         self.cal_ax.pcolormesh(img_coords_mm[0], img_coords_mm[1], img_vals, cmap=cmap, vmin=0, vmax=4000)
         self.cal_ax.set_xlabel(r"$x_1$ (mm)", labelpad=10)
         self.cal_ax.set_ylabel(r"$x_2$ (mm)", labelpad=10)
-        # self.cal_ax.set_xlim(-0.65, 0.65)
-        # self.cal_ax.set_ylim(0.65, -0.65)
-        # self.cal_ax.set_aspect("equal")
         self.cal_canvas.draw()
         self.scrollable_canvas.configure_frame()
 
@@ -274,56 +275,34 @@ class PoseWindow:
         self.xpick_var.set(f"{pts[0][0]}")
         self.ypick_var.set(f"{pts[0][1]}")
 
-    def create_local_pose_selector(self, case: str, *args):
-        self.local_sect.grid(
-            row=2,
-            column=0,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
-            sticky="nsew",
-        )
-        self.calplate_plt.grid(
-            row=0, rowspan=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
-        )
+    def _create_local_pose_selector(self, case: str, *args):
+        self.local_sect.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.calplate_plt.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.local_sect.content.grid_columnconfigure(1, weight=1)
         self.local_sect.content.grid_rowconfigure(0, weight=1)
         self.submit_button.grid(row=3)
-
-        self.plot_calplate(case)
+        self._plot_calplate(case)
         self.picker_frame.grid(row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
         self.picker_frame.grid_columnconfigure(0, weight=1)
         self.picker_button.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
         self.picker_monitors.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
         self.picker_monitors.grid_columnconfigure(0, weight=1)
         self.picker_monitors.grid_columnconfigure(1, weight=1)
-        self.xpick_entry_label.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
-        self.ypick_entry_label.grid(row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.xpick_entry_label.grid(
+            row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.ypick_entry_label.grid(
+            row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
         self.xpick_entry.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.ypick_entry.grid(row=1, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
 
-    # pts = plotting.local_reference_selector(
-    #     img_coords_mm[0], img_coords_mm[1], img_vals, pose_measurement
-    # )
-    # x_1_loc_ref_mm = pts[0][0]
-    # x_2_loc_ref_mm = pts[0][1]
+    def _run_global_pose_calculator(self, case: str, *args):
+        self.global_sect.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.global_plt.grid(
+            row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.global_sect.content.grid_columnconfigure(0, weight=1)
 
-    # transform_params_updates = {
-    #     "translation": {
-    #         "x_1_loc_ref_mm": x_1_loc_ref_mm,
-    #         "x_2_loc_ref_mm": x_2_loc_ref_mm,
-    #     }
-    # }
-    # utility.update_nested_dict(
-    #     piv_obj.transformation_parameters, transform_params_updates
-    # )
-    # utility.write_json(transform_params_file_path, piv_obj.transformation_parameters)
-
-    #     bev = Beverli(self.bump_orientation, "cad")
-    #     px, pz = bev.compute_perimeter(self.bump_orientation)
-    #     self.bump_ax.plot(px, pz, color="blue")
-    #     self.bump_ax.set_xlabel(r"$x_1$ (m)", labelpad=10)
-    #     self.bump_ax.set_ylabel(r"$x_3$ (m)", labelpad=10)
-    #     self.bump_ax.set_xlim(-0.65, 0.65)
-    #     self.bump_ax.set_ylim(0.65, -0.65)
-    #     self.bump_ax.set_aspect("equal")
-    #     self.bump_canvas.draw()
+    def _submit_file(self):
+        pass
