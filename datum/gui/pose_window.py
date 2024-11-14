@@ -1,44 +1,46 @@
 """Pose Calculator."""
+
 import sys
 import tkinter as tk
-import numpy as np
 
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.widgets import Cursor
 
-from ..core.piv import Piv
 from ..core import transform
-from ..utility.configure import STYLES
+from ..core.piv import Piv
 from ..utility import apputils, tputils
+from ..utility.configure import STYLES
 from .widgets import Button, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
+
 
 # Constants
 WINDOW_TITLE = "Pose Calculator"
 WINDOW_SIZE = (1000, 600)
-CASES = [
-    "Load transformation file.",
-    "Calculate local and load global pose.",
-    "Calculate local and global pose.",
+CALC_MODES = [
+    "LOAD ALL transformation parameters",
+    "LOAD global / CALCULATE local",
+    "CALCULATE global / CALCULATE local",
 ]
 
 
 class PoseWindow:
-    """The pose calculator applet."""
+    """The pose calculator."""
 
     def __init__(self, master: tk.Toplevel, piv: Piv):
         """
-        Set up the GUI.
+        Set up GUI and resources.
 
-        :param master: The master window calling the applet.
+        :param master: The parent window.
         """
+        # GUI
         self.root = tk.Toplevel(master)
         self._configure_root()
-        # self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self._create_widgets()
-        self._layout_widgets_default()
-        self.scrollable_canvas.configure_frame()
+        self._layout_widgets("default")
 
+        # Resources
         self.piv = piv
 
     def _configure_root(self):
@@ -46,92 +48,100 @@ class PoseWindow:
         self.root.geometry(f"{WINDOW_SIZE[0]}x{WINDOW_SIZE[1]}")
         self.root.resizable(False, False)
         self.root.configure(bg=STYLES["color"]["base"])
-        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
         self.root.option_add("*Font", (STYLES["font"], STYLES["font_size"]["regular"]))
+        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
     def _on_closing(self):
         if hasattr(self, "cal_fig"):
             plt.close(self.cal_fig)
-
         if hasattr(self, "cal_canvas"):
-            self.cal_canvas.get_tk_widget().grid_forget()
             self.cal_canvas.get_tk_widget().destroy()
-
         self.root.destroy()
 
     def _create_widgets(self):
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
         self.main_frame = self.scrollable_canvas.get_frame()
-
-        self.selection_sect = Section(self.main_frame, "Settings", 1)
-        self.mode_selector_label = Label(
-            self.selection_sect.content, "Select Calculation Mode:", 1
-        )
+        self.opt_sect = Section(self.main_frame, "Settings", 1)
+        self.mode_selector_label = Label(self.opt_sect.content, "Select Calculation Mode:", 1)
         self.mode_selector_var = tk.StringVar()
-        self.mode_selector_var.set(CASES[0])
-        self.mode_selector_var.trace("w", self._on_selection)
-        self.mode_selector = tk.OptionMenu(
-            self.selection_sect.content, self.mode_selector_var, *CASES
-        )
-
-        self.submit_button = Button(
-            self.main_frame,
-            "Submit Transformation File",
-            command=self._submit_file,
-        )
-
+        self.mode_selector_var.set(CALC_MODES[0])
+        self.mode_selector_var.trace("w", self._on_mode_selection)
+        self.mode_selector = tk.OptionMenu(self.opt_sect.content, self.mode_selector_var, *CALC_MODES)
+        self.submit_button = Button(self.main_frame, "Submit Transformation File", command=self._submit_file)
         self.calplate_loader = FileLoader(
-            self.selection_sect.content,
+            self.opt_sect.content,
             "Calibration Image:",
             [("Calibration Image", "*.dat"), ("All Files", "*.*")],
             1,
             False,
         )
-        self.calplate_status_var = self.calplate_loader.get_status_var()
+        self.calplate_loader.status_label_var.trace(
+            "w",
+            lambda *args: (
+                self.create_local_pose_selector(self.mode_selector_var.get(), *args)
+                if self.calplate_loader.status_label_var.get() == "File Loaded"
+                and self.global_loader.status_label_var.get() == "File Loaded"
+                else None
+            ),
+        )
         self.global_loader = FileLoader(
-            self.selection_sect.content,
+            self.opt_sect.content,
             "Global parameters:",
             [("Transformation Parameters", "*.json"), ("All Files", "*.*")],
             1,
             False,
         )
-        self.global_status_var = self.global_loader.get_status_var()
-        self.calplate_status_var.trace("w", lambda *args: self.create_local_pose_selector(self.mode_selector_var.get(), *args) if self.calplate_status_var.get() == "File Loaded" and self.global_status_var.get() == "File Loaded" else None)
-        self.global_status_var.trace("w", lambda *args: self.create_local_pose_selector(self.mode_selector_var.get(), *args) if self.calplate_status_var.get() == "File Loaded" and self.global_status_var.get() == "File Loaded" else None)
+        self.global_loader.status_label_var.trace(
+            "w",
+            lambda *args: (
+                self.create_local_pose_selector(self.mode_selector_var.get(), *args)
+                if self.calplate_loader.status_label_var.get() == "File Loaded"
+                and self.global_loader.status_label_var.get() == "File Loaded"
+                else None
+            ),
+        )
         self.local_sect = Section(self.main_frame, "Local Pose", 2)
         self.calplate_plt = Frame(self.local_sect.content, 2, bd=2, relief="solid")
-        self.pickers = Frame(self.local_sect.content, 2)
-        self.pick_button = Button(
-            self.pickers,
-            "Pick Location",
-            command=self._pick_location,
-        )
-        self.pick_monitors = Frame(self.pickers, 2)
-        self.xpick = tk.StringVar()
-        self.xentry_label = Label(self.pick_monitors, "x1 [mm]:", 2)
-        self.xentry = Entry(self.pick_monitors, 2, textvariable=self.xpick, state="readonly")
-        self.yentry_label = Label(self.pick_monitors, "x2 [mm]:", 2)
-        self.ypick = tk.StringVar()
-        self.yentry = Entry(self.pick_monitors, 2, textvariable=self.ypick, state="readonly")
-        self.cursor = None
-        self.marker_pt = None
+        self.picker_frame = Frame(self.local_sect.content, 2)
+        self.picker_button = Button(self.picker_frame, "Pick Location", command=self._pick_location)
+        self.picker_monitors = Frame(self.picker_frame, 2)
+        self.xpick_var = tk.StringVar()
+        self.xpick_entry_label = Label(self.picker_monitors, "x1 [mm]:", 2)
+        self.xpick_entry = Entry(self.picker_monitors, 2, textvariable=self.xpick_var, state="readonly")
+        self.ypick_entry_label = Label(self.picker_monitors, "x2 [mm]:", 2)
+        self.ypick_var = tk.StringVar()
+        self.ypick_entry = Entry(self.picker_monitors, 2, textvariable=self.ypick_var, state="readonly")
+
+    def _layout_widgets(self, calc_lvl: str):
+        lvl = calc_lvl.lower()
+        if lvl == "default":
+            self._layout_widgets_default()
+        elif lvl == "global":
+            self._layout_widgets_global()
+        elif lvl == "local":
+            self._layout_widgets_local()
 
     def _layout_widgets_default(self):
+        self.calplate_loader.reset()
         self.calplate_loader.grid_forget()
+        self.global_loader.reset()
         self.global_loader.grid_forget()
+
+        self.xpick_var.set("")
+        self.ypick_var.set("")
         self.local_sect.grid_forget()
 
         self.main_frame.grid_columnconfigure(0, weight=1)
 
-        self.selection_sect.grid(
+        self.opt_sect.grid(
             row=0,
             column=0,
             padx=STYLES["pad"]["small"],
             pady=STYLES["pad"]["small"],
             sticky="nsew",
         )
-        self.selection_sect.content.grid_columnconfigure(0, weight=1)
-        self.selection_sect.content.grid_columnconfigure(1, weight=1)
+        self.opt_sect.content.grid_columnconfigure(0, weight=1)
+        self.opt_sect.content.grid_columnconfigure(1, weight=1)
 
         self.mode_selector_label.grid(
             row=0,
@@ -148,11 +158,10 @@ class PoseWindow:
             sticky="ew",
         )
 
-        self.submit_button.grid(
-            row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"]
-        )
+        self.submit_button.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
+        self.scrollable_canvas.configure_frame()
 
-    def _layout_widgets_local_only(self):
+    def _layout_widgets_local(self):
         self._layout_widgets_default()
         self.calplate_loader.grid(
             row=1,
@@ -171,11 +180,9 @@ class PoseWindow:
             sticky="nsew",
         )
 
-        self.submit_button.grid(
-            row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"]
-        )
+        self.submit_button.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
 
-    def _layout_widgets_local_global(self):
+    def _layout_widgets_global(self):
         self._layout_widgets_default()
         # self.load_transform_button.grid_forget()
         # self.main_frame.grid_rowconfigure(1, weight=1)
@@ -188,17 +195,16 @@ class PoseWindow:
         #     sticky="nsew",
         # )
 
-    def _on_selection(self, *args):
+    def _on_mode_selection(self, *args):
         selected_option = self.mode_selector_var.get()
-        if selected_option == CASES[0]:
-            self._layout_widgets_default()
-            self.scrollable_canvas.configure_frame()
-        elif selected_option == CASES[1]:
-            self._layout_widgets_local_only()
-            self.scrollable_canvas.configure_frame()
+        if selected_option == CALC_MODES[0]:
+            lvl = "default"
+        elif selected_option == CALC_MODES[1]:
+            lvl = "local"
         else:
-            self._layout_widgets_local_global()
-            self.scrollable_canvas.configure_frame()
+            lvl = "global"
+        self._layout_widgets(lvl)
+        self.scrollable_canvas.configure_frame()
 
     def _submit_file(self):
         pass
@@ -223,7 +229,7 @@ class PoseWindow:
         img_vals = np.reshape(cal_img[:, 2], (dims[1], dims[0]))
 
         # TODO: Handle errors more neatly
-        if case == CASES[1]:
+        if case == CALC_MODES[1]:
             trans_params_path = self.global_loader.get_listbox_content()[0]
             trans_params = apputils.read_json(trans_params_path)
             if trans_params is None:
@@ -254,19 +260,19 @@ class PoseWindow:
         self.scrollable_canvas.configure_frame()
 
     def _pick_location(self):
-        if self.cursor is None:
-            self.cursor = Cursor(self.cal_ax, useblit=True, color="gray", linewidth=1)
-        if self.marker_pt:
-            self.marker_pt.remove()
+        if not hasattr(self, "picker_cursor") or self.picker_cursor is None:
+            self.picker_cursor = Cursor(self.cal_ax, useblit=True, color="gray", linewidth=1)
         self.cal_canvas.draw_idle()
         pts = plt.ginput(n=1, timeout=0, show_clicks=True)
-
-        self.marker_pt = self.cal_ax.plot(pts[0][0], pts[0][1], 'rx', markersize=10)[0]
+        if not hasattr(self, "picker_mark"):
+            self.picker_mark = self.cal_ax.plot(pts[0][0], pts[0][1], "rx", markersize=10)[0]
+        else:
+            self.picker_mark.remove()
+            self.picker_mark = self.cal_ax.plot(pts[0][0], pts[0][1], "rx", markersize=10)[0]
+        self.picker_cursor = None
         self.cal_canvas.draw_idle()
-
-        self.cursor=None
-        self.xpick.set(f"{pts[0][0]}")
-        self.ypick.set(f"{pts[0][1]}")
+        self.xpick_var.set(f"{pts[0][0]}")
+        self.ypick_var.set(f"{pts[0][1]}")
 
     def create_local_pose_selector(self, case: str, *args):
         self.local_sect.grid(
@@ -277,42 +283,23 @@ class PoseWindow:
             sticky="nsew",
         )
         self.calplate_plt.grid(
-            row=0,
-            rowspan=1,
-            column=0,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
-            sticky="nsew"
+            row=0, rowspan=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
         self.local_sect.content.grid_columnconfigure(1, weight=1)
         self.local_sect.content.grid_rowconfigure(0, weight=1)
         self.submit_button.grid(row=3)
 
         self.plot_calplate(case)
-        self.pickers.grid(
-            row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"]
-        )
-        self.pickers.grid_columnconfigure(0, weight=1)
-        self.pick_button.grid(
-            row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"]
-        )
-        self.pick_monitors.grid(
-            row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"]
-        )
-        self.pick_monitors.grid_columnconfigure(0, weight=1)
-        self.pick_monitors.grid_columnconfigure(1, weight=1)
-        self.xentry_label.grid(
-            row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
-        )
-        self.yentry_label.grid(
-            row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
-        )
-        self.xentry.grid(
-            row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
-        )
-        self.yentry.grid(
-            row=1, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
-        )
+        self.picker_frame.grid(row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
+        self.picker_frame.grid_columnconfigure(0, weight=1)
+        self.picker_button.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
+        self.picker_monitors.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
+        self.picker_monitors.grid_columnconfigure(0, weight=1)
+        self.picker_monitors.grid_columnconfigure(1, weight=1)
+        self.xpick_entry_label.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.ypick_entry_label.grid(row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.xpick_entry.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.ypick_entry.grid(row=1, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
 
     # pts = plotting.local_reference_selector(
     #     img_coords_mm[0], img_coords_mm[1], img_vals, pose_measurement
@@ -330,8 +317,6 @@ class PoseWindow:
     #     piv_obj.transformation_parameters, transform_params_updates
     # )
     # utility.write_json(transform_params_file_path, piv_obj.transformation_parameters)
-
-
 
     #     bev = Beverli(self.bump_orientation, "cad")
     #     px, pz = bev.compute_perimeter(self.bump_orientation)

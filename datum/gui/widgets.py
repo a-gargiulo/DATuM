@@ -453,6 +453,8 @@ class FileLoader(tk.Frame):
         """Get current path."""
         return self.listbox.get(0, tk.END)
 
-    def get_status_var(self):
-        """Get status of loader."""
-        return self.status_label_var
+    def reset(self):
+        """Reset the file loader."""
+        self.listbox.delete(0, tk.END)
+        self.status_label_var.set("Nothing Loaded")
+        self.status_label.config(fg="red")
