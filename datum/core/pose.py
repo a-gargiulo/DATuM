@@ -1,6 +1,6 @@
 """Define functions for computing the BeVERLI stereo PIV coordinate transformation parameters."""
 import sys
-from typing import Tuple
+from typing import Tuple, Optional
 
 from ..utility import apputils
 from .beverli import Beverli
@@ -120,7 +120,7 @@ from .beverli import Beverli
 #     utility.write_json(transform_params_file_path, piv_obj.transformation_parameters)
 
 
-def calculate_global_pose(hill_orientation_deg: float, meas_path: str) -> Tuple[float, float, float]:
+def calculate_global_pose(hill_orientation_deg: float, meas_path: str) -> Optional[Tuple[float, float, float]]:
     """Calculate the global pose.
 
     Calculate the global pose of the PIV plane by characterizing the edge of the
@@ -138,16 +138,19 @@ def calculate_global_pose(hill_orientation_deg: float, meas_path: str) -> Tuple[
         measured in meters, whereas the angle is measured in degrees.
     """
     pose_measurement = apputils.read_json(meas_path)
+
     if pose_measurement is None:
-        sys.exit(1)
+        return None
+
+    x_3_hill_profile_m = pose_measurement["calibration_plate_location"]["x_3"]
+
     hill = Beverli(hill_orientation_deg, "cad")
 
-    # Get local cross-sectional x1-x2-hill-profile (incl. derivatives)
-    x_3_hill_profile_m = pose_measurement["calibration_plate_location"]["x_3"]
     if isinstance(x_3_hill_profile_m, float):
         x_1_hill_profile_m, x_2_hill_profile_m = hill.compute_x1_x2_profile(x_3_hill_profile_m)
     else:
-        raise TypeError(f"Expected a numeric value, got {type(x_3_hill_profile_m)}")
+        print(f"Expected a numeric value, got {type(x_3_hill_profile_m)}")
+        return None
 
     x_2_prime_hill_profile = compute_derivative_1d(
         x_1_hill_profile_m, x_2_hill_profile_m

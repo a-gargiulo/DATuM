@@ -92,20 +92,15 @@ def read_json(file_path: str) -> Optional[NestedDict]:
     """
     try:
         with open(file_path, "r", encoding="utf-8") as file:
-            file_content = file.read()
-            data = json.loads(file_content)
-        if len(data) == 0:
-            raise ValueError(
-                f"The provided '{os.path.basename(file_path)}' contains no data.\n\n"
-            )
-        return data
-    except ValueError as val_error:
-        print("--> ERROR:", val_error)
-        return None
+            return json.load(file)
     except FileNotFoundError:
-        print(
-            f"--> ERROR: The file '{os.path.basename(file_path)}' does not exist.\n\n"
-        )
+        print(f"Error: The file at {file_path} was not found.")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error: The file at {file_path} is not a valid JSON.")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
         return None
 
 # def write_json(file_path: str, dictionary: NestedDict) -> None:
