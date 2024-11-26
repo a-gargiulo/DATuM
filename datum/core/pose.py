@@ -120,36 +120,30 @@ from .beverli import Beverli
 #     utility.write_json(transform_params_file_path, piv_obj.transformation_parameters)
 
 
-def calculate_global_pose(hill_orientation_deg: float, meas_path: str) -> Optional[Tuple[float, float, float]]:
-    """Calculate the global pose.
+def calculate_global_pose(hill_orientation_deg: float, measurement: str) -> Optional[Tuple[float, float, float]]:
+    """Calculate the PIV plane's global pose.
 
-    Calculate the global pose of the PIV plane by characterizing the edge of the
-    calibration plate adjacent to the BeVERLI Hill's surface. This edge forms either a
-    secant or tangent with the local cross-sectional x:sub:`1`-x:sub:`2`-hill-profile.
-    The calculation is assisted by manual measurements of the calibration plate's pose,
-    collected in the Virginia Tech Stability Wind Tunnel during the BeVERLI experiment.
+    Calculate the PIV plane's global pose based on measurements collected during the
+    experiment.
 
-    :param hill_orientation_deg: The hill orientation measured in degrees.
-    :param meas_path: The path to the pose measurement file.
+    :param hill_orientation_deg: Hill orientation measured in degrees.
+    :param measurement: File path to the pose measurement.
 
-    :return: A tuple of shape (3, ) encompassing the Cartesian coordinates of the center
-        point of the calibration plate's edge adjacent to the surface of the BeVERLI
-        Hill, along with its corresponding inclination angle. The coordinates are
-        measured in meters, whereas the angle is measured in degrees.
+    :return: Cartesian (x, y) coordinates, measured in meters, of the center point of
+        the calibration plate's edge closest to the hill's surface, and the inclination
+        angle, measured in degrees.
     """
-    pose_measurement = apputils.read_json(meas_path)
+    hill = Beverli(hill_orientation_deg, "cad")
 
+    pose_measurement = apputils.read_json(measurement)
     if pose_measurement is None:
         return None
 
     x_3_hill_profile_m = pose_measurement["calibration_plate_location"]["x_3"]
-
-    hill = Beverli(hill_orientation_deg, "cad")
-
     if isinstance(x_3_hill_profile_m, float):
         x_1_hill_profile_m, x_2_hill_profile_m = hill.compute_x1_x2_profile(x_3_hill_profile_m)
     else:
-        print(f"Expected a numeric value, got {type(x_3_hill_profile_m)}")
+        print(f"Error: Expected a numeric value, got {type(x_3_hill_profile_m)}")
         return None
 
     x_2_prime_hill_profile = compute_derivative_1d(

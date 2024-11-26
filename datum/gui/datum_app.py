@@ -15,7 +15,7 @@ WINDOW_SIZE = (600, 600)
 BANNER_IMG_PATH = "./datum/resources/images/banner.png"
 
 
-class Datum:
+class DatumApp:
     """Class for the main application window."""
 
     def __init__(self, root: tk.Tk):

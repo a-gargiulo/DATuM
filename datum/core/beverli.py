@@ -1,4 +1,4 @@
-"""This module defines the `Beverli` class, used for querying the as-designed BeVERLI Hill geometry."""
+"""Define a class to load and probe the as-designed BeVERLI Hill geometry."""
 import sys
 from typing import Dict, List, Literal, Tuple, Union
 
@@ -7,42 +7,27 @@ import scipy.io as scio
 import scipy.optimize as spoptimize
 import trimesh
 
+# Constants
+HILL_WIDTH_M = 0.93472
+HILL_HEIGHT_M = HILL_WIDTH_M / 5.0
+HILL_CYL_SECTION_WIDTH_M = HILL_WIDTH_M / 10.0
+
 
 class Beverli:
-    """`Beverli` instances encapsulate the as-designed BeVERLI Hill geometry.
+    """Encapsulate the BeVERLI Hill geometry."""
 
-    :ivar orientation: Hill orientation measured in degrees.
-    :ivar cyl_section_width_m: Width of the hill's cylindrical section in meters.
-    :ivar height_m: Height of the hill in meters.
-    :ivar geometry: The hill geometry as `Trimesh <https://trimsh.org/trimesh.html>`_
-        object or dictionary of 2-D NumPy ndarrays of shape (n, m), where n and m
-        represent the number of available point cloud point in the x:sub:`1`- and
-        x:sub:`2`- direction.
-    :ivar polynomial_coefficients: 1-D NumPy ndarray of shape (6, ) containing the
-        hill's fifth-degree polynomial coefficients.
-    :ivar width_m: Hill width in meters.
-    """
-
-    def __init__(self, orientation, geometry_type) -> None:
-        """Constructs a `Beverli` instance."""
-        self.orientation = orientation
-        self.geometry_type = geometry_type
-        self.width_m: float = 0.93472
-        self.height_m: float = 0.186944
-        self.cyl_section_width_m: float = 0.093472
+    def __init__(self, is_cad: bool):
+        """Initialize variables and load hill geometry."""
+        self.is_cad: bool = is_cad
+        self.width_m: float = HILL_WIDTH_M
+        self.height_m: float = HILL_HEIGHT_M
+        self.cyl_section_width_m: float = HILL_CYL_SECTION_WIDTH_M
         self.polynomial_coefficients: np.ndarray = self._compute_polynomial_coefficients()
         self.geometry: Union[trimesh.Trimesh, Dict[str, np.ndarray]] = self._load_hill_geometry()
 
-    def compute_perimeter(self, hill_angle_deg: float) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute the hill's perimeter.
-
-        :param hill_angle_deg: Yaw angle orientation of the hill, measured in degrees.
-        :return: A tuple containing two 1-D NumPy ndarrays with shape (n, )
-            representing the x:sub:`1` and x:sub:`3` coordinates of the hill,
-            measured in meters, where n denotes the number of discrete perimeter
-            points.
-        """
-        angle_rad = hill_angle_deg * np.pi / 180
+    def compute_perimeter(self, orientation_deg: float) -> Tuple[np.ndarray, np.ndarray]:
+        """Compute the perimeter of the hill."""
+        orientation_rad = np.deg2rad(orientation_deg)
         num_of_pts = 1000
 
         # Calculate corners
@@ -78,12 +63,12 @@ class Beverli:
         )
 
         # Rotate perimeter
-        x1_perimeter_rotated = x1_perimeter * np.cos(angle_rad) + x3_perimeter * np.sin(
-            angle_rad
+        x1_perimeter_rotated = x1_perimeter * np.cos(orientation_rad) + x3_perimeter * np.sin(
+            orientation_rad
         )
         x3_perimeter_rotated = -x1_perimeter * np.sin(
-            angle_rad
-        ) + x3_perimeter * np.cos(angle_rad)
+            orientation_rad
+        ) + x3_perimeter * np.cos(orientation_rad)
 
         return x1_perimeter_rotated, x3_perimeter_rotated
 
@@ -110,7 +95,7 @@ class Beverli:
         x_1_profile = np.linspace(x_1_intersect[0], x_1_intersect[1], num_of_pts)
         x_2_profile = np.zeros((num_of_pts,))
         for i in range(num_of_pts):
-            if self.geometry_type == "CAD":
+            if self.is_cad:
                 x_2_profile[i] = self._probe_cad_hill(x_1_profile[i], x_3_m)
             else:
                 x_2_profile[i] = self._probe_analytic_hill(
@@ -127,7 +112,7 @@ class Beverli:
         :return: Height of the hill at the specified probe's location.
         """
 
-        if self.geometry_type == "CAD":
+        if self.is_cad:
             return self._probe_cad_hill(x_1_m, x_3_m)
         return self._probe_analytic_hill(
             x_1_m, x_3_m, self.orientation
@@ -169,7 +154,7 @@ class Beverli:
             the geometry's Cartesian coordinates, where n denotes the number of
             available discrete points of the corresponding 3-D geometry point cloud.
         """
-        if self.geometry_type == "CAD":
+        if self.is_cad:
             return self._load_cad_hill()
         return self._load_analytic_hill()
 

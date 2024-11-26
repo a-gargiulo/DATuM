@@ -84,7 +84,7 @@ def search_nested_dict(dictionary: NestedDict, keyword: str) -> bool:
 
 
 def read_json(file_path: str) -> Optional[NestedDict]:
-    """Read a json file.
+    """Read json file.
 
     :param file_path: The path to the json file.
 
