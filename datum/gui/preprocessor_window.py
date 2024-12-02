@@ -1,5 +1,4 @@
-"""Preprocessor Application"""
-
+"""Create the preprocessor application window."""
 import tkinter as tk
 from tkinter import messagebox
 
@@ -19,11 +18,10 @@ WINDOW_SIZE = (800, 600)
 
 
 class PreprocessorWindow:
-    def __init__(self, master: tk.Tk):
-        """Initialize GUI and resources.
+    """Generate the GUI for the preprocessor window and link it to the core functions."""
 
-        :param master: The parent window.
-        """
+    def __init__(self, master: tk.Tk):
+        """Initialize GUI and resources."""
         self.root = tk.Toplevel(master)
         self._configure_root()
         self._create_widgets()
@@ -54,7 +52,7 @@ class PreprocessorWindow:
         self.bump_orientation_entry = Entry(self.general_sect.content, 2)
         self.bump_orientation_entry.config(validate="focusout", validatecommand=(self.vfcmd, "%P"))
         self.bump_orientation_entry.insert(0, "0")
-        self.bump_orientation = 0
+        self.bump_orientation = 0.0
         self.transform_sect = Section(self.geom_sect.content, "Pose & Transformation (Local PIV -> Global SWT)", 2)
         self.pose_button = Button(self.transform_sect.content, "Load/Calculate Tranformation Matrix", self.open_pose)
         self.pose_button.config(width=200 if system == "Darwin" else 20)
@@ -169,7 +167,7 @@ class PreprocessorWindow:
 
     def _validate_float(self, input_value):
         if input_value == "":
-            self.bump_orientation = 0
+            self.bump_orientation = 0.0
             self.plot_bump()
             return True
         try:
@@ -240,8 +238,8 @@ class PreprocessorWindow:
             self.bump_canvas = FigureCanvasTkAgg(self.bump_fig, master=self.bump_plt_frame)
             self.bump_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
-        bev = Beverli(self.bump_orientation, "cad")
-        px, pz = bev.compute_perimeter(self.bump_orientation)
+        bev = Beverli(use_cad=True)
+        px, pz = bev.calculate_perimeter(self.bump_orientation)
         self.bump_ax.plot(px, pz, color="blue")
         self.bump_ax.set_xlabel(r"$x_1$ (m)", labelpad=10)
         self.bump_ax.set_ylabel(r"$x_3$ (m)", labelpad=10)

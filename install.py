@@ -4,7 +4,7 @@ import sys
 
 def install_dependencies():
     print("Installing dependencies...")
-    subprocess.check_call(["pip", "install", "-r", "resources/requirements.txt"])
+    subprocess.check_call(["pip", "install", "-r", "datum/resources/requirements.txt"])
 
 def create_run_py():
     run_py_content = """import tkinter as tk
@@ -12,7 +12,7 @@ import datum
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = datum.Datum(root)
+    app = datum.DatumWindow(root)
     root.mainloop()
 """
     with open("run.py", "w") as f:

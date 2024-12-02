@@ -1,62 +1,26 @@
-"""The main class for the BeVERLI Hill stereo PIV data."""
+"""This module defines the main PIV data container."""
 
 from typing import Optional
 
 from ..utility import apputils
-from .my_types import NestedDict, PivData
+from .my_types import PivData
+from .pose import Pose
 
 
 class Piv:
-    """Encapsulate the BeVERLI Hill stereo PIV data."""
+    """
+    This class defines the main PIV data container.
 
-    def __init__(self, data: Optional[PivData] = None, trans_params: Optional[NestedDict] = None):
-        """Class constructor.
+    It contains the PIV data and its pose.
+    """
 
-        :param data: The BeVERLI Hill stereo PIV data.
-        :param trans_params: The coordinate transformation parameters (local -> global).
-        """
-        self._data = data
-        self._trans_params = trans_params
-
-    @property
-    def data(self):
-        """Get the BeVERLI Hill stereo PIV data.
-
-        :return: The BeVERLI Hill stereo PIV data.
-        """
-        return self._data
-
-    @data.setter
-    def data(self, new_data: PivData):
-        """Set the BeVERLI Hill stereo PIV data.
-
-        :param new_data: The BeVERLI Hill stereo PIV data to be set.
-        """
-        self._data = new_data
-
-    @property
-    def trans_params(self):
-        """Get the coordinate transformation parameters (local -> global).
-
-        :return: The coordinate transformation parameters.
-        """
-        return self._trans_params
-
-    @trans_params.setter
-    def trans_params(self, new_data: NestedDict) -> None:
-        """Set the transformation parameters.
-
-        :param new_data: Coordinate transformation parameters to be set.
-        """
-        self._trans_params = new_data
+    def __init__(self, data: Optional[PivData] = None, pose: Optional[Pose] = None):
+        """Initialize a PIV object."""
+        self.data = data
+        self.pose = Pose() if pose is None else pose
 
     def search(self, quantity: str) -> bool:
-        """Search for a specific flow quantity within the BeVERLI Hill stereo PIV data.
-
-        :param quantity: The flow quantity to be searched.
-
-        :return: Boolean value indicating whether the specified quantity was found or not.
-        """
+        """Search for a specific flow quantity."""
         if self.data:
             return apputils.search_nested_dict(self.data, quantity)
         else:

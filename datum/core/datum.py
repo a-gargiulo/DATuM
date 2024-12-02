@@ -1,5 +1,12 @@
-"""Main API class."""
+"""Main DATuM class."""
+
 
 class Datum:
-    def __init__():
+    """
+    This class represents the main application engine.
+
+    It initializes the preprocessor and profiler.
+    """
+
+    def __init__(self):
         pass

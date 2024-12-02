@@ -1,1 +1,1 @@
-from .gui.datum import Datum
+from .gui.datum_window import DatumWindow
