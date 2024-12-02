@@ -6,6 +6,7 @@ import trimesh
 
 NestedDict = Dict[str, Union["NestedDict", Any]]
 PivData = Dict[str, Union["PivData", np.ndarray]]
+PoseMeasurement = Dict[str, Union["PoseMeasurement", float]]
 CadGeometry = trimesh.Trimesh
 AnalyticGeometry = Dict[str, np.ndarray]
 HillGeometry = Union[CadGeometry, AnalyticGeometry]

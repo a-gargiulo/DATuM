@@ -10,6 +10,7 @@ from matplotlib.widgets import Cursor
 
 from ..core import transform
 from ..core.piv import Piv
+from ..core.beverli import Beverli
 from ..utility import apputils, tputils
 from ..utility.configure import STYLES
 from .widgets import Button, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
@@ -28,7 +29,7 @@ CALC_MODES = [
 class PoseWindow:
     """The pose calculator."""
 
-    def __init__(self, master: tk.Toplevel, piv: Piv):
+    def __init__(self, master: tk.Toplevel, piv: Piv, geometry: Beverli):
         """
         Set up GUI and resources.
 
@@ -42,6 +43,7 @@ class PoseWindow:
 
         # Resources
         self.piv = piv
+        self.geometry = geometry
 
     def _configure_root(self):
         self.root.title(WINDOW_TITLE)

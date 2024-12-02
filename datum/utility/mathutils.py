@@ -5,31 +5,25 @@ import numpy as np
 import scipy.interpolate as spinterpolate
 
 
-def compute_derivative_1d(x_1: np.ndarray, x_2: np.ndarray) -> np.ndarray:
-    """Compute the first derivative of x:sub:`2` with respect to x:sub:`1`.
+def calculate_derivative_1d(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
+    """
+    Compute the first derivative of x2 with respect to x1.
 
     The algorithm operates on 1D data and uses a simple second-order centered finite
     difference approximation.
-
-    :param x_1: NumPy ndarray of shape (n, ) containing spatial x:sub:`1` coordinates
-        of the selected quantity.
-    :param x_2: NumPy ndarray of shape (n, ) containing the selected quantity's values
-        x:sub:`2`.
-    :return: NumPy ndarray of shape (n, ) representing the first derivative of the
-        selected quantity.
     """
-    num_of_pts = len(x_1)
-    x_2_prime = np.zeros((num_of_pts,))
+    num_of_pts = len(x1)
+    x2_prime = np.zeros((num_of_pts,))
 
     for i in range(num_of_pts):
         if i == 0:
-            x_2_prime[i] = (x_2[i + 1] - x_2[i]) / (x_1[i + 1] - x_1[i])
+            x2_prime[i] = (x2[i + 1] - x2[i]) / (x1[i + 1] - x1[i])
         elif i == num_of_pts - 1:
-            x_2_prime[i] = (x_2[i] - x_2[i - 1]) / (x_1[i] - x_1[i - 1])
+            x2_prime[i] = (x2[i] - x2[i - 1]) / (x1[i] - x1[i - 1])
         else:
-            x_2_prime[i] = (x_2[i + 1] - x_2[i - 1]) / (x_1[i + 1] - x_1[i - 1])
+            x2_prime[i] = (x2[i + 1] - x2[i - 1]) / (x1[i + 1] - x1[i - 1])
 
-    return x_2_prime
+    return x2_prime
 
 
 # def compute_derivative_2d(

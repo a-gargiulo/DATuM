@@ -11,7 +11,6 @@ from ..utility.configure import STYLES, system
 from .pose_window import PoseWindow
 from .widgets import Button, Checkbutton, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
 
-
 # Constants
 WINDOW_TITLE = "Preprocessor"
 WINDOW_SIZE = (800, 600)
@@ -22,14 +21,15 @@ class PreprocessorWindow:
 
     def __init__(self, master: tk.Tk):
         """Initialize GUI and resources."""
+        self.geometry = Beverli(use_cad=True)
+        self.piv = Piv()
+
         self.root = tk.Toplevel(master)
         self._configure_root()
         self._create_widgets()
         self._layout_widgets()
         self.plot_bump()
         self.scrollable_canvas.configure_frame()
-
-        self.piv = Piv()
 
     def _configure_root(self):
         """Configure main window settings."""
@@ -52,7 +52,9 @@ class PreprocessorWindow:
         self.bump_orientation_entry = Entry(self.general_sect.content, 2)
         self.bump_orientation_entry.config(validate="focusout", validatecommand=(self.vfcmd, "%P"))
         self.bump_orientation_entry.insert(0, "0")
+        self.bump_orientation_button = Button(self.general_sect.content, "Confirm", self._confirm_orientation)
         self.bump_orientation = 0.0
+        self.orientation_is_confirmed = False
         self.transform_sect = Section(self.geom_sect.content, "Pose & Transformation (Local PIV -> Global SWT)", 2)
         self.pose_button = Button(self.transform_sect.content, "Load/Calculate Tranformation Matrix", self.open_pose)
         self.pose_button.config(width=200 if system == "Darwin" else 20)
@@ -113,7 +115,10 @@ class PreprocessorWindow:
             row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsw"
         )
         self.bump_orientation_entry.grid(
-            row=0, column=1, columnspan=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+            row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.bump_orientation_button.grid(
+            row=0, column=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
 
         self.transform_sect.grid(
@@ -167,16 +172,25 @@ class PreprocessorWindow:
 
     def _validate_float(self, input_value):
         if input_value == "":
+            self.geometry.rotate(-self.bump_orientation)
             self.bump_orientation = 0.0
+            self.geometry.orientation = self.bump_orientation
+            self.orientation_is_confirmed = False
             self.plot_bump()
             return True
         try:
             float(input_value)
+            self.geometry.rotate(float(input_value) - self.bump_orientation)
             self.bump_orientation = float(input_value)
+            self.geometry.orientation = self.bump_orientation
+            self.orientation_is_confirmed = False
             self.plot_bump()
             return True
         except ValueError:
             self._on_invalid_input()
+            self.geometry.rotate(-self.bump_orientation)
+            self.geometry.orientation = None
+            self.orientation_is_confirmed = False
             return False
 
     def _on_invalid_input(self):
@@ -238,8 +252,7 @@ class PreprocessorWindow:
             self.bump_canvas = FigureCanvasTkAgg(self.bump_fig, master=self.bump_plt_frame)
             self.bump_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
-        bev = Beverli(use_cad=True)
-        px, pz = bev.calculate_perimeter(self.bump_orientation)
+        px, pz = self.geometry.calculate_perimeter()
         self.bump_ax.plot(px, pz, color="blue")
         self.bump_ax.set_xlabel(r"$x_1$ (m)", labelpad=10)
         self.bump_ax.set_ylabel(r"$x_3$ (m)", labelpad=10)
@@ -248,11 +261,17 @@ class PreprocessorWindow:
         self.bump_ax.set_aspect("equal")
         self.bump_canvas.draw()
 
+    def _confirm_orientation(self):
+        self.orientation_is_confirmed = True
+
     def load_cfd_slice(self):
         pass
 
     def open_pose(self):
-        PoseWindow(self.root, self.piv)
+        if self.orientation_is_confirmed:
+            PoseWindow(self.root, self.piv, self.geometry)
+        else:
+            messagebox.showwarning("Warning", "You must first confirm the hill orientation.")
 
     def preprocess_data(self):
         pass

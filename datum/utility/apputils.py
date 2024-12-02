@@ -28,7 +28,7 @@ def search_nested_dict(dictionary: NestedDict, keyword: str) -> bool:
     """Search a keyword within a nested dictionary.
 
     :param dictionary: The nested dictionary.
-    :param keyword: The keyword to be searched within.
+    :param keyword: The keyword to be searched.
 
     :return: Boolean value indicating, whether the keyword was found or not.
     """

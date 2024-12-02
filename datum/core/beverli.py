@@ -1,7 +1,7 @@
 """Define a class to load and probe the as-designed BeVERLI geometry."""
 
 import sys
-from typing import cast, List, Literal, Tuple
+from typing import cast, List, Literal, Tuple, Optional
 
 import numpy as np
 import scipy.io as scio
@@ -22,7 +22,7 @@ class Beverli:
     Both a CAD model or an analytic pointcloud can be loaded. Additionally, various probing methods are provided.
     """
 
-    def __init__(self, use_cad: bool = True):
+    def __init__(self, orientation: Optional[float] = None, use_cad: bool = True):
         """Initialize attributes and load geometry."""
         self.width: float = HILL_WIDTH
         self.height: float = HILL_HEIGHT
@@ -30,11 +30,29 @@ class Beverli:
         self.polynomial_coefficients: np.ndarray = self._calculate_polynomial_coefficients()
 
         self.use_cad: bool = use_cad
-        self.geometry: HillGeometry = self._load_geometry()
+        self.mesh: HillGeometry = self._load_geometry()
 
-    def calculate_perimeter(self, orientation: float) -> Tuple[np.ndarray, np.ndarray]:
+        self._orientation: Optional[float] = orientation
+
+    @property
+    def orientation(self):
+        """Getter for orientation."""
+        if self._orientation is None:
+            return 0.0
+        else:
+            return self._orientation
+
+    @orientation.setter
+    def orientation(self, new_orientation: Optional[float]):
+        self._orientation = new_orientation
+
+    @orientation.deleter
+    def orientation(self):
+        del self._orientation
+
+    def calculate_perimeter(self) -> Tuple[np.ndarray, np.ndarray]:
         """Calculate the x1 and x3 coordinates of the hill perimeter at a specific orientation."""
-        orientation_rad = np.deg2rad(orientation)
+        orientation_rad = np.deg2rad(self.orientation)
 
         corners = self._calculate_perimeter_corners(n_pts=1000)
         edges = self._calculate_perimeter_edges(n_pts=100)
@@ -47,9 +65,9 @@ class Beverli:
 
         return x1rot, x3rot
 
-    def calculate_x1_x2(self, orientation: float, x3: float) -> Tuple[np.ndarray, np.ndarray]:
+    def calculate_x1_x2(self, x3: float) -> Tuple[np.ndarray, np.ndarray]:
         """Calculate a cross-sectional x1-x2 profile at specific orientation and x3 location."""
-        x1_perim, x3_perim = self.calculate_perimeter(orientation)
+        x1_perim, x3_perim = self.calculate_perimeter()
 
         try:
             x1_ip = self._find_perimeter_intersection_points(x1_perim, x3_perim, x3)
@@ -61,11 +79,11 @@ class Beverli:
         x1 = np.linspace(x1_ip[0], x1_ip[1], n_pts)
         x2 = np.zeros((n_pts,))
         for i in range(n_pts):
-            x2[i] = self.probe_hill(orientation, x1[i], x3)
+            x2[i] = self.probe_hill(x1[i], x3)
 
         return x1, x2
 
-    def probe_hill(self, orientation: float, x1: float, x3: float) -> float:
+    def probe_hill(self, x1: float, x3: float) -> float:
         """Find x2 at a specific (x1, x3) point."""
         if self.use_cad:
             try:
@@ -73,19 +91,17 @@ class Beverli:
             except ValueError as e:
                 print(f"[ERROR]: {e}")
                 sys.exit(-1)
-        return self._probe_analytic_hill(orientation, x1, x3)
+        return self._probe_analytic_hill(self.orientation, x1, x3)
 
-    def get_surface_normal_symmetric_hill_centerline(self, orientation: float, x1: float) -> np.ndarray:
+    def get_surface_normal_symmetric_hill_centerline(self, x1: float) -> np.ndarray:
         """Calculate the surface normal at a specific x1 location along the centerline at symmetric orientations."""
-        if orientation not in [0, 45, 90, 135, 180, 225, 270, 315]:
+        if self.orientation not in [0, 45, 90, 135, 180, 225, 270, 315]:
             raise ValueError("Non-symmetric hill orientations are not supported.")
 
         # resolution
         dx1 = 1e-12
 
-        slope = np.array(
-            [1, (self.probe_hill(orientation, x1 + dx1, 0) - self.probe_hill(orientation, x1, 0)) / dx1, 0]
-        )
+        slope = np.array([1, (self.probe_hill(x1 + dx1, 0) - self.probe_hill(x1, 0)) / dx1, 0])
         nvec = np.array([-slope[1], slope[0], 0])
         nvec = nvec / np.sqrt(nvec[0] ** 2 + nvec[1] ** 2 + nvec[2] ** 2)
 
@@ -120,13 +136,13 @@ class Beverli:
         rot_angle_rad = np.deg2rad(rot_angle)
         rot_axis = np.array([0, 1, 0])
         rot_mat = trimesh.transformations.rotation_matrix(rot_angle_rad, rot_axis)
-        cast(trimesh.Trimesh, self.geometry).apply_transform(rot_mat)
+        cast(trimesh.Trimesh, self.mesh).apply_transform(rot_mat)
 
     def _rotate_analytic(self, rot_angle: float):
         """Rotate analytic geometry about x2 axis (counterclockwise)."""
         rot_angle_rad = np.deg2rad(rot_angle)
 
-        geometry = cast(AnalyticGeometry, self.geometry)
+        geometry = cast(AnalyticGeometry, self.mesh)
 
         x1rot = np.cos(rot_angle_rad) * geometry["X"] + np.sin(rot_angle_rad) * geometry["Z"]
         x2rot = geometry["Y"]
@@ -222,10 +238,10 @@ class Beverli:
 
         return x1, x2, x3
 
-    def _probe_analytic_hill(self, orientation: float, x1p: float, x3p: float) -> float:
+    def _probe_analytic_hill(self, x1p: float, x3p: float) -> float:
         """Probe the analytic hill geometry using a single probe."""
         # Rotate coordinate system counterclockwise to align with the 0 deg hill orientation
-        orientation_rad = np.deg2rad(orientation)
+        orientation_rad = np.deg2rad(self.orientation)
         x1 = x1p * np.cos(orientation_rad) - x3p * np.sin(orientation_rad)
         x2 = None
         x3 = x1p * np.sin(orientation_rad) + x3p * np.cos(orientation_rad)
@@ -278,7 +294,7 @@ class Beverli:
         ray_origin = [x1, -0.1, x3]
         ray_direction = [0, 1, 0]
 
-        geometry = cast(trimesh.Trimesh, self.geometry)
+        geometry = cast(trimesh.Trimesh, self.mesh)
 
         intersections, _, _ = geometry.ray.intersects_location(ray_origins=[ray_origin], ray_directions=[ray_direction])
 

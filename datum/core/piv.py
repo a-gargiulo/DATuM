@@ -17,7 +17,7 @@ class Piv:
     def __init__(self, data: Optional[PivData] = None, pose: Optional[Pose] = None):
         """Initialize a PIV object."""
         self.data = data
-        self.pose = Pose() if pose is None else pose
+        self.pose = pose if pose is not None else Pose()
 
     def search(self, quantity: str) -> bool:
         """Search for a specific flow quantity."""
