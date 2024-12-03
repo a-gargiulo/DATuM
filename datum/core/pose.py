@@ -17,7 +17,7 @@ class Pose:
     It further provides functionalities to calculate and manipulate the pose.
     """
 
-    def __init__(self, angle: float = 0.0, loc: List[float] = [0.0, 0.0], glob: List[float] = [0.0, 0.0]):
+    def __init__(self, angle: float = 0.0, loc: List[float] = [0.0, 0.0], glob: List[float] = [0.0, 0.0, 0.0]):
         """Initialize a PIV plane pose."""
         self.angle = angle
         self.loc = loc
@@ -25,16 +25,16 @@ class Pose:
 
     def calculate_global_pose(
         self, geometry: Beverli, meas_path: str, opts: Dict[str, bool]
-    ) -> bool:
+    ) -> Optional[List[float]]:
         """Calculate the global pose of the PIV plane."""
         measurement = apputils.read_json(meas_path)
         if measurement is None:
-            return False
+            return None
 
         # CHECKS ENTIRE MEASUREMENT FILE
         if not Pose._check_pose_measurement(measurement):
             print("ISSUE WITH POSE MEASUREMENT.")
-            return False
+            return None
 
         x3_profile = cast(float, cast(dict, measurement["calibration_plate_location"])["x_3"])
         x1_profile, x2_profile = geometry.calculate_x1_x2(x3_profile)
@@ -49,15 +49,17 @@ class Pose:
             secant_tangent_parameters, x1_profile, x2_profile, measurement, opts
         )
 
-        secant_tangent_center_point_x1 = secant_tangent_parameters[4]
-        secant_tangent_center_point_x2 = secant_tangent_parameters[5]
-        secant_tangent_angle_deg = secant_tangent_parameters[6]
+        secant_tangent_parameters.append(x3_profile)
+        # secant_tangent_center_point_x1 = secant_tangent_parameters[4]
+        # secant_tangent_center_point_x2 = secant_tangent_parameters[5]
+        # secant_tangent_angle_deg = secant_tangent_parameters[6]
 
-        self.angle = secant_tangent_angle_deg
-        self.glob[0] = secant_tangent_center_point_x1
-        self.glob[1] = secant_tangent_center_point_x2
+        # self.angle = secant_tangent_angle_deg
+        # self.glob[0] = secant_tangent_center_point_x1
+        # self.glob[1] = secant_tangent_center_point_x2
+        # self.glob[2] = x3_profile
 
-        return True
+        return secant_tangent_parameters
 
     @staticmethod
     def _obtain_secant_tangent_parameters(
@@ -172,9 +174,8 @@ class Pose:
     ) -> List[float]:
         # Initialization
         calplate_width = 0.106
-        measured_angle_deg = cast(
-            float, cast(dict, cast(dict, measurement["calibration_plate_angle"])["direct_measurement"])["angle"]
-        )
+        measured_angle_deg = cast(float, cast(dict, measurement["calibration_plate_angle"])["direct_measurement"])
+
         hill_side = np.sign(cast(float, cast(dict, measurement["calibration_plate_location"])["x_1"]))
         hill_prof_interpolant = interpolate.interp1d(x1_profile, x2_profile, kind="linear")
         is_on_convex_curvature = opts["apply_convex_curvature_correction"]
@@ -232,16 +233,16 @@ class Pose:
             (
                 "upstream_plate_corner_arclength_position",
                 float,
-                ["calibration_plate_angle", "upstream_plate_corner_arclength_position"]
+                ["calibration_plate_angle", "triangulation", "upstream_plate_corner_arclength_position"]
             ),
             (
                 "downstream_plate_corner_arclength_position",
                 float,
-                ["calibration_plate_angle", "downstream_plate_corner_arclength_position"]
+                ["calibration_plate_angle", "triangulation", "downstream_plate_corner_arclength_position"]
             ),
             ("calibration_plate_location", dict, ["calibration_plate_location"]),
             ("x_1", float, ["calibration_plate_location", "x_1"]),
-            ("x_3", float, ["calibration_plate_location", "x_2"]),
+            ("x_3", float, ["calibration_plate_location", "x_3"]),
         ]
 
         keys_ok = all([apputils.search_nested_dict(measurement, key[0]) for key in keys])

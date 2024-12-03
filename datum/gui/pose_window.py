@@ -4,6 +4,8 @@ import sys
 import tkinter as tk
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+from matplotlib import patches
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.widgets import Cursor
@@ -15,6 +17,7 @@ from ..utility import apputils, tputils
 from ..utility.configure import STYLES
 from .widgets import Button, Checkbutton, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
 
+from typing import cast, List
 
 # Constants
 WINDOW_TITLE = "Pose Calculator"
@@ -58,6 +61,10 @@ class PoseWindow:
             plt.close(self.cal_fig)
         if hasattr(self, "cal_canvas"):
             self.cal_canvas.get_tk_widget().destroy()
+        if hasattr(self, "glob_fig"):
+            plt.close(self.glob_fig)
+        if hasattr(self, "glob_canvas"):
+            self.glob_canvas.get_tk_widget().destroy()
         self.root.destroy()
 
     def _create_widgets(self):
@@ -112,7 +119,16 @@ class PoseWindow:
         self.meas_loader.status_label_var.trace(
             "w",
             lambda *args: (
-                self._run_global_pose_calculator(self.mode_selector_var.get(), *args)
+                self._create_global_pose_calculator(self.mode_selector_var.get(), *args)
+                if self.calplate_loader.status_label_var.get() == "File Loaded"
+                and self.meas_loader.status_label_var.get() == "File Loaded"
+                else None
+            ),
+        )
+        self.calplate_loader.status_label_var.trace(
+            "w",
+            lambda *args: (
+                self._create_global_pose_calculator(self.mode_selector_var.get(), *args)
                 if self.calplate_loader.status_label_var.get() == "File Loaded"
                 and self.meas_loader.status_label_var.get() == "File Loaded"
                 else None
@@ -154,7 +170,8 @@ class PoseWindow:
         self.local_sect.grid_forget()
         self.meas_loader.reset()
         self.meas_loader.grid_forget()
-        self.
+        self.global_plt.grid_forget()
+        self.global_sect.grid_forget()
 
     def _layout_widgets_default(self):
         self._reset_layout()
@@ -305,11 +322,8 @@ class PoseWindow:
         self.xpick_entry.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.ypick_entry.grid(row=1, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
 
-    def _run_global_pose_calculator(self, case: str, *args):
+    def _create_global_pose_calculator(self, case: str, *args):
         self.global_sect.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
-        self.global_plt.grid(
-            row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
-        )
         self.global_sect.content.grid_columnconfigure(0, weight=1)
         self.global_sect.content.grid_columnconfigure(1, weight=1)
         self.global_sect.content.grid_columnconfigure(2, weight=1)
@@ -322,20 +336,67 @@ class PoseWindow:
         self.calc_glob_button.grid(
             row=0, column=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
-        # self.piv.pose.calculate_global_pose(self.geometry, self.meas_loader.get_listbox_content(), dict)
-        # self._plot_global()
+        self.submit_button.grid(row=3)
 
-    def _plot_global(self):
+    def _plot_global(self, secant: List[float]):
         if hasattr(self, "glob_fig") and hasattr(self, "glob_canvas"):
             self.glob_ax.clear()
         else:
-            self.glob_fig = plt.figure(figsize=(7, 2))
+            self.glob_fig = plt.figure(figsize=(10, 4))
             self.glob_ax = self.glob_fig.add_axes((0.12, 0.12, 0.85, 0.87))
             self.glob_canvas = FigureCanvasTkAgg(self.glob_fig, master=self.global_plt)
             self.glob_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
 
+        x1_prof, x2_prof = self.geometry.calculate_x1_x2(secant[7])
+        self.glob_ax.plot(x1_prof, x2_prof, color="blue")
+        self.glob_ax.plot(
+            [secant[2], secant[0]],
+            [secant[3], secant[1]],
+            color="red",
+            marker="o",
+            markersize=1,
+            linestyle="dashed",
+        )
+        self.glob_ax.scatter(secant[4], secant[5], s=2, marker="o", c="black", zorder=500)
+        rect = patches.Rectangle(
+            (secant[0], secant[1]),
+            np.sqrt((secant[0] - secant[2]) ** 2 + (secant[1] - secant[3]) ** 2),
+            np.sqrt((secant[0] - secant[2]) ** 2 + (secant[1] - secant[3]) ** 2),
+            angle=secant[6],
+            color="red",
+            alpha=0.5,
+         )
+        self.glob_ax.add_patch(rect)
+        self.glob_ax.set_xlabel(r"$x_1$ [m]", labelpad=10)
+        self.glob_ax.set_ylabel(r"$x_2$ [m]", labelpad=10)
+        self.glob_ax.xaxis.set_tick_params(which="major", size=8, width=2, direction="in")
+        self.glob_ax.xaxis.set_tick_params(which="minor", size=5, width=1.5, direction="in")
+        self.glob_ax.xaxis.set_major_locator(ticker.MultipleLocator(0.25))
+        self.glob_ax.yaxis.set_tick_params(which="major", size=8, width=2, direction="in")
+        self.glob_ax.yaxis.set_tick_params(which="minor", size=5, width=1.5, direction="in")
+        if secant[4] < 0:
+            self.glob_ax.axis((-0.55, 0, -0.025, 0.186944 + 0.15))
+            self.glob_ax.set_aspect("equal", adjustable="box")
+        else:
+            self.glob_ax.axis((0, 0.55, -0.025, 0.186944 + 0.15))
+            self.glob_ax.set_aspect("equal", adjustable="box")
+
+        self.glob_canvas.draw()
+        self.scrollable_canvas.configure_frame()
+
     def _calculate_global(self):
-        pass
+        self.global_plt.grid(
+            row=1, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        opts = {
+            "apply_convex_curvature_correction":  bool(self.is_convex_opt.get_var().get()),
+            "use_measured_rotation_angle": bool(self.use_meas_angle_opt.get_var().get())
+        }
+        print(opts)
+        self.global_pose = self.piv.pose.calculate_global_pose(self.geometry, self.meas_loader.get_listbox_content()[0], opts)
+        if self.global_pose is None:
+            sys.exit(-1)
+        self._plot_global(self.global_pose)
 
     def _submit_file(self):
         pass
