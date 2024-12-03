@@ -13,7 +13,7 @@ from ..core.piv import Piv
 from ..core.beverli import Beverli
 from ..utility import apputils, tputils
 from ..utility.configure import STYLES
-from .widgets import Button, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
+from .widgets import Button, Checkbutton, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
 
 
 # Constants
@@ -105,7 +105,7 @@ class PoseWindow:
         self.meas_loader = FileLoader(
             self.opt_sect.content,
             "Pose Measurement:",
-            [("Pose Measurement", "*.txt"), ("All Files", "*.*")],
+            [("Pose Measurement", "*.json"), ("All Files", "*.*")],
             1,
             False,
         )
@@ -131,6 +131,9 @@ class PoseWindow:
         self.ypick_entry = Entry(self.picker_monitors, 2, textvariable=self.ypick_var, state="readonly")
         self.global_sect = Section(self.main_frame, "Global Pose", 2)
         self.global_plt = Frame(self.global_sect.content, 2, bd=2, relief="solid")
+        self.is_convex_opt = Checkbutton(self.global_sect.content, 2, text="Use Convex Hill Curvature Correction")
+        self.use_meas_angle_opt = Checkbutton(self.global_sect.content, 2, text="Use measured angle")
+        self.calc_glob_button = Button(self.global_sect.content, "Calculate Global", command=self._calculate_global)
 
     def _layout_widgets(self, calc_lvl: str):
         lvl = calc_lvl.lower()
@@ -149,6 +152,9 @@ class PoseWindow:
         self.xpick_var.set("")
         self.ypick_var.set("")
         self.local_sect.grid_forget()
+        self.meas_loader.reset()
+        self.meas_loader.grid_forget()
+        self.
 
     def _layout_widgets_default(self):
         self._reset_layout()
@@ -302,9 +308,34 @@ class PoseWindow:
     def _run_global_pose_calculator(self, case: str, *args):
         self.global_sect.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.global_plt.grid(
-            row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+            row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
         self.global_sect.content.grid_columnconfigure(0, weight=1)
+        self.global_sect.content.grid_columnconfigure(1, weight=1)
+        self.global_sect.content.grid_columnconfigure(2, weight=1)
+        self.is_convex_opt.grid(
+            row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.use_meas_angle_opt.grid(
+            row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.calc_glob_button.grid(
+            row=0, column=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        # self.piv.pose.calculate_global_pose(self.geometry, self.meas_loader.get_listbox_content(), dict)
+        # self._plot_global()
+
+    def _plot_global(self):
+        if hasattr(self, "glob_fig") and hasattr(self, "glob_canvas"):
+            self.glob_ax.clear()
+        else:
+            self.glob_fig = plt.figure(figsize=(7, 2))
+            self.glob_ax = self.glob_fig.add_axes((0.12, 0.12, 0.85, 0.87))
+            self.glob_canvas = FigureCanvasTkAgg(self.glob_fig, master=self.global_plt)
+            self.glob_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+
+    def _calculate_global(self):
+        pass
 
     def _submit_file(self):
         pass
