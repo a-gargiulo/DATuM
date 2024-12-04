@@ -174,7 +174,7 @@ class Pose:
     ) -> List[float]:
         # Initialization
         calplate_width = 0.106
-        measured_angle_deg = cast(float, cast(dict, measurement["calibration_plate_angle"])["direct_measurement"])
+        measured_angle_deg = float(cast(dict, measurement["calibration_plate_angle"])["direct_measurement"])
 
         hill_side = np.sign(cast(float, cast(dict, measurement["calibration_plate_location"])["x_1"]))
         hill_prof_interpolant = interpolate.interp1d(x1_profile, x2_profile, kind="linear")

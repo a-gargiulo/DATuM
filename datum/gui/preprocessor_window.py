@@ -57,9 +57,11 @@ class PreprocessorWindow:
         self.orientation_is_confirmed = False
         self.transform_sect = Section(self.geom_sect.content, "Pose & Transformation (Local PIV -> Global SWT)", 2)
         self.pose_button = Button(self.transform_sect.content, "Load/Calculate Tranformation Matrix", self.open_pose)
+        self.params_status_var = tk.BooleanVar(value=False)
         self.pose_button.config(width=200 if system == "Darwin" else 20)
         self.pose_status_label = Label(self.transform_sect.content, "Nothing Loaded", 2)
         self.pose_status_label.config(fg="red")
+        self.params_status_var.trace("w", lambda *args: self._toggle_params_status(*args))
         self.checkbox_interp = Checkbutton(self.transform_sect.content, 2)
         self.checkbox_interp.config(text="Interpolate data to regular grid", command=self._toggle_interp)
         self.checkbox_interp_var = self.checkbox_interp.get_var()
@@ -79,11 +81,10 @@ class PreprocessorWindow:
         self.checkbox_gradient_opt = Checkbutton(self.cfd_sect.content, 1)
         self.checkbox_gradient_opt.config(text=r"dUdZ and dVdZ from CFD", command=self._toggle_cfd, state="disabled")
         self.checkbox_gradient_opt_var = self.checkbox_gradient_opt.get_var()
-        self.slice_button = Button(self.cfd_sect.content, "Load CFD Slice", self.load_cfd_slice, state="disabled")
-        self.slice_button.config(width=200 if system == "Darwin" else 10)
-        self.slice_listbox = tk.Listbox(self.cfd_sect.content, width=20, height=1, state="disabled")
-        self.slice_status_label = Label(self.cfd_sect.content, "Nothing Loaded", 1, state="disabled")
-        self.slice_status_label.config(fg="red")
+        self.slice_loader = FileLoader(self.cfd_sect.content, "CFD Slice", [("Tecplot Slice", "*.dat"), ("All Files", "*.*")], 1, False)
+        self.slice_loader.load_button.config(state="disabled")
+        self.slice_loader.listbox.config(state="disabled")
+        self.slice_loader.status_label.config(state="disabled")
         self.process_button = Button(self.main_frame, "Preprocess Data", self.preprocess_data)
         self.process_button.config(width=200 if system == "Darwin" else 20)
 
@@ -151,11 +152,6 @@ class PreprocessorWindow:
         self.inst_vel_loader.grid(
             row=3, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
-        # self.data_sect.content.grid(columnspan=4)
-        # self.data_sect.content.grid_columnconfigure(0, weight=1)
-        # self.data_sect.content.grid_columnconfigure(1, weight=1)
-        # self.data_sect.content.grid_columnconfigure(2, weight=1)
-        # self.data_sect.content.grid_columnconfigure(3, weight=1)
         self.cfd_sect.grid(
             row=3, column=0, columnspan=2, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
@@ -165,9 +161,7 @@ class PreprocessorWindow:
         self.cfd_sect.content.grid_columnconfigure(2, weight=1)
         self.checkbox_gradient.grid(row=0, column=0, sticky="nsew")
         self.checkbox_gradient_opt.grid(row=0, column=1, sticky="nsew")
-        self.slice_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
-        self.slice_listbox.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
-        self.slice_status_label.grid(row=1, column=2, padx=5, sticky="nsew")
+        self.slice_loader.grid(row=1, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.process_button.grid(row=4, column=0, columnspan=2, pady=5, padx=10)
 
     def _validate_float(self, input_value):
@@ -218,9 +212,9 @@ class PreprocessorWindow:
             self.checkbox_gradient_var.set(0)
             self.checkbox_gradient_opt.config(state="disabled")
             self.checkbox_gradient_opt_var.set(0)
-            self.slice_button.config(state="disabled")
-            self.slice_listbox.config(state="disabled")
-            self.slice_status_label.config(state="disabled")
+            self.slice_loader.load_button.config(state="disabled")
+            self.slice_loader.listbox.config(state="disabled")
+            self.slice_loader.status_label.config(state="disabled")
 
     def _toggle_gradient(self):
         is_gradient_enabled = self.checkbox_gradient_var.get()
@@ -232,15 +226,16 @@ class PreprocessorWindow:
             state = "disabled"
             self.checkbox_gradient_opt_var.set(0)
 
-        self.slice_button.config(state=state)
-        self.slice_listbox.config(state=state)
+        self.slice_loader.load_button.config(state=state)
+        self.slice_loader.listbox.config(state=state)
+        self.slice_loader.status_label.config(state=state)
 
     def _toggle_cfd(self):
         is_cfd_enabled = self.checkbox_gradient_opt_var.get()
         state = "normal" if is_cfd_enabled else "disabled"
-        self.slice_button.config(state=state)
-        self.slice_listbox.config(state=state)
-        self.slice_status_label.config(state=state)
+        self.slice_loader.load_button.config(state=state)
+        self.slice_loader.listbox.config(state=state)
+        self.slice_loader.status_label.config(state=state)
 
     def plot_bump(self):
         """Plot the bump contour."""
@@ -263,13 +258,23 @@ class PreprocessorWindow:
 
     def _confirm_orientation(self):
         self.orientation_is_confirmed = True
+        print(self.piv.pose.angle)
+        print(self.piv.pose.loc)
+        print(self.piv.pose.glob)
+
+    def _toggle_params_status(self, *args):
+        status = self.params_status_var.get()
+        if status:
+            self.pose_status_label.config(fg="green", text="Successfully Loaded")
+        else:
+            self.pose_status_label.config(fg="red", text="Nothing Loaded")
 
     def load_cfd_slice(self):
         pass
 
     def open_pose(self):
         if self.orientation_is_confirmed:
-            PoseWindow(self.root, self.piv, self.geometry)
+            PoseWindow(self.root, self.piv, self.geometry, self.params_status_var)
         else:
             messagebox.showwarning("Warning", "You must first confirm the hill orientation.")
 

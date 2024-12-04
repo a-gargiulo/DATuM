@@ -2,7 +2,7 @@
 
 import sys
 import tkinter as tk
-
+from tkinter import messagebox
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import patches
@@ -32,7 +32,7 @@ CALC_MODES = [
 class PoseWindow:
     """The pose calculator."""
 
-    def __init__(self, master: tk.Toplevel, piv: Piv, geometry: Beverli):
+    def __init__(self, master: tk.Toplevel, piv: Piv, geometry: Beverli, param_status: tk.BooleanVar):
         """
         Set up GUI and resources.
 
@@ -45,6 +45,7 @@ class PoseWindow:
         self._layout_widgets("default")
 
         # Resources
+        self.status = param_status
         self.piv = piv
         self.geometry = geometry
 
@@ -77,6 +78,13 @@ class PoseWindow:
         self.mode_selector_var.trace("w", self._on_mode_selection)
         self.mode_selector = tk.OptionMenu(self.opt_sect.content, self.mode_selector_var, *CALC_MODES)
         self.submit_button = Button(self.main_frame, "Submit Transformation File", command=self._submit_file)
+        self.parameters_loader = FileLoader(
+            self.opt_sect.content,
+            "Transformation Parameters:",
+            [("Transformation Parameters", "*.json"), ("All Files", "*.*")],
+            1,
+            False,
+        )
         self.calplate_loader = FileLoader(
             self.opt_sect.content,
             "Calibration Image:",
@@ -165,6 +173,8 @@ class PoseWindow:
         self.calplate_loader.grid_forget()
         self.global_loader.reset()
         self.global_loader.grid_forget()
+        self.parameters_loader.reset()
+        self.parameters_loader.grid_forget()
         self.xpick_var.set("")
         self.ypick_var.set("")
         self.local_sect.grid_forget()
@@ -187,6 +197,14 @@ class PoseWindow:
             sticky="w"
         )
         self.mode_selector.grid(row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="ew")
+        self.parameters_loader.grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=STYLES["pad"]["small"],
+            pady=STYLES["pad"]["small"],
+            sticky="nsew",
+        )
         self.submit_button.grid(row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
         self.scrollable_canvas.configure_frame()
 
@@ -266,16 +284,14 @@ class PoseWindow:
             trans_params = apputils.read_json(trans_params_path)
             if trans_params is None:
                 sys.exit(1)
+            rotation_angle_deg = cast(dict, trans_params["rotation"])["angle_deg"]
+        elif case == CALC_MODES[2]:
+            rotation_angle_deg = cast(list, self.global_pose)[6]
         else:
             print("ERROR: Invalid case for pose calculator.")
             sys.exit(1)
 
-        rotation_angle_deg = trans_params["rotation"]["angle_deg"]
-        if isinstance(rotation_angle_deg, float):
-            rotation_matrix = transform.get_rotation_matrix(rotation_angle_deg, (0, 0, 1))
-        else:
-            print("ERROR: Invalid rotation angle")
-            sys.exit(1)
+        rotation_matrix = transform.get_rotation_matrix(rotation_angle_deg, (0, 0, 1))
 
         img_coords_mm = transform.rotate_planar_vector_field(img_coords_mm, rotation_matrix)
         cmap = plt.get_cmap("gray")
@@ -299,13 +315,19 @@ class PoseWindow:
         self.cal_canvas.draw_idle()
         self.xpick_var.set(f"{pts[0][0]}")
         self.ypick_var.set(f"{pts[0][1]}")
+        self.local_pose = [float(self.xpick_var.get()), float(self.ypick_var.get())]
 
     def _create_local_pose_selector(self, case: str, *args):
-        self.local_sect.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        if not args:
+            row = args[0]
+        else:
+            row = 3
+
+        self.local_sect.grid(row=row, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.calplate_plt.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.local_sect.content.grid_columnconfigure(1, weight=1)
         self.local_sect.content.grid_rowconfigure(0, weight=1)
-        self.submit_button.grid(row=3)
+        self.submit_button.grid(row=row+1)
         self._plot_calplate(case)
         self.picker_frame.grid(row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"])
         self.picker_frame.grid_columnconfigure(0, weight=1)
@@ -392,11 +414,72 @@ class PoseWindow:
             "apply_convex_curvature_correction":  bool(self.is_convex_opt.get_var().get()),
             "use_measured_rotation_angle": bool(self.use_meas_angle_opt.get_var().get())
         }
-        print(opts)
         self.global_pose = self.piv.pose.calculate_global_pose(self.geometry, self.meas_loader.get_listbox_content()[0], opts)
         if self.global_pose is None:
             sys.exit(-1)
         self._plot_global(self.global_pose)
+        self._create_local_pose_selector(self.mode_selector_var.get(), 3)
 
     def _submit_file(self):
-        pass
+        case = self.mode_selector_var.get()
+        if case == CALC_MODES[0]:
+            trans_params_path = self.parameters_loader.get_listbox_content()[0]
+            trans_params = apputils.read_json(trans_params_path)
+            if trans_params is None:
+                sys.exit(-1)
+            self.piv.pose.angle = cast(float, trans_params["rotation"]["angle_deg"])
+            self.piv.pose.loc[0] = cast(float, trans_params["translation"]["x_1_loc_ref_mm"])
+            self.piv.pose.loc[1] = cast(float, trans_params["translation"]["x_2_loc_ref_mm"])
+            self.piv.pose.glob[0] = cast(float, trans_params["translation"]["x_1_glob_ref_m"])
+            self.piv.pose.glob[1] = cast(float, trans_params["translation"]["x_2_glob_ref_m"])
+            self.piv.pose.glob[2] = cast(float, trans_params["translation"]["x_3_glob_ref_m"])
+            self.status.set(True)
+            self._on_closing()
+        elif case == CALC_MODES[1]:
+            trans_params_path = self.global_loader.get_listbox_content()[0]
+            trans_params = apputils.read_json(trans_params_path)
+            if trans_params is None:
+                sys.exit(-1)
+            self.piv.pose.angle = cast(float, trans_params["rotation"]["angle_deg"])
+            self.piv.pose.glob[0] = cast(float, trans_params["translation"]["x_1_glob_ref_m"])
+            self.piv.pose.glob[1] = cast(float, trans_params["translation"]["x_2_glob_ref_m"])
+            self.piv.pose.glob[2] = cast(float, trans_params["translation"]["x_3_glob_ref_m"])
+            self.piv.pose.loc[0] = float(self.xpick_var.get())
+            self.piv.pose.loc[1] = float(self.ypick_var.get())
+            parameters = {
+                    "rotation": {
+                        "angle_deg": self.piv.pose.angle
+                    },
+                    "translation": {
+                        "x_1_glob_ref_m": self.piv.pose.glob[0],
+                        "x_2_glob_ref_m": self.piv.pose.glob[1],
+                        "x_3_glob_ref_m": self.piv.pose.glob[2],
+                        "x_1_loc_ref_mm": self.piv.pose.loc[0],
+                        "x_2_loc_ref_mm": self.piv.pose.loc[1]
+                    }
+            }
+            apputils.write_json("./outputs/test.json", parameters)
+            self.status.set(True)
+            self._on_closing()
+        else:
+            self.piv.pose.angle = cast(list, self.global_pose)[6]
+            self.piv.pose.glob[0] = cast(list, self.global_pose)[4]
+            self.piv.pose.glob[1] = cast(list, self.global_pose)[5]
+            self.piv.pose.glob[2] = cast(list, self.global_pose)[7]
+            self.piv.pose.loc[0] = float(self.xpick_var.get())
+            self.piv.pose.loc[1] = float(self.ypick_var.get())
+            parameters = {
+                    "rotation": {
+                        "angle_deg": self.piv.pose.angle
+                    },
+                    "translation": {
+                        "x_1_glob_ref_m": self.piv.pose.glob[0],
+                        "x_2_glob_ref_m": self.piv.pose.glob[1],
+                        "x_3_glob_ref_m": self.piv.pose.glob[2],
+                        "x_1_loc_ref_mm": self.piv.pose.loc[0],
+                        "x_2_loc_ref_mm": self.piv.pose.loc[1]
+                    }
+            }
+            apputils.write_json("./outputs/test.json", parameters)
+            self.status.set(True)
+            self._on_closing()

@@ -103,16 +103,18 @@ def read_json(file_path: str) -> Optional[NestedDict]:
         print(f"An unexpected error occurred: {e}")
         return None
 
-# def write_json(file_path: str, dictionary: NestedDict) -> None:
-#     """Write a dictionary to a json formatted file.
 
-#     :param file_path: System path to the json file.
-#     :param dictionary: Dictionary to write to a json file.
-#     """
-#     with open(file_path, "w", encoding="utf-8") as file:
-#         file.write(json.dumps(dictionary, indent=4))
+def write_json(file_path: str, dictionary: NestedDict) -> None:
+    """Write a dictionary to a json formatted file.
 
-#     print(f"--> File '{os.path.basename(file_path)}' created.\n")
+    :param file_path: System path to the json file.
+    :param dictionary: Dictionary to write to a json file.
+    """
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, "w", encoding="utf-8") as file:
+        file.write(json.dumps(dictionary, indent=4))
+
+    print(f"--> File '{os.path.basename(file_path)}' created.\n")
 
 
 # def load_pickle(file_path: str) -> NestedDict:
