@@ -1,4 +1,5 @@
 """Create the preprocessor application window."""
+import sys
 import tkinter as tk
 from tkinter import messagebox
 
@@ -7,9 +8,13 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from ..core.beverli import Beverli
 from ..core.piv import Piv
+from ..core import preprocessing
 from ..utility.configure import STYLES, system
+from ..utility import apputils
 from .pose_window import PoseWindow
 from .widgets import Button, Checkbutton, Entry, FileLoader, Frame, Label, ScrollableCanvas, Section
+from ..core.load import load_raw_data
+from ..core import transform
 
 # Constants
 WINDOW_TITLE = "Preprocessor"
@@ -69,8 +74,11 @@ class PreprocessorWindow:
         self.interp_pts_label.config(state="disabled")
         self.interp_pts_entry = Entry(self.transform_sect.content, 2, state="disabled")
         self.data_sect = Section(self.main_frame, "Raw (Matlab) Data", 2)
+        self.checkbox_flip_u3 = Checkbutton(self.data_sect.content, 2, text="Flip U3 Velocity", state="disabled")
+        self.checkbox_flip_u3_var = self.checkbox_flip_u3.get_var()
         mat_type = [("Matlab Files", "*.mat"), ("All Files", "*.*")]
         self.vel_loader = FileLoader(self.data_sect.content, "Mean Velocity", mat_type, 2)
+        self.vel_loader.checkbox_var.trace("w", lambda *args: self._toggle_flip_opt(*args))
         self.stress_loader = FileLoader(self.data_sect.content, "Reynolds Stress", mat_type, 2)
         self.dissp_loader = FileLoader(self.data_sect.content, "Turbulence Dissipation", mat_type, 2)
         self.inst_vel_loader = FileLoader(self.data_sect.content, "Velocity Frame", mat_type, 2)
@@ -79,12 +87,14 @@ class PreprocessorWindow:
         self.checkbox_gradient.config(text="Enable combutation", command=self._toggle_gradient, state="disabled")
         self.checkbox_gradient_var = self.checkbox_gradient.get_var()
         self.checkbox_gradient_opt = Checkbutton(self.cfd_sect.content, 1)
-        self.checkbox_gradient_opt.config(text=r"dUdZ and dVdZ from CFD", command=self._toggle_cfd, state="disabled")
+        self.checkbox_gradient_opt.config(text=r"dUdZ and dVdZ from CFD", state="disabled")
         self.checkbox_gradient_opt_var = self.checkbox_gradient_opt.get_var()
         self.slice_loader = FileLoader(self.cfd_sect.content, "CFD Slice", [("Tecplot Slice", "*.dat"), ("All Files", "*.*")], 1, False)
         self.slice_loader.load_button.config(state="disabled")
         self.slice_loader.listbox.config(state="disabled")
         self.slice_loader.status_label.config(state="disabled")
+        self.slice_zone_name_label = Label(self.cfd_sect.content, "Slice Zone Name:", 1, state="disabled")
+        self.slice_zone_name = Entry(self.cfd_sect.content, 1, state="disabled")
         self.process_button = Button(self.main_frame, "Preprocess Data", self.preprocess_data)
         self.process_button.config(width=200 if system == "Darwin" else 20)
 
@@ -145,6 +155,9 @@ class PreprocessorWindow:
         )
         self.data_sect.content.grid_columnconfigure(0, weight=1)
         self.vel_loader.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.checkbox_flip_u3.grid(
+            row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
         self.stress_loader.grid(
             row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
@@ -162,6 +175,8 @@ class PreprocessorWindow:
         self.checkbox_gradient.grid(row=0, column=0, sticky="nsew")
         self.checkbox_gradient_opt.grid(row=0, column=1, sticky="nsew")
         self.slice_loader.grid(row=1, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
+        self.slice_zone_name_label.grid(row=2, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsw")
+        self.slice_zone_name.grid(row=2, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsw")
         self.process_button.grid(row=4, column=0, columnspan=2, pady=5, padx=10)
 
     def _validate_float(self, input_value):
@@ -215,27 +230,20 @@ class PreprocessorWindow:
             self.slice_loader.load_button.config(state="disabled")
             self.slice_loader.listbox.config(state="disabled")
             self.slice_loader.status_label.config(state="disabled")
+            self.slice_zone_name.config(state="disabled")
 
     def _toggle_gradient(self):
         is_gradient_enabled = self.checkbox_gradient_var.get()
-        self.checkbox_gradient_opt.config(state="normal" if is_gradient_enabled else "disabled")
-
-        if is_gradient_enabled and self.checkbox_gradient_opt_var.get():
-            state = "normal"
-        else:
-            state = "disabled"
+        state = "normal" if is_gradient_enabled else "disabled"
+        if state == "disabled":
             self.checkbox_gradient_opt_var.set(0)
 
+        self.checkbox_gradient_opt.config(state=state)
         self.slice_loader.load_button.config(state=state)
         self.slice_loader.listbox.config(state=state)
         self.slice_loader.status_label.config(state=state)
-
-    def _toggle_cfd(self):
-        is_cfd_enabled = self.checkbox_gradient_opt_var.get()
-        state = "normal" if is_cfd_enabled else "disabled"
-        self.slice_loader.load_button.config(state=state)
-        self.slice_loader.listbox.config(state=state)
-        self.slice_loader.status_label.config(state=state)
+        self.slice_zone_name_label.config(state=state)
+        self.slice_zone_name.config(state=state)
 
     def plot_bump(self):
         """Plot the bump contour."""
@@ -258,7 +266,8 @@ class PreprocessorWindow:
 
     def _confirm_orientation(self):
         self.orientation_is_confirmed = True
-        print(self.piv.pose.angle)
+        print(self.piv.pose.angle1)
+        print(self.piv.pose.angle2)
         print(self.piv.pose.loc)
         print(self.piv.pose.glob)
 
@@ -269,14 +278,58 @@ class PreprocessorWindow:
         else:
             self.pose_status_label.config(fg="red", text="Nothing Loaded")
 
-    def load_cfd_slice(self):
-        pass
+    def _toggle_flip_opt(self, *args):
+        if self.vel_loader.checkbox_var.get():
+            self.checkbox_flip_u3.config(state="normal")
+        else:
+            self.checkbox_flip_u3.config(state="disabled")
 
     def open_pose(self):
+        """Open the pose app."""
         if self.orientation_is_confirmed:
             PoseWindow(self.root, self.piv, self.geometry, self.params_status_var)
         else:
             messagebox.showwarning("Warning", "You must first confirm the hill orientation.")
 
     def preprocess_data(self):
-        pass
+        """Preprocess the piv data."""
+        data_path = {}
+        if self.vel_loader.get_listbox_content()[0] != "":
+            data_path["mean_velocity"] = self.vel_loader.get_listbox_content()[0]
+        if self.stress_loader.get_listbox_content()[0] != "":
+            data_path["reynolds_stress"] = self.stress_loader.get_listbox_content()[0]
+        if self.dissp_loader.get_listbox_content()[0] != "":
+            data_path["turbulence_dissipation"] = self.dissp_loader.get_listbox_content()[0]
+        if self.inst_vel_loader.get_listbox_content()[0] != "":
+            data_path["instantaneous_velocity_frame"] = self.inst_vel_loader.get_listbox_content()[0]
+
+        opts = {
+            "flip_out_of_plane_component": bool(self.checkbox_flip_u3_var.get()),
+            "use_dwdx_and_dwdy_from_cfd": bool(self.checkbox_gradient_opt_var.get())
+        }
+        should_load = {
+            "mean_velocity": bool(self.vel_loader.checkbox_var.get()),
+            "reynolds_stress": bool(self.stress_loader.checkbox_var.get()),
+            "turbulence_dissipation": bool(self.dissp_loader.checkbox_var.get()),
+            "instantaneous_velocity_frame": bool(self.inst_vel_loader.checkbox_var.get())
+        }
+
+        load_raw_data(self.piv, data_path, should_load, opts)
+        if self.piv.data is None:
+            sys.exit(-1)
+        if bool(self.checkbox_interp_var.get()):
+            transform.rotate_data(self.piv)
+            transform.translate_data(self.piv)
+            transform.scale_coordinates(self.piv, scale_factor=1e-3)
+            if self.piv.pose.angle2 != 0.0:
+                self.piv.data["coordinates"]["Z"] = self.piv.data["coordinates"]["X"]
+        else:
+            transform.rotate_data(self.piv)
+            transform.interpolate_data(self.piv, int(self.interp_pts_entry.get()))
+            transform.translate_data(self.piv)
+            transform.scale_coordinates(self.piv, scale_factor=1e-3)
+
+        if bool(self.checkbox_gradient_var.get()) and self.piv.pose.angle2 == 0.0:
+            preprocessing.compute_velocity_gradient(self.piv, self.slice_loader.get_listbox_content()[0], self.slice_zone_name.get(), opts)
+
+        apputils.write_pickle("./outputs/preprocessed.pkl", self.piv.data)

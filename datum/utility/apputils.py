@@ -1,8 +1,8 @@
 """Define useful application utility functions."""
 import json
+import sys
 import os
-# import pickle
-# import sys
+import pickle
 from typing import Optional
 
 # from . import parser
@@ -42,45 +42,45 @@ def search_nested_dict(dictionary: NestedDict, keyword: str) -> bool:
     return False
 
 
-# def update_nested_dict(main_dict: NestedDict, update_dict: NestedDict) -> None:
-#     """Update arbitrary nested dictionaries.
+def update_nested_dict(main_dict: NestedDict, update_dict: NestedDict) -> None:
+    """Update arbitrary nested dictionaries.
 
-#     :param main_dict: Nested dictionary to update.
-#     :param update_dict: Updates to apply to the dictionary.
-#     """
-#     for key, value in update_dict.items():
-#         if isinstance(value, dict) and key in main_dict:
-#             update_nested_dict(main_dict[key], value)
-#         else:
-#             main_dict[key] = value
+    :param main_dict: Nested dictionary to update.
+    :param update_dict: Updates to apply to the dictionary.
+    """
+    for key, value in update_dict.items():
+        if isinstance(value, dict) and key in main_dict:
+            update_nested_dict(main_dict[key], value)
+        else:
+            main_dict[key] = value
 
 
-# def find_file(root_folder: str, target_filename: str) -> Optional[str]:
-#     """Search for a file within all subfolders contained at a desired root folder
-#     location.
+def find_file(root_folder: str, target_filename: str) -> Optional[str]:
+    """Search for a file within all subfolders contained at a desired root folder
+    location.
 
-#     :param root_folder: The desired root folder.
-#     :param target_filename: The file name to find.
-#     :return: An optional string representing the found file's system path.
-#     """
-#     root_folder = os.path.normpath(root_folder)
-#     result = None
-#     try:
-#         for foldername, _, filenames in os.walk(root_folder):
-#             if target_filename in filenames:
-#                 result = os.path.join(foldername, target_filename)
+    :param root_folder: The desired root folder.
+    :param target_filename: The file name to find.
+    :return: An optional string representing the found file's system path.
+    """
+    root_folder = os.path.normpath(root_folder)
+    result = None
+    try:
+        for foldername, _, filenames in os.walk(root_folder):
+            if target_filename in filenames:
+                result = os.path.join(foldername, target_filename)
 
-#         if result:
-#             return result
-#         raise FileNotFoundError(
-#             (
-#                 f"The file `{target_filename}` was not found "
-#                 "at the provided root location."
-#             )
-#         )
-#     except FileNotFoundError as err:
-#         print(f"-->ERROR: {err}")
-#         sys.exit(1)
+        if result:
+            return result
+        raise FileNotFoundError(
+            (
+                f"The file `{target_filename}` was not found "
+                "at the provided root location."
+            )
+        )
+    except FileNotFoundError as err:
+        print(f"-->ERROR: {err}")
+        sys.exit(1)
 
 
 def read_json(file_path: str) -> Optional[NestedDict]:
@@ -117,26 +117,27 @@ def write_json(file_path: str, dictionary: NestedDict) -> None:
     print(f"--> File '{os.path.basename(file_path)}' created.\n")
 
 
-# def load_pickle(file_path: str) -> NestedDict:
-#     """Load a dictionary contained in a Pickle (.pkl) file.
+def load_pickle(file_path: str) -> NestedDict:
+    """Load a dictionary contained in a Pickle (.pkl) file.
 
-#     :param file_path: System path to the Pickle file.
-#     :return: A nested dictionary containing the file's content.
-#     """
-#     with open(file_path, "rb") as file:
-#         data = pickle.load(file)
-#     return data
+    :param file_path: System path to the Pickle file.
+    :return: A nested dictionary containing the file's content.
+    """
+    with open(file_path, "rb") as file:
+        data = pickle.load(file)
+    return data
 
 
-# def write_pickle(file_path: str, dictionary: NestedDict) -> None:
-#     """Write a dictionary to a Pickle (.pkl) file.
+def write_pickle(file_path: str, dictionary: NestedDict) -> None:
+    """Write a dictionary to a Pickle (.pkl) file.
 
-#     :param file_path: System path to the Pickle file.
-#     :param dictionary: Dictionary to write to the Pickle file.
-#     """
-#     with open(file_path, "wb") as file:
-#         pickle.dump(dictionary, file)
-#     print(f"--> File '{os.path.basename(file_path)}' created.\n")
+    :param file_path: System path to the Pickle file.
+    :param dictionary: Dictionary to write to the Pickle file.
+    """
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, "wb") as file:
+        pickle.dump(dictionary, file)
+    print(f"--> File '{os.path.basename(file_path)}' created.\n")
 
 
 # def get_output_file_path() -> str:

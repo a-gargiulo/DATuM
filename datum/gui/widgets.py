@@ -76,6 +76,7 @@ class Checkbutton(tk.Checkbutton):
             variable=self.checkbox_var,
             bg=STYLES["color"][f"s{category}_content"],
             fg="white",
+            selectcolor="gray",
             anchor="w",
             **kwargs,
         )

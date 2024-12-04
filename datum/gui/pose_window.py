@@ -72,6 +72,7 @@ class PoseWindow:
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
         self.main_frame = self.scrollable_canvas.get_frame()
         self.opt_sect = Section(self.main_frame, "Settings", 1)
+        self.checkbox_diag = Checkbutton(self.opt_sect.content, 1, text="Plane is diagonal")
         self.mode_selector_label = Label(self.opt_sect.content, "Select Calculation Mode:", 1)
         self.mode_selector_var = tk.StringVar()
         self.mode_selector_var.set(CALC_MODES[0])
@@ -189,16 +190,17 @@ class PoseWindow:
         self.opt_sect.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.opt_sect.content.grid_columnconfigure(0, weight=1)
         self.opt_sect.content.grid_columnconfigure(1, weight=1)
+        self.checkbox_diag.grid(row=0, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew")
         self.mode_selector_label.grid(
-            row=0,
+            row=1,
             column=0,
             padx=STYLES["pad"]["small"],
             pady=STYLES["pad"]["small"],
             sticky="w"
         )
-        self.mode_selector.grid(row=0, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="ew")
+        self.mode_selector.grid(row=1, column=1, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="ew")
         self.parameters_loader.grid(
-            row=1,
+            row=2,
             column=0,
             columnspan=2,
             padx=STYLES["pad"]["small"],
@@ -210,6 +212,9 @@ class PoseWindow:
 
     def _layout_widgets_local(self):
         self._layout_widgets_default()
+        self.checkbox_diag.grid_forget()
+        self.mode_selector.grid(row=0)
+        self.mode_selector_label.grid(row=0)
         self.calplate_loader.grid(
             row=1,
             column=0,
@@ -231,6 +236,9 @@ class PoseWindow:
 
     def _layout_widgets_global(self):
         self._layout_widgets_default()
+        self.checkbox_diag.grid_forget()
+        self.mode_selector.grid(row=0)
+        self.mode_selector_label.grid(row=0)
         self.calplate_loader.grid(
             row=1,
             column=0,
@@ -427,7 +435,11 @@ class PoseWindow:
             trans_params = apputils.read_json(trans_params_path)
             if trans_params is None:
                 sys.exit(-1)
-            self.piv.pose.angle = cast(float, trans_params["rotation"]["angle_deg"])
+            if self.checkbox_diag and bool(self.checkbox_diag.get_var().get()):
+                self.piv.pose.angle1 = cast(float, trans_params["rotation"]["angle_1_deg"])
+                self.piv.pose.angle2 = cast(float, trans_params["rotation"]["angle_2_deg"])
+            else:
+                self.piv.pose.angle1 = cast(float, trans_params["rotation"]["angle_deg"])
             self.piv.pose.loc[0] = cast(float, trans_params["translation"]["x_1_loc_ref_mm"])
             self.piv.pose.loc[1] = cast(float, trans_params["translation"]["x_2_loc_ref_mm"])
             self.piv.pose.glob[0] = cast(float, trans_params["translation"]["x_1_glob_ref_m"])
@@ -440,7 +452,7 @@ class PoseWindow:
             trans_params = apputils.read_json(trans_params_path)
             if trans_params is None:
                 sys.exit(-1)
-            self.piv.pose.angle = cast(float, trans_params["rotation"]["angle_deg"])
+            self.piv.pose.angle1 = cast(float, trans_params["rotation"]["angle_deg"])
             self.piv.pose.glob[0] = cast(float, trans_params["translation"]["x_1_glob_ref_m"])
             self.piv.pose.glob[1] = cast(float, trans_params["translation"]["x_2_glob_ref_m"])
             self.piv.pose.glob[2] = cast(float, trans_params["translation"]["x_3_glob_ref_m"])
@@ -448,7 +460,7 @@ class PoseWindow:
             self.piv.pose.loc[1] = float(self.ypick_var.get())
             parameters = {
                     "rotation": {
-                        "angle_deg": self.piv.pose.angle
+                        "angle_deg": self.piv.pose.angle1
                     },
                     "translation": {
                         "x_1_glob_ref_m": self.piv.pose.glob[0],
@@ -462,7 +474,7 @@ class PoseWindow:
             self.status.set(True)
             self._on_closing()
         else:
-            self.piv.pose.angle = cast(list, self.global_pose)[6]
+            self.piv.pose.angle1 = cast(list, self.global_pose)[6]
             self.piv.pose.glob[0] = cast(list, self.global_pose)[4]
             self.piv.pose.glob[1] = cast(list, self.global_pose)[5]
             self.piv.pose.glob[2] = cast(list, self.global_pose)[7]
@@ -470,7 +482,7 @@ class PoseWindow:
             self.piv.pose.loc[1] = float(self.ypick_var.get())
             parameters = {
                     "rotation": {
-                        "angle_deg": self.piv.pose.angle
+                        "angle_deg": self.piv.pose.angle1
                     },
                     "translation": {
                         "x_1_glob_ref_m": self.piv.pose.glob[0],

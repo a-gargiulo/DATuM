@@ -17,9 +17,10 @@ class Pose:
     It further provides functionalities to calculate and manipulate the pose.
     """
 
-    def __init__(self, angle: float = 0.0, loc: List[float] = [0.0, 0.0], glob: List[float] = [0.0, 0.0, 0.0]):
+    def __init__(self, angle1: float = 0.0, angle2: float = 0.0, loc: List[float] = [0.0, 0.0], glob: List[float] = [0.0, 0.0, 0.0]):
         """Initialize a PIV plane pose."""
-        self.angle = angle
+        self.angle1 = angle1
+        self.angle2 = angle2
         self.loc = loc
         self.glob = glob
 

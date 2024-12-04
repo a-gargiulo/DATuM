@@ -2,23 +2,27 @@
 PIV coordinate system to the global Cartesian coordinate system of the corresponding
 BeVERLI Hill experiment in the Virginia Tech Stability Wind Tunnel."""
 
-from typing import Tuple, List, Dict
+from typing import Dict, List, Tuple
 
 import numpy as np
-import sys
 
-from ..utility import mathutils
-# from .parser import InputFile
-from .piv import Piv
+from . import log
+from .my_math import interpolate
+from .parser import InputFile
 
 
-def get_rotation_matrix(rotation_angle_deg: float, rotation_axis: Tuple[float, float, float]) -> np.ndarray:
-    """Get the rotation matrix for a body's Euler rotation about a specified axis of its Cartesian coordinate system.
+def get_rotation_matrix(
+    rotation_angle_deg: float, rotation_axis: Tuple[float, float, float]
+) -> np.ndarray:
+    """Gets the rotation matrix for an Euler rotation of a body about a specified axis
+    of its Cartesian coordinate system.
 
     :param rotation_angle_deg: Rotation angle measured in degrees.
-    :param rotation_axis: 3D vector components of the axis of rotation as a tuple of shape (3, ).
+    :param rotation_axis: 3D vector components of the axis of rotation as a tuple of
+        shape (3, ).
 
     :return: Rotation matrix as :py:type:`ndarray` of shape (3, 3).
+    :rtype: :py:type:`ndarray`
     """
     angle_rad = np.deg2rad(rotation_angle_deg)
     axis = calculate_unit_vector(rotation_axis)
@@ -38,19 +42,37 @@ def get_rotation_matrix(rotation_angle_deg: float, rotation_axis: Tuple[float, f
 
 
 def calculate_unit_vector(data: Tuple[float, float, float]) -> np.ndarray:
-    """Normalize a 3D vector.
+    """Normalizes an input vector.
 
-    :param data: 3D vector components.
+    :param data: 3D vector components of an input vector.
 
     :return: The normalized vector as :py:type:`ndarray` of shape (3, ).
+    :rtype: :py:type:`ndarray`
     """
-    np_data = np.array(data, dtype=np.float64)
-    np_data /= np.sqrt(np.dot(np_data, np_data))
-    return np_data
+    data = np.array(data, dtype=np.float64)
+    data /= np.sqrt(np.dot(data, data))
+    return data
 
 
-def rotate_data(piv_obj: Piv) -> None:
-    """Rotate PIV data from local PIV coordinates to global coordinates in VT SWT."""
+@log.log_process("Rotate data", "subsub")
+def rotate_data(piv_obj) -> None:
+    """Rotates the `original` BeVERLI Hill stereo PIV data from its local PIV coordinate
+    system to the Cartesian coordinate system used in the Virginia Tech Stability Wind
+    Tunnel.
+
+    The `original` data comprises coordinates, mean velocity, Reynolds stress tensor,
+    and an instantaneous velocity frame (if available). Additional derived quantities,
+    such as the mean rate-of-strain tensor, are computed directly in the (rotated)
+    coordinate system of the Virginia Tech Stability Wind Tunnel.
+
+    If you need to rotate a specific flow quantity to a coordinate system not handled by
+    this routine, consider the :py:meth:`datum.transformations.rotate_flow_quantity`
+    function.
+
+    The present routine directly edits the :py:type:`Piv` object that is passed to it.
+
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
+    """
     rotation_matrix = _obtain_rotation_matrix(piv_obj)
 
     data_to_rotate = [
@@ -68,15 +90,21 @@ def rotate_data(piv_obj: Piv) -> None:
             rotate_flow_quantity(piv_obj, quantity, components, rotation_matrix)
 
 
-def _obtain_rotation_matrix(piv_obj: Piv):
-    if piv_obj.pose.angle2 != 0.0:
-        rotation_angle_1_deg = piv_obj.pose.angle1
-        rotation_angle_2_deg = piv_obj.pose.angle2
+def _obtain_rotation_matrix(piv_obj):
+    input_data = InputFile().data
+
+    if input_data["piv_data"]["plane_is_diagonal"]:
+        rotation_angle_1_deg = piv_obj.transformation_parameters["rotation"][
+            "angle_1_deg"
+        ]
+        rotation_angle_2_deg = piv_obj.transformation_parameters["rotation"][
+            "angle_2_deg"
+        ]
         rotation_matrix_1 = get_rotation_matrix(rotation_angle_1_deg, (0, 0, 1))
         rotation_matrix_2 = get_rotation_matrix(rotation_angle_2_deg, (0, -1, 0))
         rotation_matrix = rotation_matrix_2 @ rotation_matrix_1
     else:
-        rotation_angle_deg = piv_obj.pose.angle1
+        rotation_angle_deg = piv_obj.transformation_parameters["rotation"]["angle_deg"]
         rotation_matrix = get_rotation_matrix(rotation_angle_deg, (0, 0, 1))
 
     return rotation_matrix
@@ -103,22 +131,31 @@ def rotate_flow_quantity(
         set_rotated_tensor_quantity(piv_obj, quantity, components, rotated_tensor)
     else:
         vector = prepare_vector_quantity_for_rotation(piv_obj, quantity, components)
-        rotated_vector = rotate_planar_vector_field(vector, rotation_matrix)
+        rotated_vector = rotate_vector_quantity(vector, rotation_matrix)
         set_rotated_vector_quantity(piv_obj, quantity, components, rotated_vector)
 
 
-def rotate_planar_vector_field(vector: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
-    """Rotate a 2d plane of 2d or 3d vectors.
+# static
+def rotate_vector_quantity(
+    vector: np.ndarray, rotation_matrix: np.ndarray
+) -> np.ndarray:
+    """Rotate a BeVERLI stereo PIV vector quantity based on the provided rotation
+    matrix.
 
-    :param rotation_matrix: The rotation matrix as NumPy ndarray of shape (3, 3).
-    :param vector: NumPy ndarray of shape (dim, m, n), where dim is the vector dimension (or number of vector
-        components), and m and n represent the number of available data points in each dimension of the 2d data plane.
+    This method takes a rotation matrix and a list of vector component matrices as
+    input. It then calculates the rotated quantity and returns it.
 
-    :return: NumPy ndarray of shape (dim, m, n) representing the rotated data plane, where dim is the number of vector
-        components, and m and n represent the number of available data points in each dimension of the 2d data plane.
+    :param rotation_matrix: NumPy ndarray of shape (3, 3) representing the rotation
+        matrix.
+    :param vector: List of NumPy ndarrays of shape (m, n), each containing a
+        specific vector component, where m and n represent the number of available data
+        points in the x:sub:`1`- and x:sub:`2`-direction.
+    :return: List of NumPy ndarrays of shape (m, n) containing the rotated vector
+        quantity's components, where m and n represent the number of available data
+        points in the x:sub:`1`- and x:sub:`2`-direction.
     """
     if vector.shape[0] < 2:
-        raise TypeError("The vector must be at least 2d.")
+        raise TypeError("You must provide a list of at least two quantities.")
 
     if vector.shape[0] == 2:
         vector = np.append(vector, np.zeros_like(vector[0])[None, :, :], axis=0)
@@ -235,13 +272,14 @@ def set_rotated_tensor_quantity(
             continue
 
 
-def interpolate_data(piv_obj, n_grid) -> None:
+@log.log_process("Interpolate data", "subsub")
+def interpolate_data(piv_obj) -> None:
     """Perform a comprehensive routine to interpolate the BeVERLI stereo PIV data to a
     dense grid within the global BeVERLI coordinate system.
 
     :param piv_obj: Instance of the :py:class:`datum.piv.Piv` class.
     """
-    x1_q, x2_q = get_interpolation_grid(piv_obj, n_grid)
+    x1_q, x2_q = get_interpolation_grid(piv_obj)
 
     data_to_interpolate = [
         ("mean_velocity", ["U", "V", "W"]),
@@ -256,13 +294,13 @@ def interpolate_data(piv_obj, n_grid) -> None:
             is_avail = all([piv_obj.search(data_type), piv_obj.search(key)])
             if is_avail:
                 data = get_flattened_data(piv_obj, data_type, key)
-                interp_data = mathutils.interpolate(coords, data, (x1_q, x2_q))
+                interp_data = interpolate(coords, data, (x1_q, x2_q))
                 set_interpolated_data(piv_obj, data_type, key, interp_data)
 
     piv_obj.data["coordinates"] = {"X": x1_q, "Y": x2_q}
 
 
-def get_interpolation_grid(piv_obj, n_grid) -> Tuple[np.ndarray, np.ndarray]:
+def get_interpolation_grid(piv_obj) -> Tuple[np.ndarray, np.ndarray]:
     """Build a structured, dense coordinate mesh for the interpolation of the BeVERLI
     stereo PIV data.
 
@@ -271,7 +309,10 @@ def get_interpolation_grid(piv_obj, n_grid) -> Tuple[np.ndarray, np.ndarray]:
         grid, where m and n represent the number of available data points in the
         x:sub:`1`- and x:sub:`2`-direction.
     """
-    num_of_pts = n_grid
+    input_data = InputFile().data
+    num_of_pts = input_data["preprocessor"]["coordinate_transformation"][
+        "interpolation_grid_size"
+    ]
     x1_range = np.linspace(
         np.min(piv_obj.data["coordinates"]["X"]),
         np.max(piv_obj.data["coordinates"]["X"]),
@@ -337,6 +378,7 @@ def set_interpolated_data(
     piv_obj.data[data_type][key] = interpolated_data
 
 
+@log.log_process("Translate data", "subsub")
 def translate_data(piv_obj) -> None:
     """Perform a comprehensive routine to translate the BeVERLI stereo PIV data from
     its local to the global BeVERLI coordinate system."""
@@ -354,8 +396,9 @@ def get_translation_vector(piv_obj) -> Tuple[float, float]:
     """
     # THIS FUNCTION IS QUITE SPECIFIC TO THE BEVERLI PIV DATA, WHICH IS ASSUMED TO
     # HAVE COORDINATES MEASURED IN MM WHEN RAW
-    x_1_shift = piv_obj.pose.glob[0] * 1000 - piv_obj.pose.loc[0]
-    x_2_shift = piv_obj.pose.glob[1] * 1000 - piv_obj.pose.loc[1]
+    translation = piv_obj.transformation_parameters["translation"]
+    x_1_shift = translation["x_1_glob_ref_m"] * 1000 - translation["x_1_loc_ref_mm"]
+    x_2_shift = translation["x_2_glob_ref_m"] * 1000 - translation["x_2_loc_ref_mm"]
 
     return x_1_shift, x_2_shift
 
@@ -376,127 +419,128 @@ def translate_coordinates(
     coordinates["Y"] += x_2_shift
 
 
+@log.log_process("Scale data", "subsub")
 def scale_coordinates(piv_obj, scale_factor: float) -> None:
     piv_obj.data["coordinates"]["X"] *= scale_factor
     piv_obj.data["coordinates"]["Y"] *= scale_factor
 
 
-# def rotate_profile(profile, rotation_matrix):
-#     velocity_vector = np.array([profile["mean_velocity"][f"{i}"] for i in "UVW"])
+def rotate_profile(profile, rotation_matrix):
+    velocity_vector = np.array([profile["mean_velocity"][f"{i}"] for i in "UVW"])
 
-#     components = ["UU", "UV", "UW", "UV", "VV", "VW", "UW", "VW", "WW"]
-#     re_stress_tensor = np.array(
-#         [
-#             [
-#                 profile["reynolds_stress"][component]
-#                 for component in components[i : i + 3]
-#             ]
-#             for i in range(0, 9, 3)
-#         ]
-#     )
+    components = ["UU", "UV", "UW", "UV", "VV", "VW", "UW", "VW", "WW"]
+    re_stress_tensor = np.array(
+        [
+            [
+                profile["reynolds_stress"][component]
+                for component in components[i : i + 3]
+            ]
+            for i in range(0, 9, 3)
+        ]
+    )
 
-#     velocity_vector_rotated = rotation_matrix @ velocity_vector
-#     re_stress_tensor_rotated = (
-#         rotation_matrix @ re_stress_tensor.transpose(2, 0, 1) @ rotation_matrix.T
-#     ).transpose(1, 2, 0)
+    velocity_vector_rotated = rotation_matrix @ velocity_vector
+    re_stress_tensor_rotated = (
+        rotation_matrix @ re_stress_tensor.transpose(2, 0, 1) @ rotation_matrix.T
+    ).transpose(1, 2, 0)
 
-#     if "strain_tensor" in profile:
-#         strain_tensor = np.array(
-#             [
-#                 [profile["strain_tensor"][f"S_{i+1}{j+1}"] for j in range(3)]
-#                 for i in range(3)
-#             ]
-#         )
-#         rotation_tensor = np.array(
-#             [
-#                 [profile["rotation_tensor"][f"W_{i+1}{j+1}"] for j in range(3)]
-#                 for i in range(3)
-#             ]
-#         )
-#         normalized_rotation_tensor = np.array(
-#             [
-#                 [
-#                     profile["normalized_rotation_tensor"][f"O_{i+1}{j+1}"]
-#                     for j in range(3)
-#                 ]
-#                 for i in range(3)
-#             ]
-#         )
+    if "strain_tensor" in profile:
+        strain_tensor = np.array(
+            [
+                [profile["strain_tensor"][f"S_{i+1}{j+1}"] for j in range(3)]
+                for i in range(3)
+            ]
+        )
+        rotation_tensor = np.array(
+            [
+                [profile["rotation_tensor"][f"W_{i+1}{j+1}"] for j in range(3)]
+                for i in range(3)
+            ]
+        )
+        normalized_rotation_tensor = np.array(
+            [
+                [
+                    profile["normalized_rotation_tensor"][f"O_{i+1}{j+1}"]
+                    for j in range(3)
+                ]
+                for i in range(3)
+            ]
+        )
 
-#         strain_tensor_rotated = rotate_tensor_profile(strain_tensor, rotation_matrix)
-#         rotation_tensor_rotated = rotate_tensor_profile(
-#             rotation_tensor, rotation_matrix
-#         )
-#         normalized_rotation_tensor_rotated = rotate_tensor_profile(
-#             normalized_rotation_tensor, rotation_matrix
-#         )
+        strain_tensor_rotated = rotate_tensor_profile(strain_tensor, rotation_matrix)
+        rotation_tensor_rotated = rotate_tensor_profile(
+            rotation_tensor, rotation_matrix
+        )
+        normalized_rotation_tensor_rotated = rotate_tensor_profile(
+            normalized_rotation_tensor, rotation_matrix
+        )
 
-#         return (
-#             velocity_vector_rotated,
-#             re_stress_tensor_rotated,
-#             strain_tensor_rotated,
-#             rotation_tensor_rotated,
-#             normalized_rotation_tensor_rotated,
-#         )
+        return (
+            velocity_vector_rotated,
+            re_stress_tensor_rotated,
+            strain_tensor_rotated,
+            rotation_tensor_rotated,
+            normalized_rotation_tensor_rotated,
+        )
 
-#     return velocity_vector_rotated, re_stress_tensor_rotated, None, None, None
-
-
-# def rotate_tensor_profile(tensor, rotation_matrix):
-#     return (
-#         rotation_matrix[None, :, :]
-#         @ tensor.transpose(2, 0, 1)
-#         @ rotation_matrix.T[None, :, :]
-#     ).transpose(1, 2, 0)
+    return velocity_vector_rotated, re_stress_tensor_rotated, None, None, None
 
 
-# def set_rotated_profiles(
-#     profile,
-#     velocity_vector_rotated,
-#     re_stress_tensor_rotated,
-#     strain_tensor_rotated=None,
-#     rotation_tensor_rotated=None,
-#     normalized_rotation_tensor_rotated=None,
-# ):
-#     for index, component in enumerate(["U_SS", "V_SS", "W_SS"]):
-#         profile["mean_velocity"][component] = velocity_vector_rotated[index, :]
+def rotate_tensor_profile(tensor, rotation_matrix):
+    return (
+        rotation_matrix[None, :, :]
+        @ tensor.transpose(2, 0, 1)
+        @ rotation_matrix.T[None, :, :]
+    ).transpose(1, 2, 0)
 
-#     for index, component in enumerate(["UU_SS", "VV_SS", "WW_SS"]):
-#         profile["reynolds_stress"][component] = re_stress_tensor_rotated[
-#             index, index, :
-#         ]
 
-#     for indices, component in zip(
-#         [(0, 1), (0, 2), (1, 2)], ["UV_SS", "UW_SS", "VW_SS"]
-#     ):
-#         profile["reynolds_stress"][component] = re_stress_tensor_rotated[*indices, :]
+def set_rotated_profiles(
+    profile,
+    velocity_vector_rotated,
+    re_stress_tensor_rotated,
+    strain_tensor_rotated=None,
+    rotation_tensor_rotated=None,
+    normalized_rotation_tensor_rotated=None,
+):
+    for index, component in enumerate(["U_SS", "V_SS", "W_SS"]):
+        profile["mean_velocity"][component] = velocity_vector_rotated[index, :]
 
-#     if (
-#         (strain_tensor_rotated is not None)
-#         and (rotation_tensor_rotated is not None)
-#         and (normalized_rotation_tensor_rotated is not None)
-#     ):
-#         indices_list = [(i, j) for i in range(3) for j in range(3)]
-#         strain_tensor_components = [
-#             f"S_{i+1}{j+1}_SS" for i in range(3) for j in range(3)
-#         ]
-#         rotation_tensor_components = [
-#             f"W_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
-#         ]
-#         normalized_rotation_tensor_components = [
-#             f"O_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
-#         ]
+    for index, component in enumerate(["UU_SS", "VV_SS", "WW_SS"]):
+        profile["reynolds_stress"][component] = re_stress_tensor_rotated[
+            index, index, :
+        ]
 
-#         for indices, s_component, w_component, o_component in zip(
-#             indices_list,
-#             strain_tensor_components,
-#             rotation_tensor_components,
-#             normalized_rotation_tensor_components,
-#         ):
-#             profile["strain_tensor"][s_component] = strain_tensor_rotated[*indices, :]
-#             profile["rotation_tensor"][w_component] = rotation_tensor_rotated[
-#                 *indices, :
-#             ]
-#             profile["normalized_rotation_tensor"][o_component] = (
-#                 rotation_tensor_rotated[*indices, :]
-#             )
+    for indices, component in zip(
+        [(0, 1), (0, 2), (1, 2)], ["UV_SS", "UW_SS", "VW_SS"]
+    ):
+        profile["reynolds_stress"][component] = re_stress_tensor_rotated[*indices, :]
+
+    if (
+        (strain_tensor_rotated is not None)
+        and (rotation_tensor_rotated is not None)
+        and (normalized_rotation_tensor_rotated is not None)
+    ):
+        indices_list = [(i, j) for i in range(3) for j in range(3)]
+        strain_tensor_components = [
+            f"S_{i+1}{j+1}_SS" for i in range(3) for j in range(3)
+        ]
+        rotation_tensor_components = [
+            f"W_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
+        ]
+        normalized_rotation_tensor_components = [
+            f"O_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
+        ]
+
+        for indices, s_component, w_component, o_component in zip(
+            indices_list,
+            strain_tensor_components,
+            rotation_tensor_components,
+            normalized_rotation_tensor_components,
+        ):
+            profile["strain_tensor"][s_component] = strain_tensor_rotated[*indices, :]
+            profile["rotation_tensor"][w_component] = rotation_tensor_rotated[
+                *indices, :
+            ]
+            profile["normalized_rotation_tensor"][o_component] = (
+                rotation_tensor_rotated[*indices, :]
+            )
