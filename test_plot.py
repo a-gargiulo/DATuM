@@ -105,12 +105,11 @@ def plot_contour(
 
 if __name__ == "__main__":
     data = apputils.load_pickle("./outputs/preprocessed.pkl")
-    print(data["coordinates"]["X"])
     properties = {
         "colormap": "turbo",
         "contour_range": {
             "start": 0,
-            "end": 25,
+            "end": 0.005,
             "num_of_contours": 100,
         },
         "zpos": 0.0,
@@ -120,9 +119,9 @@ if __name__ == "__main__":
         "ymajor_locator": 0.05,
         "cbar_range": {
             "start": 0,
-            "end": 25,
+            "end": 0.005,
             "num_of_ticks": 6
         },
         "cbar_label": r"$U_1$ m/s"
     }
-    plot_contour(cast(dict, data["coordinates"]), cast(np.ndarray, data["mean_velocity"]["U"]), properties, "test.png")
+    plot_contour(cast(dict, data["coordinates"]), cast(np.ndarray, data["turbulence_scales"]["NUT"]), properties, "test.png")

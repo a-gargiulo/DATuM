@@ -109,16 +109,16 @@ def interpolate(
 #         ]
 #     )
 
-# def spatial_tensor_multiply(tensor_1: np.ndarray, tensor_2: np.ndarray) -> np.ndarray:
-#     """Multiply two 4D NumPy ndarrays containing a tensor quantity for each point in a
-#     2D data field.
+def spatial_tensor_multiply(tensor_1: np.ndarray, tensor_2: np.ndarray) -> np.ndarray:
+    """Multiply two 4D NumPy ndarrays containing a tensor quantity for each point in a
+    2D data field.
 
-#     :param tensor_1: A NumPy ndarray of shape (k, l, m, n), where k and l represent the
-#         dimensions of the tensor, and m and n are the number of points in each spatial
-#         direction of the 2D data field.
-#     :param tensor_2: A NumPy ndarray of shape (k, l, m, n), where k and l represent the
-#         dimensions of the tensor, and m and n are the number of points in each spatial
-#         direction of the 2D data field.
-#     :return: The tensor multiplication as a NumPy array of shape (k, l, m, n)
-#     """
-#     return (tensor_1.transpose(2, 3, 0, 1) @ tensor_2.transpose(2, 3, 0, 1)).transpose(2, 3, 0, 1)
+    :param tensor_1: A NumPy ndarray of shape (k, l, m, n), where k and l represent the
+        dimensions of the tensor, and m and n are the number of points in each spatial
+        direction of the 2D data field.
+    :param tensor_2: A NumPy ndarray of shape (k, l, m, n), where k and l represent the
+        dimensions of the tensor, and m and n are the number of points in each spatial
+        direction of the 2D data field.
+    :return: The tensor multiplication as a NumPy array of shape (k, l, m, n)
+    """
+    return (tensor_1.transpose(2, 3, 0, 1) @ tensor_2.transpose(2, 3, 0, 1)).transpose(2, 3, 0, 1)

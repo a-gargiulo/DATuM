@@ -331,5 +331,8 @@ class PreprocessorWindow:
 
         if bool(self.checkbox_gradient_var.get()) and self.piv.pose.angle2 == 0.0:
             preprocessing.compute_velocity_gradient(self.piv, self.slice_loader.get_listbox_content()[0], self.slice_zone_name.get(), opts)
+            preprocessing.get_strain_and_rotation_tensor(self.piv)
+            preprocessing.get_eddy_viscosity(self.piv)
 
         apputils.write_pickle("./outputs/preprocessed.pkl", self.piv.data)
+        messagebox.showinfo("Info", "PREPROCESSING SUCCESSFUL! Check output folder for preprocessed data.")

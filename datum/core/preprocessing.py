@@ -4,6 +4,7 @@ import numpy as np
 from typing import cast, Dict
 from .piv import Piv
 from ..utility import apputils, mathutils, tputils
+from . import analysis
 
 
 def compute_velocity_gradient(piv_obj: Piv, slice_path: str, zone_name: str, opts: Dict[str, bool]) -> None:
@@ -27,7 +28,10 @@ def compute_velocity_gradient(piv_obj: Piv, slice_path: str, zone_name: str, opt
     print("Getting Tecplot derivatives... ", end="")
     x1_q, x2_q = (cast(dict, piv_obj.data)["coordinates"]["X"], cast(dict, piv_obj.data)["coordinates"]["Y"])
     cfd_data = tputils.get_tecplot_derivatives(slice_path, zone_name, opts)
-    cfd_coords = 1000 * np.column_stack(
+    # cfd_coords = 1000 * np.column_stack(
+    #     (cfd_data["X"].flatten(), cfd_data["Y"].flatten())
+    # )
+    cfd_coords = np.column_stack(
         (cfd_data["X"].flatten(), cfd_data["Y"].flatten())
     )
     for key, _ in cfd_data.items():
@@ -66,3 +70,37 @@ def _get_computable_velocity_gradient_components(piv_obj: Piv) -> Dict[str, np.n
         components[dv_key] = ddy
 
     return components
+
+
+def get_strain_and_rotation_tensor(piv_obj: Piv) -> None:
+    """Obtains the mean rate-of-strain and rotation tensors.
+
+    This function directly edits the :py:type:`Piv` object that is passed to it.
+
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
+    """
+    base_tensors = analysis.get_base_tensors(piv_obj)
+    piv_obj.data["strain_tensor"] = {
+        f"S_{i+1}{j+1}": base_tensors["S"][i, j] for i in range(3) for j in range(3)
+    }
+    piv_obj.data["rotation_tensor"] = {
+        f"W_{i+1}{j+1}": base_tensors["W"][i, j] for i in range(3) for j in range(3)
+    }
+    piv_obj.data["normalized_rotation_tensor"] = {
+        f"O_{i+1}{j+1}": base_tensors["O"][i, j] for i in range(3) for j in range(3)
+    }
+
+
+def get_eddy_viscosity(piv_obj: Piv) -> None:
+    """Obtains the eddy viscosity.
+
+    This function directly edits the :py:type:`Piv` object that is passed to it.
+
+    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
+    """
+    base_tensors = analysis.get_base_tensors(piv_obj)
+    (piv_obj.data["turbulence_scales"]["NUT"]) = analysis.calculate_eddy_viscosities(
+        base_tensors
+    )
+
+
