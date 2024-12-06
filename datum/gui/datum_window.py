@@ -7,6 +7,8 @@ from PIL import Image, ImageTk
 from ..utility.configure import STYLES
 from .preprocessor_window import PreprocessorWindow
 from .widgets import Button
+from ..core.piv import Piv
+from ..core.beverli import Beverli
 
 
 # Constants
@@ -24,12 +26,12 @@ class DatumWindow:
 
         :param root: The main application handle.
         """
+        self.geometry = Beverli(use_cad=True)
+        self.piv = Piv()
+
         self.root = root
         self._configure_root()
-
-        self.banner_frame = tk.Frame(self.root, bg=STYLES["color"]["base"])
-        self.banner_label, self.banner_image = self._create_banner(self.banner_frame, BANNER_IMG_PATH)
-        self.preprocessor_button = Button(self.root, text="Preprocessor", command=self.open_preprocessor)
+        self._create_widgets()
         self._layout_widgets()
 
     def _configure_root(self):
@@ -38,12 +40,19 @@ class DatumWindow:
         self.root.resizable(False, False)
         self.root.configure(bg=STYLES["color"]["base"])
 
+    def _create_widgets(self):
+        self.banner_frame = tk.Frame(self.root, bg=STYLES["color"]["base"])
+        self.banner_label, self.banner_image = self._create_banner(self.banner_frame, BANNER_IMG_PATH)
+        self.preprocessor_button = Button(self.root, text="Preprocessor", command=lambda: self.open_preprocessor(self.geometry, self.piv))
+        self.profiler_button = Button(self.root, text="Profiler", command=lambda: self.open_profiler(self.geometry, self.piv))
+
     def _layout_widgets(self):
         self.root.grid_columnconfigure(0, weight=1)
         self.banner_frame.grid(row=0, column=0, padx=STYLES["pad"]["medium"], pady=STYLES["pad"]["medium"], sticky="ew")
         self.banner_frame.grid_columnconfigure(0, weight=1)
         self.banner_label.grid(row=0, column=0, padx=0, pady=0)
         self.preprocessor_button.grid(row=1, column=0, padx=0, pady=STYLES["pad"]["medium"])
+        self.profiler_button.grid(row=2, column=0, padx=0, pady=STYLES["pad"]["medium"])
 
     def _create_banner(self, parent: tk.Frame, img_path: str) -> Tuple[tk.Label, ImageTk.PhotoImage]:
         banner_image = self._load_resized_image(img_path, int(WINDOW_SIZE[0] / 1.3))
@@ -57,6 +66,9 @@ class DatumWindow:
         resized_image = image.resize((target_width, int(target_width / aspect_ratio)), Image.LANCZOS)
         return ImageTk.PhotoImage(resized_image)
 
-    def open_preprocessor(self):
+    def open_preprocessor(self, geometry: Beverli, piv: Piv):
         """Open the preprocessor window."""
-        PreprocessorWindow(self.root)
+        PreprocessorWindow(self.root, geometry, piv)
+
+    def open_profiler(self, geometry: Beverli, piv: Piv):
+        pass

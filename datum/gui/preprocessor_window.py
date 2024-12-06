@@ -24,10 +24,10 @@ WINDOW_SIZE = (800, 600)
 class PreprocessorWindow:
     """Generate the GUI for the preprocessor window and link it to the core functions."""
 
-    def __init__(self, master: tk.Tk):
+    def __init__(self, master: tk.Tk, geometry: Beverli, piv: Piv):
         """Initialize GUI and resources."""
-        self.geometry = Beverli(use_cad=True)
-        self.piv = Piv()
+        self.geometry = geometry
+        self.piv = piv
 
         self.root = tk.Toplevel(master)
         self._configure_root()
@@ -317,7 +317,7 @@ class PreprocessorWindow:
         load_raw_data(self.piv, data_path, should_load, opts)
         if self.piv.data is None:
             sys.exit(-1)
-        if bool(self.checkbox_interp_var.get()):
+        if not bool(self.checkbox_interp_var.get()):
             transform.rotate_data(self.piv)
             transform.translate_data(self.piv)
             transform.scale_coordinates(self.piv, scale_factor=1e-3)
@@ -329,10 +329,10 @@ class PreprocessorWindow:
             transform.translate_data(self.piv)
             transform.scale_coordinates(self.piv, scale_factor=1e-3)
 
-        if bool(self.checkbox_gradient_var.get()) and self.piv.pose.angle2 == 0.0:
-            preprocessing.compute_velocity_gradient(self.piv, self.slice_loader.get_listbox_content()[0], self.slice_zone_name.get(), opts)
-            preprocessing.get_strain_and_rotation_tensor(self.piv)
-            preprocessing.get_eddy_viscosity(self.piv)
+            if bool(self.checkbox_gradient_var.get()) and self.piv.pose.angle2 == 0.0:
+                preprocessing.compute_velocity_gradient(self.piv, self.slice_loader.get_listbox_content()[0], self.slice_zone_name.get(), opts)
+                preprocessing.get_strain_and_rotation_tensor(self.piv)
+                preprocessing.get_eddy_viscosity(self.piv)
 
         apputils.write_pickle("./outputs/preprocessed.pkl", self.piv.data)
         messagebox.showinfo("Info", "PREPROCESSING SUCCESSFUL! Check output folder for preprocessed data.")

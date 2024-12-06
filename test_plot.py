@@ -109,7 +109,7 @@ if __name__ == "__main__":
         "colormap": "turbo",
         "contour_range": {
             "start": 0,
-            "end": 0.005,
+            "end": 80,
             "num_of_contours": 100,
         },
         "zpos": 0.0,
@@ -119,9 +119,9 @@ if __name__ == "__main__":
         "ymajor_locator": 0.05,
         "cbar_range": {
             "start": 0,
-            "end": 0.005,
-            "num_of_ticks": 6
+            "end": 80,
+            "num_of_ticks": 9
         },
-        "cbar_label": r"$U_1$ m/s"
+        "cbar_label": r"dWdZ"
     }
-    plot_contour(cast(dict, data["coordinates"]), cast(np.ndarray, data["turbulence_scales"]["NUT"]), properties, "test.png")
+    plot_contour(cast(dict, data["coordinates"]), cast(np.ndarray, data["mean_velocity_gradient"]["dWdZ"]), properties, "test.png")
