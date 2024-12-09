@@ -1,9 +1,15 @@
 """Create the profiler application window."""
-
+import sys
 import tkinter as tk
 from ..utility.configure import STYLES
 from .widgets import Button, Checkbutton, Entry, FileLoader, Label, ScrollableCanvas, Section
-
+from ..core.beverli import Beverli
+from ..core.piv import Piv
+from ..core.pose import Pose
+from ..utility import apputils
+from ..core.my_types import PivData
+from ..core import profiles
+from typing import cast
 # Constants
 WINDOW_TITLE = "Profiler"
 WINDOW_SIZE = (600, 600)
@@ -34,9 +40,18 @@ class ProfilerWindow:
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
         self.main_frame = self.scrollable_canvas.get_frame()
         self.general_sect = Section(self.main_frame, "General", 1)
+        self.hill_orientation_label = Label(self.general_sect.content, "Hill  Orientation:", 1)
+        self.hill_orientation = Entry(self.general_sect.content, 1)
         self.data_loader = FileLoader(
             self.general_sect.content,
             "Piv Data (no interp)",
+            [("Pickle File", "*.pkl"), ("All Files", "*.*")],
+            1,
+            False,
+        )
+        self.data_loader_interp = FileLoader(
+            self.general_sect.content,
+            "Piv Data (interp)",
             [("Pickle File", "*.pkl"), ("All Files", "*.*")],
             1,
             False,
@@ -48,6 +63,7 @@ class ProfilerWindow:
             1,
             False,
         )
+        self.diag_checkbox = Checkbutton(self.general_sect.content, 1, text="Plane is Diagonal")
         self.properties_loader = FileLoader(
             self.general_sect.content,
             "Fluid and Flow Properties",
@@ -119,17 +135,29 @@ class ProfilerWindow:
         self.general_sect.content.grid_columnconfigure(0, weight=1)
         self.general_sect.content.grid_columnconfigure(1, weight=1)
         self.general_sect.content.grid_columnconfigure(2, weight=1)
-        self.data_loader.grid(
+        self.hill_orientation_label.grid(
             row=0, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
-        self.pose_loader.grid(
+        self.hill_orientation.grid(
+            row=0, column=1, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.data_loader.grid(
             row=1, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
-        self.properties_loader.grid(
+        self.data_loader_interp.grid(
             row=2, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
-        self.ref_conditions_loader.grid(
+        self.pose_loader.grid(
             row=3, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.diag_checkbox.grid(
+            row=4, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.properties_loader.grid(
+            row=5, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
+        )
+        self.ref_conditions_loader.grid(
+            row=6, column=0, columnspan=3, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
         )
         self.pressure_sect.grid(
             row=1, column=0, padx=STYLES["pad"]["small"], pady=STYLES["pad"]["small"], sticky="nsew"
@@ -212,4 +240,41 @@ class ProfilerWindow:
 
     def calculate(self):
         """Extract profiles."""
-        pass
+        self.geometry = Beverli(orientation=float(self.hill_orientation.get()), use_cad=True)
+        self.geometry.rotate(self.geometry.orientation)
+
+        pose_data = apputils.read_json(self.pose_loader.get_listbox_content()[0])
+        if pose_data is None:
+            sys.exit(-1)
+        pose = Pose(
+            angle1=(
+                cast(float, pose_data["rotation"]["angle_1_deg"])
+                if bool(self.diag_checkbox.get_var())
+                else cast(float, pose_data["rotation"]["angle_deg"])
+            ),
+            angle2=(
+                cast(float, pose_data["rotation"]["angle_2_deg"])
+                if bool(self.diag_checkbox.get_var())
+                else 0.0
+            ),
+            loc=[
+                cast(float, pose_data["translation"]["x_1_loc_ref_mm"]),
+                cast(float, pose_data["translation"]["x_2_loc_ref_mm"]),
+            ],
+            glob=[
+                cast(float, pose_data["translation"]["x_1_glob_ref_m"]),
+                cast(float, pose_data["translation"]["x_2_glob_ref_m"]),
+                cast(float, pose_data["translation"]["x_3_glob_ref_m"]),
+            ]
+        )
+
+        data_intrp = apputils.load_pickle(self.data_loader_interp.get_listbox_content()[0])
+        data_no_intrp = apputils.load_pickle(self.data_loader.get_listbox_content()[0])
+
+        self.piv_intrp = Piv(data=data_intrp, pose=pose)
+        self.piv_no_intrp = Piv(data=data_no_intrp, pose=pose)
+        try:
+            profiles.extract_data(self.piv_no_intrp, self.piv_intrp)
+        except 
+
+

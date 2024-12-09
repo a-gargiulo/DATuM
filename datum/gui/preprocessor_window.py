@@ -24,10 +24,10 @@ WINDOW_SIZE = (800, 600)
 class PreprocessorWindow:
     """Generate the GUI for the preprocessor window and link it to the core functions."""
 
-    def __init__(self, master: tk.Tk, geometry: Beverli, piv: Piv):
+    def __init__(self, master: tk.Tk):
         """Initialize GUI and resources."""
-        self.geometry = geometry
-        self.piv = piv
+        self.geometry = Beverli(use_cad=True)
+        self.piv = Piv()
 
         self.root = tk.Toplevel(master)
         self._configure_root()

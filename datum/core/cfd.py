@@ -1,68 +1,10 @@
 """Functions for integrating and handling ANSYS Fluent CFD data and Tecplot files in DATuM."""
 import os
 import re
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 import numpy as np
 import tecplot as tp
-
-from . import log, my_math, utility
-from .parser import InputFile
-
-
-def get_shape_of_ijk_ordered_tecplot_file(file_path: str) -> Tuple[int, ...]:
-    """Obtain the shape of the ijk-ordered data stored in Tecplot (.dat) files.
-
-    :param file_path: String containing the system path to the desired Tecplot file.
-    :return: Tuple containing the dimensions of the ijk-ordered data.
-    """
-    with open(file_path, "r", encoding="utf-8") as file:
-        for line in file:
-            if line.startswith("ZONE"):
-                dimensions = extract_dimensions_from_header_line(line)
-                break
-
-    return dimensions
-
-
-# def get_tecplot_derivatives() -> Dict[str, np.ndarray]:
-#     """Extract the non-computable components of the mean velocity gradient tensor from
-#     CFD data using Tecplot.
-
-#     :return: A dictionary containing the extracted mean velocity gradient tensor
-#         components as NumPy ndarrays of shape (m, n), where m and n represent
-#         the number of points in the x:sub:`1` and x:sub:`2 direction, respectively.
-#     """
-#     input_data = InputFile().data
-#     system_input = input_data["system"]
-#     cfd_input = input_data["cfd"]
-#     options = input_data["preprocessor"]["mean_velocity_gradient_tensor"]
-#     cfd_data = {}
-
-#     use_all = options["use_dwdx_and_dwdy_from_cfd"]
-
-#     slice_path = utility.find_file(
-#         system_input["cfd_data_root_folder"], cfd_input["file_name"]
-#     )
-
-#     zone_name = cfd_input["zone_name"]
-
-#     tp.new_layout()
-#     dataset = tp.data.load_tecplot(slice_path)
-#     zone = dataset.zone(zone_name)
-
-#     cfd_data["X"] = zone.values("X").as_numpy_array()
-#     cfd_data["Y"] = zone.values("Y").as_numpy_array()
-
-#     gradients = [("dUdZ", True), ("dVdZ", True), ("dWdX", use_all), ("dWdY", use_all)]
-#     for gradient, use in gradients:
-#         data = zone.values(gradient).as_numpy_array()
-#         if use:
-#             cfd_data[gradient] = data
-#         else:
-#             continue
-
-#     return cfd_data
 
 
 # def extract_dimensions_from_header_line(line: str) -> Tuple[int, ...]:
@@ -85,110 +27,112 @@ def get_shape_of_ijk_ordered_tecplot_file(file_path: str) -> Tuple[int, ...]:
 #     return tuple(dimensions)
 
 
-# @log.log_process("Load Fluent data","sub")
-# def load_fluent_data(
-#     case_file: str, data_file: str, connected: bool
-# ) -> None:
-#     """Initialize a Tecplot session and load a Fluent dataset.
+def load_fluent_data(
+    case_file: str, data_file: str, connected: bool
+) -> None:
+    """Initialize a Tecplot session and load a Fluent dataset.
 
-#     :param case_file: A string representing the system path to the Fluent case file.
-#     :param data_file: A string representing the system path to the Fluent data file.
-#     :param connected: Boolean value indicating whether to run the code in connected
-#         or batch mode. If the value is true, the code will run in connected mode.
-#     """
-#     # Connect to Tecplot session
-#     if connected:
-#         tp.session.connect()
-#     tp.new_layout()
+    :param case_file: A string representing the system path to the Fluent case file.
+    :param data_file: A string representing the system path to the Fluent data file.
+    :param connected: Boolean value indicating whether to run the code in connected
+        or batch mode. If the value is true, the code will run in connected mode.
+    """
+    # Connect to Tecplot session
+    if connected:
+        tp.session.connect()
+    tp.new_layout()
 
-#     # Load Fluent dataset
-#     tp.data.load_fluent(
-#         case_filenames=os.path.normpath(case_file),
-#         data_filenames=os.path.normpath(data_file),
-#     )
+    # Load Fluent dataset
+    tp.data.load_fluent(
+        case_filenames=os.path.normpath(case_file),
+        data_filenames=os.path.normpath(data_file),
+    )
 
-# @log.log_process("Calculate CFD reference conditions", "sub")
-# def calculate_reference_conditions(reynolds_number, properties):
-#     """Calculate the reference conditions for the BeVERLI RANS ANSYS Fluent simulations
-#     and normalize the available flow quantities accordingly."""
-#     # pylint: disable=too-many-locals
-#     dataset = tp.active_frame().dataset
 
-#     # Fluid properties
-#     heat_capacity_ratio = properties["fluid"]["heat_capacity_ratio"]
-#     gas_constant_air = properties["fluid"]["gas_constant_air"]
+def calculate_reference_conditions(reynolds_number, properties) -> Optional[Dict[str, float]]:
+    """Calculate the reference conditions for the BeVERLI RANS ANSYS Fluent simulations.
 
-#     # Inlet boundary conditions
-#     stagnation_pressure = None
-#     stagnation_temperature = None
+    Also normalize the available flow quantities accordingly.
+    """
+    dataset = tp.active_frame().dataset
 
-#     if reynolds_number in [250, 250000]:
-#         stagnation_pressure = 94220
-#         stagnation_temperature = 297
-#     elif reynolds_number in [325, 325000]:
-#         stagnation_pressure = 94275
-#         stagnation_temperature = 297
-#     elif reynolds_number in [650, 650000]:
-#         stagnation_pressure = 94450
-#         stagnation_temperature = 297
+    # Fluid properties
+    heat_capacity_ratio = properties["fluid"]["heat_capacity_ratio"]
+    gas_constant_air = properties["fluid"]["gas_constant_air"]
 
-#     # Reference locations
-#     reference_locations = np.array(
-#         [
-#             [-2.228, 1.85, -0.6858],
-#             [-2.228, 1.85, -0.4572],
-#             [-2.228, 1.85, -0.2286],
-#             [-2.228, 1.85, 0],
-#             [-2.228, 1.85, 0.2286],
-#             [-2.228, 1.85, 0.4572],
-#             [-2.228, 1.85, 0.6858],
-#         ]
-#     )
+    # Inlet boundary conditions
+    stagnation_pressure = None
+    stagnation_temperature = None
 
-#     # Pressure variable index within dataset
-#     variables = [str(variable) for variable in dataset.variables()]
-#     pressure_variable_index = variables.index("Pressure")
+    if reynolds_number in [250, 250000]:
+        stagnation_pressure = 94220
+        stagnation_temperature = 297
+    elif reynolds_number in [325, 325000]:
+        stagnation_pressure = 94275
+        stagnation_temperature = 297
+    elif reynolds_number in [650, 650000]:
+        stagnation_pressure = 94450
+        stagnation_temperature = 297
 
-#     # Find the reference ports
-#     res = tp.data.query.probe_on_surface(reference_locations.transpose())
-#     values = np.array(res.data).reshape((-1, len(reference_locations))).transpose()
+    # Reference locations
+    reference_locations = np.array(
+        [
+            [-2.228, 1.85, -0.6858],
+            [-2.228, 1.85, -0.4572],
+            [-2.228, 1.85, -0.2286],
+            [-2.228, 1.85, 0],
+            [-2.228, 1.85, 0.2286],
+            [-2.228, 1.85, 0.4572],
+            [-2.228, 1.85, 0.6858],
+        ]
+    )
 
-#     # Compute the reference conditions
-#     static_pressure_ref = np.array(values[:, pressure_variable_index])
-#     static_pressure_ref = np.mean(static_pressure_ref)
-#     mach_ref = np.sqrt(
-#         (2 / (heat_capacity_ratio - 1))
-#         * (
-#             (stagnation_pressure / static_pressure_ref)
-#             ** ((heat_capacity_ratio - 1) / heat_capacity_ratio)
-#             - 1
-#         )
-#     )
-#     static_temperature_ref = stagnation_temperature * (
-#         1 + (heat_capacity_ratio - 1) / 2 * mach_ref**2
-#     ) ** (-1)
-#     velocity_ref = mach_ref * np.sqrt(
-#         heat_capacity_ratio * gas_constant_air * static_temperature_ref
-#     )
-#     density_ref = static_pressure_ref / (gas_constant_air * static_temperature_ref)
-#     dynamic_viscosity_ref = (
-#         1.716e-5
-#         * (static_temperature_ref / 273.15) ** (3 / 2)
-#         * (273.15 + 110.4)
-#         / (static_temperature_ref + 110.4)
-#     )
+    # Pressure variable index within dataset
+    variables = [str(variable) for variable in dataset.variables()]
+    pressure_variable_index = variables.index("Pressure")
 
-#     reference_conditions = {
-#         "inlet_stagnation_pressure": stagnation_pressure,
-#         "inlet_stagnation_temperature": stagnation_temperature,
-#         "static_pressure_ref": static_pressure_ref,
-#         "static_temperature_ref": static_temperature_ref,
-#         "density_ref": density_ref,
-#         "velocity_ref": velocity_ref,
-#         "dynamic_viscosity_ref": dynamic_viscosity_ref,
-#     }
+    # Find the reference ports
+    res = tp.data.query.probe_on_surface(reference_locations.transpose())
+    values = np.array(res.data).reshape((-1, len(reference_locations))).transpose()
 
-#     return reference_conditions
+    # Compute the reference conditions
+    static_pressure_ref = np.array(values[:, pressure_variable_index])
+    static_pressure_ref = np.mean(static_pressure_ref)
+    if stagnation_pressure is None:
+        return None
+    mach_ref = np.sqrt(
+        (2 / (heat_capacity_ratio - 1))
+        * (
+            (stagnation_pressure / static_pressure_ref)
+            ** ((heat_capacity_ratio - 1) / heat_capacity_ratio)
+            - 1
+        )
+    )
+    static_temperature_ref = stagnation_temperature * (
+        1 + (heat_capacity_ratio - 1) / 2 * mach_ref**2
+    ) ** (-1)
+    velocity_ref = mach_ref * np.sqrt(
+        heat_capacity_ratio * gas_constant_air * static_temperature_ref
+    )
+    density_ref = static_pressure_ref / (gas_constant_air * static_temperature_ref)
+    dynamic_viscosity_ref = (
+        1.716e-5
+        * (static_temperature_ref / 273.15) ** (3 / 2)
+        * (273.15 + 110.4)
+        / (static_temperature_ref + 110.4)
+    )
+
+    reference_conditions = {
+        "inlet_stagnation_pressure": stagnation_pressure,
+        "inlet_stagnation_temperature": stagnation_temperature,
+        "static_pressure_ref": static_pressure_ref,
+        "static_temperature_ref": static_temperature_ref,
+        "density_ref": density_ref,
+        "velocity_ref": velocity_ref,
+        "dynamic_viscosity_ref": dynamic_viscosity_ref,
+    }
+
+    return reference_conditions
 
 
 # @log.log_process("Normalize CFD variables", "sub")

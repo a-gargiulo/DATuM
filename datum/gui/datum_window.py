@@ -27,9 +27,6 @@ class DatumWindow:
 
         :param root: The main application handle.
         """
-        self.geometry = Beverli(use_cad=True)
-        self.piv = Piv()
-
         self.root = root
         self._configure_root()
         self._create_widgets()
@@ -69,7 +66,7 @@ class DatumWindow:
 
     def open_preprocessor(self, geometry: Beverli, piv: Piv):
         """Open the preprocessor window."""
-        PreprocessorWindow(self.root, geometry, piv)
+        PreprocessorWindow(self.root)
 
     def open_profiler(self):
         """Open the profiler window."""

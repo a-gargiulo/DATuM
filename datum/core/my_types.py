@@ -11,3 +11,5 @@ CadGeometry = trimesh.Trimesh
 AnalyticGeometry = Dict[str, np.ndarray]
 HillGeometry = Union[CadGeometry, AnalyticGeometry]
 FloatOrArray = Union[float, np.ndarray]
+Properties = Dict[str, Dict[str, float]]
+TunnelConditions = Dict[str, Dict[str, Union[float, np.ndarray]]]

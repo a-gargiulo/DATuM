@@ -1,106 +1,37 @@
-"""This module offers a comprehensive library of functions designed for the extraction
-of profile data from BeVERLI stereo PIV data planes.
+"""Extract 1D profiles from 2D stereo PIV planes.
 
-Profiles can be extracted either perpendicular to the Virginia Tech Stability Wind
-Tunnel's wall, which houses the BeVERLI Hill, or perpendicular to the surface of the
-BeVERLI Hill in a local coordinate system aligned with the surface shear stress
-direction.
+Profiles can be extracted either perpendicular to the VT SWT's wall or perpendicular to the hill's surface in a local
+coordinate system aligned with the surface shear stress direction.
 """
 import os
 import sys
-from typing import Dict, List, Optional, Tuple, Union
+from typing import cast, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy.interpolate import griddata
 
-from . import (boundary_layer, cfd, log, parser, plotting, preprocessor,
-               reference, spalding, transformations, uncertainty, utility)
+# from . import (boundary_layer, cfd, log, parser, plotting, preprocessor,
+# reference, spalding, transformations, uncertainty, utility)
+from . import cfd, reference
 from .beverli import Beverli
 from .my_types import NestedDict
-from .parser import InputFile, PoseFile
 from .piv import Piv
 
 
-@log.log_process(message="Extract profile data", process_type="main")
-def extract_profile_data(piv_obj_no_intrp: Piv, piv_obj_intrp: Piv) -> None:
-    """Extract profile data from the BeVERLI stereo PIV data."""
-    input_data = parser.InputFile().data
-    if input_data["profiles"]["extraction_active"]:
-        preprocessor.transform_data_without_interpolation(piv_obj_no_intrp)
-        extract_profiles(
-            piv_obj_no_intrp,
-            piv_obj_intrp,
-            number_of_profiles=input_data["profiles"]["number_of_profiles"],
-            number_of_profile_points=input_data["profiles"][
-                "number_of_profile_points"
-            ],
-            profile_height_m=input_data["profiles"]["profile_height"],
-            coordinate_system_type=input_data["profiles"]["coordinate_system_type"],
-        )
-    else:
-        print("WARNING: Profile extraction is inactive, program will continue.\n\n")
-
-@log.log_process("Extract profiles", "main")
-def extract_profiles(
-    piv_obj,
-    piv_obj_intrp,
-    number_of_profiles: int,
-    number_of_profile_points: int,
-    profile_height_m: float,
-    coordinate_system_type: str,
-) -> None:
-    """Extract profile data from the PIV plane, either perpendicular to the Virginia
-    Tech Stability Wind Tunnel's wall, which houses the BeVERLI Hill, or perpendicular
-    to the surface of the BeVERLI Hill in a local coordinate system aligned with the
-    surface shear stress direction.
-
-    :param piv_obj: An instance of the :py:class:`datum.piv.Piv` class, containing the
-        BeVERLI stereo PIV data.
-    :param piv_obj_intrp: An instance of the :py:class:`datum.piv.Piv` class, containing the
-        fully pre-processed BeVERLI stereo PIV data.
-    :param number_of_profiles: An integer number of profiles to extract from the
-        selected PIV data plane.
-    :param number_of_profile_points: An integer number of points to extract along each
-        profile.
-    :param profile_height_m: The height of each profile, measured in meters.
-    :param coordinate_system_type: A string indicating the desired orientation for
-        profile extraction: either normal to the hill surface in local shear stress
-        coordinates (`shear`) or normal to the tunnel wall hosting the BeVERLI Hill
-        (`tunnel`).
-    """
-    check_inputs(
-        number_of_profiles,
-        number_of_profile_points,
-        profile_height_m,
-        coordinate_system_type,
-    )
-
-    # Load user input data
-    input_data = InputFile().data
-    pose_measurement = PoseFile().pose_measurement
-
-    # Outputfile name
-    plane_number = input_data["piv_data"]["plane_number"]
-    reynolds_number = input_data["general"]["reynolds_number"]
-    plane_type = input_data["piv_data"]["plane_type"]
-    output_file_name = os.path.join(
-        input_data["system"]["piv_plane_data_folder"],
-        "preprocessed",
-        f"plane{plane_number}_{int(reynolds_number*1e-3)}k_{plane_type}_{coordinate_system_type}_profiles.pkl",
-    )
-
+def extract_data(piv_obj_no_intrp: Piv, piv_obj_intrp: Piv, opts: Dict[str, Union[int, float, str, bool]]) -> None:
+    """Extract profile data from the 2D stereo PIV data."""
     # Obtain reference quantities (if .stat available) for experimental data.
-    properties = reference.get_all_plane_properties()
+    properties = reference.get_all_plane_properties(opts)
 
     cfd_reference_conditions = None
-    if input_data["profiles"]["add_cfd"]:
+    if opts["add_cfd"]:
         cfd.load_fluent_data(
-            case_file=input_data["profiles"]["fluent_case"],
-            data_file=input_data["profiles"]["fluent_data"],
+            case_file=cast(str, opts["fluent_case"]),
+            data_file=cast(str, opts["fluent_data"]),
             connected=False,
         )
         cfd_reference_conditions = cfd.calculate_reference_conditions(
-            reynolds_number=int(input_data["general"]["reynolds_number"] * 1e-3),
+            reynolds_number=int(cast(float, opts["reynolds_number"]) * 1e-3),
             properties=properties,
         )
         cfd.normalize_variables_by_reference(
@@ -171,43 +102,6 @@ def check_shear_case_computability(x_3_m: float, hill_orientation_deg: float) ->
                 "orientations."
             )
     except ValueError as err:
-        print(f"ERROR: {err}\n")
-        sys.exit(1)
-
-
-def check_inputs(
-    number_of_profiles: int,
-    number_of_profile_points: int,
-    profile_height_m: float,
-    coordinate_system_type: str,
-) -> None:
-    """Conduct a type check on the input parameters for profile extraction.
-
-    :param number_of_profiles: An integer number of profiles to extract from the analyzed
-        stereo PIV plane.
-    :param number_of_profile_points: An integer number of profiles to extract from the
-        selected PIV data plane.
-    :param profile_height_m: The height of each profile, measured in meters.
-    :param coordinate_system_type: A string indicating the desired orientation for
-        profile extraction: either normal to the hill surface in local shear stress
-        coordinates (`shear`) or normal to the tunnel wall hosting the BeVERLI Hill
-        (`tunnel`).
-    """
-    try:
-        if not isinstance(number_of_profiles, int):
-            raise TypeError("Variable must be an integer value.")
-
-        if not isinstance(number_of_profile_points, int):
-            raise TypeError("Variable must be an integer value.")
-
-        if not isinstance(profile_height_m, float):
-            raise TypeError("Variable must be a float value.")
-
-        if coordinate_system_type.lower() not in ["shear", "tunnel"]:
-            raise ValueError(
-                "Accepted values for `coordinate_system_type` are `shear` or `tunnel`."
-            )
-    except (TypeError, ValueError) as err:
         print(f"ERROR: {err}\n")
         sys.exit(1)
 
