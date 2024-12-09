@@ -99,15 +99,15 @@ def interpolate(
     )
 
 
-# def cross(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
-#     """Cross product."""
-#     return np.array(
-#         [
-#             vec1[1] * vec2[2] - vec1[2] * vec2[1],
-#             vec1[2] * vec2[0] - vec1[0] * vec2[2],
-#             vec1[0] * vec2[1] - vec1[1] * vec2[0],
-#         ]
-#     )
+def cross(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
+    """Cross product."""
+    return np.array(
+        [
+            vec1[1] * vec2[2] - vec1[2] * vec2[1],
+            vec1[2] * vec2[0] - vec1[0] * vec2[2],
+            vec1[0] * vec2[1] - vec1[1] * vec2[0],
+        ]
+    )
 
 def spatial_tensor_multiply(tensor_1: np.ndarray, tensor_2: np.ndarray) -> np.ndarray:
     """Multiply two 4D NumPy ndarrays containing a tensor quantity for each point in a

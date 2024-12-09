@@ -243,6 +243,8 @@ class ProfilerWindow:
         self.geometry = Beverli(orientation=float(self.hill_orientation.get()), use_cad=True)
         self.geometry.rotate(self.geometry.orientation)
 
+        #TODO: add a check for the orientation and the shear mode
+
         pose_data = apputils.read_json(self.pose_loader.get_listbox_content()[0])
         if pose_data is None:
             sys.exit(-1)
@@ -274,7 +276,7 @@ class ProfilerWindow:
         self.piv_intrp = Piv(data=data_intrp, pose=pose)
         self.piv_no_intrp = Piv(data=data_no_intrp, pose=pose)
         try:
-            profiles.extract_data(self.piv_no_intrp, self.piv_intrp)
+            profiles.extract_data(self.piv_no_intrp, self.piv_intrp, self.geometry, opts)
         except 
 
 

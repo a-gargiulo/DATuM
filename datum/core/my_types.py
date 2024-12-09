@@ -13,3 +13,6 @@ HillGeometry = Union[CadGeometry, AnalyticGeometry]
 FloatOrArray = Union[float, np.ndarray]
 Properties = Dict[str, Dict[str, float]]
 TunnelConditions = Dict[str, Dict[str, Union[float, np.ndarray]]]
+
+ProfileDictAll = Dict[str, Dict[str, Dict[str, Dict[str, Union[float, np.ndarray, Dict[str, Dict[str, float]]]]]]]
+ProfileDictSingle = Dict[str, Dict[str, Union[float, np.ndarray, Dict[str, Dict[str, float]]]]]
