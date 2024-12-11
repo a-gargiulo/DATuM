@@ -452,7 +452,7 @@ class FileLoader(tk.Frame):
 
     def get_listbox_content(self):
         """Get current path."""
-        return self.listbox.get(0, tk.END)
+        return self.listbox.get(0, tk.END)[0]
 
     def reset(self):
         """Reset the file loader."""

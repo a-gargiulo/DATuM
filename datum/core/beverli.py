@@ -28,27 +28,10 @@ class Beverli:
         self.height: float = HILL_HEIGHT
         self.cyl_section_width: float = HILL_CYL_SECTION_WIDTH
         self.polynomial_coefficients: np.ndarray = self._calculate_polynomial_coefficients()
-
         self.use_cad: bool = use_cad
         self.mesh: HillGeometry = self._load_geometry()
-
-        self._orientation: Optional[float] = orientation
-
-    @property
-    def orientation(self):
-        """Getter for orientation."""
-        if self._orientation is None:
-            return 0.0
-        else:
-            return self._orientation
-
-    @orientation.setter
-    def orientation(self, new_orientation: Optional[float]):
-        self._orientation = new_orientation
-
-    @orientation.deleter
-    def orientation(self):
-        del self._orientation
+        self.orientation: float = 0.0 if orientation is None else orientation
+        self.rotate(self.orientation)
 
     def calculate_perimeter(self) -> Tuple[np.ndarray, np.ndarray]:
         """Calculate the x1 and x3 coordinates of the hill perimeter at a specific orientation."""
@@ -91,7 +74,7 @@ class Beverli:
             except ValueError as e:
                 print(f"[ERROR]: {e}")
                 sys.exit(-1)
-        return self._probe_analytic_hill(self.orientation, x1, x3)
+        return self._probe_analytic_hill(x1, x3)
 
     def get_surface_normal_symmetric_hill_centerline(self, x1: float) -> np.ndarray:
         """Calculate the surface normal at a specific x1 location along the centerline at symmetric orientations."""

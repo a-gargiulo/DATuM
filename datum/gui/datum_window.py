@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 
 from ..utility.configure import STYLES
 from .preprocessor_window import PreprocessorWindow
-from .profiler_window import ProfilerWindow
+# from .profiler_window import ProfilerWindow
 from .widgets import Button
 from ..core.piv import Piv
 from ..core.beverli import Beverli
@@ -41,7 +41,7 @@ class DatumWindow:
     def _create_widgets(self):
         self.banner_frame = tk.Frame(self.root, bg=STYLES["color"]["base"])
         self.banner_label, self.banner_image = self._create_banner(self.banner_frame, BANNER_IMG_PATH)
-        self.preprocessor_button = Button(self.root, text="Preprocessor", command=lambda: self.open_preprocessor(self.geometry, self.piv))
+        self.preprocessor_button = Button(self.root, text="Preprocessor", command=self.open_preprocessor)
         self.profiler_button = Button(self.root, text="Profiler", command=self.open_profiler)
 
     def _layout_widgets(self):
@@ -64,10 +64,11 @@ class DatumWindow:
         resized_image = image.resize((target_width, int(target_width / aspect_ratio)), Image.LANCZOS)
         return ImageTk.PhotoImage(resized_image)
 
-    def open_preprocessor(self, geometry: Beverli, piv: Piv):
+    def open_preprocessor(self):
         """Open the preprocessor window."""
         PreprocessorWindow(self.root)
 
     def open_profiler(self):
-        """Open the profiler window."""
-        ProfilerWindow(self.root)
+        pass
+        # """Open the profiler window."""
+        # ProfilerWindow(self.root)

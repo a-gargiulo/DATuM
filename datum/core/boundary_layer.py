@@ -7,7 +7,8 @@ from typing import Callable, Dict, List, Union
 import numpy as np
 from scipy.interpolate import interp1d
 
-from . import plotting, utility
+from . import plotting
+from ..utility import apputils
 from .my_types import ProfileDictSingle
 from .parser import InputFile
 from .spalding import spalding_profile
@@ -23,19 +24,19 @@ def get_centerline_pressure() -> Dict[str, Dict[str, Union[float, np.ndarray]]]:
     # pylint: disable=too-many-locals
     # Load pressure data
     input_data = InputFile().data
-    port_wall_pressure_file = utility.find_file(
+    port_wall_pressure_file = apputils.find_file(
         input_data["system"]["pressure_data_root_folder"],
         input_data["pressure_data"]["port_wall"],
     )
-    hill_pressure_file = utility.find_file(
+    hill_pressure_file = apputils.find_file(
         input_data["system"]["pressure_data_root_folder"],
         input_data["pressure_data"]["hill"],
     )
-    readme_file = utility.find_file(
+    readme_file = apputils.find_file(
         input_data["system"]["pressure_data_root_folder"],
         input_data["pressure_data"]["readme"],
     )
-    properties_file = utility.construct_file_path(
+    properties_file = apputils.construct_file_path(
         input_data["system"]["piv_plane_data_folder"],
         [],
         input_data["general"]["fluid_and_flow_properties"],
@@ -43,7 +44,7 @@ def get_centerline_pressure() -> Dict[str, Dict[str, Union[float, np.ndarray]]]:
     pressure_data_port_wall = np.loadtxt(port_wall_pressure_file, skiprows=1)
     pressure_data_hill = np.loadtxt(hill_pressure_file, skiprows=1)
 
-    properties = utility.load_json(properties_file)
+    properties = apputils.load_json(properties_file)
     rho = properties["fluid"]["density"]
 
     # Obtain centerline pressure and properties

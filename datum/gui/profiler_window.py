@@ -239,9 +239,8 @@ class ProfilerWindow:
         pass
 
     def calculate(self):
-        """Extract profiles."""
+        """Extract 1D profile data from 2D PIV planes."""
         self.geometry = Beverli(orientation=float(self.hill_orientation.get()), use_cad=True)
-        self.geometry.rotate(self.geometry.orientation)
 
         #TODO: add a check for the orientation and the shear mode
 
@@ -275,8 +274,9 @@ class ProfilerWindow:
 
         self.piv_intrp = Piv(data=data_intrp, pose=pose)
         self.piv_no_intrp = Piv(data=data_no_intrp, pose=pose)
-        try:
-            profiles.extract_data(self.piv_no_intrp, self.piv_intrp, self.geometry, opts)
-        except 
+        pass
+        # try:
+        #     profiles.extract_data(self.piv_no_intrp, self.piv_intrp, self.geometry, opts)
+        # except 
 
 
