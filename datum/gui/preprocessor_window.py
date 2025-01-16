@@ -8,9 +8,8 @@ from typing import Dict
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from ..core import preprocessing, transform
+from ..core import preprocessing
 from ..core.beverli import Beverli
-from ..core.load import load_raw_data
 from ..core.piv import Piv
 from ..utility import apputils
 from ..utility.configure import STYLES, system
@@ -308,10 +307,19 @@ class PreprocessorWindow:
             return
         data_paths = self.fetch_data_paths()
 
+        state = {
+            "interpolate_data": bool(self.checkbox_interp_var.get()),
+            "num_interp_pts": int(self.interp_pts_entry.get()),
+            "compute_gradients": bool(self.checkbox_gradient_var.get()),
+            "slice_path": self.slice_loader.get_listbox_content()[0],
+            "slice_name": self.slice_zone_name.get()
+        }
+
         opts = {
             "flip_out_of_plane_component": bool(self.checkbox_flip_u3_var.get()),
             "use_dwdx_and_dwdy_from_cfd": bool(self.checkbox_gradient_opt_var.get()),
         }
+
         should_load = {
             "mean_velocity": bool(self.vel_loader.checkbox_var.get()),
             "reynolds_stress": bool(self.stress_loader.checkbox_var.get()),
@@ -319,27 +327,7 @@ class PreprocessorWindow:
             "instantaneous_velocity_frame": bool(self.inst_vel_loader.checkbox_var.get()),
         }
 
-        load_raw_data(self.piv, data_paths, should_load, opts)
-        if self.piv.data is None:
-            sys.exit(-1)
-        if not bool(self.checkbox_interp_var.get()):
-            transform.rotate_data(self.piv)
-            transform.translate_data(self.piv)
-            transform.scale_coordinates(self.piv, scale_factor=1e-3)
-            if self.piv.pose.angle2 != 0.0:
-                self.piv.data["coordinates"]["Z"] = self.piv.data["coordinates"]["X"]
+        if preprocessing.preprocess_data(self.piv, state, opts, data_paths, should_load):
+            messagebox.showinfo("Info", "PREPROCESSING SUCCESSFUL! Check output folder for preprocessed data.")
         else:
-            transform.rotate_data(self.piv)
-            transform.interpolate_data(self.piv, int(self.interp_pts_entry.get()))
-            transform.translate_data(self.piv)
-            transform.scale_coordinates(self.piv, scale_factor=1e-3)
-
-            if bool(self.checkbox_gradient_var.get()) and self.piv.pose.angle2 == 0.0:
-                preprocessing.compute_velocity_gradient(
-                    self.piv, self.slice_loader.get_listbox_content()[0], self.slice_zone_name.get(), opts
-                )
-                preprocessing.get_strain_and_rotation_tensor(self.piv)
-                preprocessing.get_eddy_viscosity(self.piv)
-
-        apputils.write_pickle("./outputs/preprocessed.pkl", self.piv.data)
-        messagebox.showinfo("Info", "PREPROCESSING SUCCESSFUL! Check output folder for preprocessed data.")
+            sys.exit(-1)

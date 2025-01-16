@@ -1,10 +1,39 @@
 """Define preprocessing functions."""
 import sys
 import numpy as np
-from typing import cast, Dict
+from typing import cast, Dict, Union
 from .piv import Piv
 from ..utility import apputils, mathutils, tputils
-from . import analysis
+from .load import load_raw_data
+from . import analysis, transform
+
+
+def preprocess_data(piv_obj: Piv, state: Dict[str, Union[bool, int, str]], opts: Dict[str, bool], data_paths: Dict[str, str], should_load: Dict[str, bool]) -> bool:
+    """Enter docstring here."""
+    load_raw_data(piv_obj, data_paths, should_load, opts)
+    if piv_obj.data is None:
+        return False
+    if not state["compute_gradients"]:
+        transform.rotate_data(piv_obj)
+        transform.translate_data(piv_obj)
+        transform.scale_coordinates(piv_obj, scale_factor=1e-3)
+        if piv_obj.pose.angle2 != 0.0:
+            piv_obj.data["coordinates"]["Z"] = piv_obj.data["coordinates"]["X"]
+    else:
+        transform.rotate_data(piv_obj)
+        transform.interpolate_data(piv_obj, state["num_interp_pts"])
+        transform.translate_data(piv_obj)
+        transform.scale_coordinates(piv_obj, scale_factor=1e-3)
+
+        if state["compute_gradients"] and piv_obj.pose.angle2 == 0.0:
+            compute_velocity_gradient(
+                piv_obj, cast(str, state["slice_path"]), cast(str, state["slice_name"]), opts
+            )
+            get_strain_and_rotation_tensor(piv_obj)
+            get_eddy_viscosity(piv_obj)
+
+    apputils.write_pickle("./outputs/preprocessed.pkl", piv_obj.data)
+    return True
 
 
 def compute_velocity_gradient(piv_obj: Piv, slice_path: str, zone_name: str, opts: Dict[str, bool]) -> None:
