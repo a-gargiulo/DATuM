@@ -3,6 +3,7 @@
 import sys
 import tkinter as tk
 from tkinter import messagebox
+from typing import Dict
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -23,10 +24,10 @@ PAD_S = STYLES["pad"]["small"]
 
 
 class PreprocessorWindow:
-    """Generate the GUI for the preprocessor window."""
+    """Generate the preprocessor GUI."""
 
     def __init__(self, master: tk.Tk):
-        """Initialize GUI and resources."""
+        """Initialize the GUI and the resources."""
         self.geometry = Beverli(use_cad=True)
         self.piv = Piv()
 
@@ -110,7 +111,7 @@ class PreprocessorWindow:
         self.process_button.config(width=200 if system == "Darwin" else 20)
 
     def layout_widgets(self):
-        """Layout widgets on the window."""
+        """Layout all widgets on the window."""
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(1, weight=1)
         self.geom_sect.grid(row=0, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew")
@@ -181,11 +182,11 @@ class PreprocessorWindow:
             return False
 
     def on_invalid_input(self):
-        """Inform user when bump orientation input is wrong."""
+        """Inform the user when the bump orientation input is wrong."""
         messagebox.showerror("Invalid Input", "Please enter a valid float.")
 
     def on_closing(self):
-        """Free resources after closing the window."""
+        """Free the resources after closing the window."""
         if hasattr(self, "bump_fig"):
             plt.close(self.bump_fig)
 
@@ -196,7 +197,7 @@ class PreprocessorWindow:
         self.root.destroy()
 
     def toggle_interp(self):
-        """Toggle on/off the data interpolation."""
+        """Turn the data interpolation on/off."""
         is_interp_enabled = self.checkbox_interp_var.get()
         state = "normal" if is_interp_enabled else "disabled"
 
@@ -214,7 +215,7 @@ class PreprocessorWindow:
             self.slice_zone_name.config(state="disabled")
 
     def toggle_gradient(self):
-        """Toggle on/off the gradient calculation."""
+        """Turn the gradient calculation on/off."""
         is_gradient_enabled = self.checkbox_gradient_var.get()
         state = "normal" if is_gradient_enabled else "disabled"
         if state == "disabled":
@@ -269,17 +270,43 @@ class PreprocessorWindow:
         else:
             messagebox.showwarning("Warning", "You must first confirm the hill orientation.")
 
+    def validate_inputs(self) -> bool:
+        """Check the status of all required input fields."""
+        if not self.params_status_var.get():
+            messagebox.showwarning("Warning", "Not all data has been loaded! Please load all data.")
+            return False
+
+        loaders = [self.vel_loader, self.stress_loader, self.dissp_loader, self.inst_vel_loader, self.slice_loader]
+        for loader in loaders:
+            if loader.load_button.cget("state") == "normal":
+                if loader.status_label_var.get() == "Nothing Loaded":
+                    messagebox.showwarning("Warning", "Not all data has been loaded! Please load all data.")
+                    return False
+
+        return True
+
+    def fetch_data_paths(self) -> Dict[str, str]:
+        """Fetch all system paths for the PIV data."""
+        data_paths = {}
+
+        loaders = [
+            (self.vel_loader, "mean_velocity"),
+            (self.stress_loader, "reynolds_stress"),
+            (self.dissp_loader, "turbulence_dissipation"),
+            (self.inst_vel_loader, "instantaneous_velocity_frame"),
+        ]
+
+        for loader in loaders:
+            if loader[0].load_button.cget("state") == "normal":
+                data_paths[loader[1]] = loader[0].get_listbox_content()
+
+        return data_paths
+
     def preprocess_data(self):
         """Preprocess the piv data."""
-        data_path = {}
-        if self.vel_loader.get_listbox_content() != "":
-            data_path["mean_velocity"] = self.vel_loader.get_listbox_content()
-        if self.stress_loader.get_listbox_content() != "":
-            data_path["reynolds_stress"] = self.stress_loader.get_listbox_content()
-        if self.dissp_loader.get_listbox_content() != "":
-            data_path["turbulence_dissipation"] = self.dissp_loader.get_listbox_content()
-        if self.inst_vel_loader.get_listbox_content() != "":
-            data_path["instantaneous_velocity_frame"] = self.inst_vel_loader.get_listbox_content()
+        if not self.validate_inputs():
+            return
+        data_paths = self.fetch_data_paths()
 
         opts = {
             "flip_out_of_plane_component": bool(self.checkbox_flip_u3_var.get()),
@@ -292,7 +319,7 @@ class PreprocessorWindow:
             "instantaneous_velocity_frame": bool(self.inst_vel_loader.checkbox_var.get()),
         }
 
-        load_raw_data(self.piv, data_path, should_load, opts)
+        load_raw_data(self.piv, data_paths, should_load, opts)
         if self.piv.data is None:
             sys.exit(-1)
         if not bool(self.checkbox_interp_var.get()):
