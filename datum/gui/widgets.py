@@ -70,10 +70,10 @@ class Checkbutton(tk.Checkbutton):
         :param parent: The parent window or widget.
         :param category: The style category applied to the `Checkbutton`.
         """
-        self.checkbox_var = tk.IntVar()
+        self.var = tk.IntVar()
         super().__init__(
             parent,
-            variable=self.checkbox_var,
+            variable=self.var,
             bg=STYLES["color"][f"s{category}_content"],
             fg="white",
             selectcolor="gray",
@@ -82,12 +82,8 @@ class Checkbutton(tk.Checkbutton):
         )
 
     def get_var(self) -> tk.IntVar:
-        """
-        Get the variable associated with the `Checkbutton`.
-
-        return: The variable associated with the `Checkbutton`.
-        """
-        return self.checkbox_var
+        """Get the checkbox variable."""
+        return self.var
 
 
 class Frame(tk.Frame):
@@ -207,6 +203,10 @@ class Section(tk.Frame):
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
+
+    def get_content_frame(self) -> tk.Frame:
+        """Get content frame."""
+        return self.content
 
 
 class ScrollableCanvas:
@@ -450,9 +450,68 @@ class FileLoader(tk.Frame):
         self.listbox.config(state=state)
         self.status_label.config(state=state)
 
-    def get_listbox_content(self):
-        """Get current path."""
+    def get_listbox(self) -> tk.Listbox:
+        """
+        Get the path listbox handle.
+
+        :return: The listbox handle.
+        :rtype: tk.Listbox
+        """
+        return self.listbox
+
+    def get_listbox_content(self) -> str:
+        """
+        Get current listbox content.
+
+        :return: Current listbox content.
+        :rtype: str
+        """
         return self.listbox.get(0, tk.END)[0]
+
+    def get_checkbox(self) -> Checkbutton:
+        """
+        Get the checkbox handle.
+
+        :return: Checkbox handle.
+        :rtype: Checkbutton
+        """
+        return self.checkbox
+
+    def get_checkbox_var(self) -> tk.IntVar:
+        """
+        Get the checkbox variable.
+
+        :return: Checkbox variable.
+        :rtype: tk.IntVar
+        """
+        return self.checkbox_var
+
+    def get_load_button(self) -> Button:
+        """
+        Get the button handle.
+
+        :return: Load button handle.
+        :rtype: Button
+        """
+        return self.load_button
+
+    def get_status_label(self) -> Label:
+        """
+        Get the status label handle.
+
+        :return: Status label handle.
+        :rtype: Label
+        """
+        return self.status_label
+
+    def get_status_label_var(self) -> tk.StringVar:
+        """
+        Get the status label variable.
+
+        :return: Status label variable.
+        :rtype: tk.StringVar
+        """
+        return self.status_label_var
 
     def reset(self):
         """Reset the file loader."""
