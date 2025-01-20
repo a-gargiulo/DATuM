@@ -1,7 +1,9 @@
-"""Extract 1D profiles from 2D stereo PIV planes.
+"""
+Extract 1D profiles from 2D stereo PIV planes.
 
-Profiles can be extracted either perpendicular to the VT SWT's wall or perpendicular to the hill's surface in a local
-coordinate system aligned with the surface shear stress direction.
+Profiles are extracted either perpendicular to the VT SWT's wall or perpendicular to the hill's surface in a local
+coordinate system aligned with the surface shear stress direction. The latter is only possible along the hill centerline
+at symmetric orientations.
 """
 import os
 import sys
@@ -12,7 +14,8 @@ from scipy.interpolate import griddata
 
 # from . import (boundary_layer, cfd, log, parser, plotting, preprocessor,
 # reference, spalding, transformations, uncertainty, utility)
-from . import cfd, reference, plotting, transform, spalding, boundary_layer, uncertainty
+from . import cfd, plotting, transform, spalding, boundary_layer, uncertainty
+from .properties import get_properties
 from ..utility import apputils
 from .beverli import Beverli
 from .my_types import NestedDict
@@ -25,9 +28,11 @@ def extract_data(
     geometry: Beverli,
     opts: Dict[str, Union[int, float, str, bool]]
 ) -> bool:
-    """Extract profile data from the 2D stereo PIV data."""
-    # Obtain reference quantities (if .stat available) for experimental data.
-    properties = reference.get_all_plane_properties(opts)
+    """Extract the profile data."""
+    # Obtain reference quantities for experimental data. If .stat file for the experiment is available, the properties
+    # are calculated. Otherwise, the function expects a .json file, from which the properties will be loaded.
+    # at a minimum file must have density, dynamic_viscosity, and U_inf
+    properties = get_properties(opts)
     if properties is None:
         return False
 

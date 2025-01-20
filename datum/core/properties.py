@@ -9,7 +9,7 @@ from ..utility import apputils
 from .my_types import Properties, TunnelConditions
 
 
-def get_all_plane_properties(opts: Dict[str, Union[int, float, str, bool]]) -> Optional[Properties]:
+def get_properties(opts: Dict[str, Union[int, float, str, bool]]) -> Optional[Properties]:
     """Obtain the reference conditions for the experimental data.
 
     The reference conditions are calculated using a corresponding file containing the conditions measured in the VT SWT

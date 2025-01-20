@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 
 from ..utility.configure import STYLES
 from .preprocessor_window import PreprocessorWindow
+from .profiler_window import ProfilerWindow
 from .widgets import Button
 
 # Constants
@@ -79,5 +80,4 @@ class DatumWindow:
 
     def open_profiler(self):
         """Open the profiler window."""
-        pass
-        # ProfilerWindow(self.root)
+        ProfilerWindow(self.root)

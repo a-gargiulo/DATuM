@@ -297,10 +297,10 @@ class PreprocessorWindow:
     def confirm_orientation(self):
         """Confirm the user input hill orientation."""
         self.orientation_is_confirmed = True
-        print(self.piv.pose.angle1)
-        print(self.piv.pose.angle2)
-        print(self.piv.pose.loc)
-        print(self.piv.pose.glob)
+        # print(self.piv.pose.angle1)
+        # print(self.piv.pose.angle2)
+        # print(self.piv.pose.loc)
+        # print(self.piv.pose.glob)
 
     def toggle_pose_status(self, *args):
         """Indicate the loading status of the pose parameters."""
