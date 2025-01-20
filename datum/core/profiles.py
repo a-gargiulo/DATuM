@@ -29,9 +29,8 @@ def extract_data(
     opts: Dict[str, Union[int, float, str, bool]]
 ) -> bool:
     """Extract the profile data."""
-    # Obtain reference quantities for experimental data. If .stat file for the experiment is available, the properties
-    # are calculated. Otherwise, the function expects a .json file, from which the properties will be loaded.
-    # at a minimum file must have density, dynamic_viscosity, and U_inf
+    # Obtain reference quantities for experimental data. A .stat file for the experiment must be available. At a
+    # minimum the properties file must have density, dynamic_viscosity, and U_inf
     properties = get_properties(opts)
     if properties is None:
         return False
