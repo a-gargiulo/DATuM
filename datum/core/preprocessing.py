@@ -21,7 +21,7 @@ def preprocess_data(piv_obj: Piv, state: Dict[str, Union[bool, int, str]], opts:
             piv_obj.data["coordinates"]["Z"] = piv_obj.data["coordinates"]["X"]
     else:
         transform.rotate_data(piv_obj)
-        transform.interpolate_data(piv_obj, state["num_interp_pts"])
+        transform.interpolate_data(piv_obj, state["num_interpolation_pts"])
         transform.translate_data(piv_obj)
         transform.scale_coordinates(piv_obj, scale_factor=1e-3)
 

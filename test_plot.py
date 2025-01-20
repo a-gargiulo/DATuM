@@ -51,7 +51,7 @@ def plot_contour(
     axs = fig.add_axes((0, 0, 1, 1))
     axs.pcolor(coordinates["X"], coordinates["Y"], quantity, norm=norm, cmap=cmap)
     hill = Beverli(45, True)
-    hill.rotate(45)
+    # hill.rotate(45)
     x1b, x2b = hill.calculate_x1_x2(cast(float, properties["zpos"]))
     axs.plot(x1b, x2b, linestyle="--", color="k")
     axs.tick_params(axis="x", pad=10)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         "colormap": "turbo",
         "contour_range": {
             "start": 0,
-            "end": 80,
+            "end": 25,
             "num_of_contours": 100,
         },
         "zpos": 0.0,
@@ -119,9 +119,9 @@ if __name__ == "__main__":
         "ymajor_locator": 0.05,
         "cbar_range": {
             "start": 0,
-            "end": 80,
-            "num_of_ticks": 9
+            "end": 25,
+            "num_of_ticks": 6
         },
-        "cbar_label": r"dWdZ"
+        "cbar_label": r"U"
     }
-    plot_contour(cast(dict, data["coordinates"]), cast(np.ndarray, data["mean_velocity_gradient"]["dWdZ"]), properties, "test.png")
+    plot_contour(cast(dict, data["coordinates"]), cast(np.ndarray, data["mean_velocity"]["U"]), properties, "test.png")
