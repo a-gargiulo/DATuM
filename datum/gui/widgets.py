@@ -61,9 +61,7 @@ class Button(BaseButton):
 class Checkbutton(tk.Checkbutton):
     """Define a custom `Checkbutton`."""
 
-    def __init__(
-        self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs
-    ):
+    def __init__(self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs):
         """
         Class constructor.
 
@@ -89,9 +87,7 @@ class Checkbutton(tk.Checkbutton):
 class Frame(tk.Frame):
     """Define a custom `Frame`."""
 
-    def __init__(
-        self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs
-    ):
+    def __init__(self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs):
         """
         Class constructor.
 
@@ -130,9 +126,7 @@ class Label(tk.Label):
 class Entry(tk.Entry):
     """Define a custom `Entry`."""
 
-    def __init__(
-        self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs
-    ):
+    def __init__(self, parent: Union[tk.Tk, tk.Toplevel, tk.Widget], category: int, **kwargs):
         """
         Class constructor.
 
@@ -270,9 +264,7 @@ class ScrollableCanvas:
             self._default_layout()
 
         self.frame = tk.Frame(self.canvas, bg=STYLES["color"]["base"], **frame_kwargs)
-        self.frame_window = self.canvas.create_window(
-            (0, 0), window=self.frame, anchor="nw"
-        )
+        self.frame_window = self.canvas.create_window((0, 0), window=self.frame, anchor="nw")
         self.frame.bind("<Configure>", self._update_scroll_region)
 
         if vertical:
@@ -388,7 +380,13 @@ class FileLoader(tk.Frame):
         )
         self.status_label_var = tk.StringVar()
         self.status_label_var.set("Nothing Loaded")
-        self.status_label = Label(self, "", self.category, state="disabled" if self.isCheckable else "normal", textvariable=self.status_label_var)
+        self.status_label = Label(
+            self,
+            "",
+            self.category,
+            state="disabled" if self.isCheckable else "normal",
+            textvariable=self.status_label_var,
+        )
         self.status_label.config(width=13, fg="red")
 
     def _layout_widgets(self):

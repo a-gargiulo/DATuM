@@ -427,7 +427,7 @@ class PoseWindow:
         self.create_local_pose_selector(self.mode_selector_var.get(), 3)
 
     def submit_file(self):
-        """Generate the pose parameters file and return to the main application."""
+        """Generate the pose parameters file."""
         case = self.mode_selector_var.get()
         if case == CALCULATION_MODES[0]:
             transformation_parameters_path = self.parameters_loader.get_listbox_content()
