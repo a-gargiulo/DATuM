@@ -32,7 +32,8 @@ import tecplot as tp
 def load_fluent_data(
     case_file: str, data_file: str, connected: bool
 ) -> None:
-    """Initialize a Tecplot session and load a Fluent dataset.
+    """
+    Initialize a Tecplot session and load a Fluent dataset.
 
     :param case_file: A string representing the system path to the Fluent case file.
     :param data_file: A string representing the system path to the Fluent data file.
@@ -51,16 +52,22 @@ def load_fluent_data(
     )
 
 
-def calculate_reference_conditions(reynolds_number: float, properties: Properties) -> Optional[Dict[str, float]]:
-    """Calculate the reference conditions for the BeVERLI RANS ANSYS Fluent simulations.
+def calculate_reference_conditions(
+    reynolds_number: float,
+    heat_capacity_ratio: float,
+    gas_constant: float
+) -> Optional[Dict[str, float]]:
+    """
+    Calculate the reference conditions for the simulations and normalize the corresponding data.
 
-    Also normalize the available flow quantities accordingly.
+    :param reynolds_number: The Reynolds number of the experiment.
+    :param heat_capacity_ratio: The fluid's heat capacity ratio.
+    :param gas_constant: The fluid's gas constant.
+
+    :return: A dictionary containing the reference conditions for the simulations or 'None', which indicates and error.
+    :rtype: Optional[Dict[str, float]]
     """
     dataset = tp.active_frame().dataset
-
-    # Fluid properties
-    heat_capacity_ratio = properties["fluid"]["heat_capacity_ratio"]
-    gas_constant_air = properties["fluid"]["gas_constant_air"]
 
     # Inlet boundary conditions
     stagnation_pressure = None
@@ -114,9 +121,9 @@ def calculate_reference_conditions(reynolds_number: float, properties: Propertie
         1 + (heat_capacity_ratio - 1) / 2 * mach_ref**2
     ) ** (-1)
     velocity_ref = mach_ref * np.sqrt(
-        heat_capacity_ratio * gas_constant_air * static_temperature_ref
+        heat_capacity_ratio * gas_constant * static_temperature_ref
     )
-    density_ref = static_pressure_ref / (gas_constant_air * static_temperature_ref)
+    density_ref = static_pressure_ref / (gas_constant * static_temperature_ref)
     dynamic_viscosity_ref = (
         1.716e-5
         * (static_temperature_ref / 273.15) ** (3 / 2)
@@ -139,9 +146,11 @@ def calculate_reference_conditions(reynolds_number: float, properties: Propertie
 
 def normalize_variables_by_reference(
     reference_conditions: Dict[str, float],
-    calculate_reynolds_stress: bool = False,
+    include_reynolds_stress: bool = False,
 ) -> None:
-    """Compute additional Tecplot variables normalized by reference conditions."""
+    """
+    Normalize C Tecplot variables normalized by reference conditions.
+    """
     # Hill geometry
     hill_height_m = 0.186944
 
@@ -243,7 +252,7 @@ def normalize_variables_by_reference(
 
     # Compute reynolds stresses and TKE production
     # (use with appropriate turbulence model)
-    if calculate_reynolds_stress:
+    if include_reynolds_stress:
         tp.macro.execute_extended_command(
             command_processor_id="CFDAnalyzer4",
             command=(

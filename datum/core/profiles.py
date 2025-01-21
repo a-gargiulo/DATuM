@@ -14,8 +14,7 @@ from scipy.interpolate import griddata
 
 # from . import (boundary_layer, cfd, log, parser, plotting, preprocessor,
 # reference, spalding, transformations, uncertainty, utility)
-from . import cfd, plotting, transform, spalding, boundary_layer, uncertainty
-from .properties import get_properties
+from . import cfd, plotting, transform, spalding, boundary_layer, uncertainty, expref
 from ..utility import apputils
 from .beverli import Beverli
 from .my_types import NestedDict
@@ -26,36 +25,51 @@ def extract_data(
     piv_obj_no_intrp: Piv,
     piv_obj_intrp: Piv,
     geometry: Beverli,
-    opts: Dict[str, Union[int, float, str, bool]]
+    inputs: Dict[str, Union[int, float, str, bool]]
 ) -> bool:
-    """Extract the profile data."""
-    # Obtain reference quantities for experimental data. A .stat file for the experiment must be available. At a
-    # minimum the properties file must have density, dynamic_viscosity, and U_inf
-    properties = get_properties(opts)
+    """
+    Extract the profile data.
+
+    :param piv_obj_no_intrp: Piv object containing non-interpolated data.
+    :param piv_obj_intrp: Piv object containing interpolated data.
+    :param geometry: An object containing the BeVERLI Hill geometry.
+    :param inputs: Dictionary containing the user inputs.
+    """
+    # TODO: Create a robust type checking mechanism for the 'inputs' dictionary.
+    # TODO: Code is currently specific for air as fluid. Make heat capacity ratio and gas constant a user input later.
+
+    properties = expref.calculate_fluid_flow_reference_properties(
+        str(inputs["stat_file_path"]),
+        1.4,
+        287.0,
+        float(inputs["reynolds_number"]),
+        int(inputs["tunnel_entry_num"])
+    )
     if properties is None:
         return False
 
     cfd_reference_conditions = None
-    if opts["add_cfd"]:
+    if inputs["add_cfd"]:
         cfd.load_fluent_data(
-            case_file=cast(str, opts["fluent_case"]),
-            data_file=cast(str, opts["fluent_data"]),
+            case_file=str(inputs["fluent_case"]),
+            data_file=str(inputs["fluent_data"]),
             connected=False,
         )
         cfd_reference_conditions = cfd.calculate_reference_conditions(
-            reynolds_number=int(cast(float, opts["reynolds_number"]) * 1e-3),
-            properties=properties,
+            reynolds_number=int(float(inputs["reynolds_number"]) * 1e-3),
+            heat_capacity_ratio=properties["fluid"]["heat_capacity_ratio"],
+            gas_constant=properties["fluid"]["gas_constant"]
         )
         if cfd_reference_conditions is None:
             return False
 
         cfd.normalize_variables_by_reference(
             reference_conditions=cfd_reference_conditions,
-            calculate_reynolds_stress=False,
+            include_reynolds_stress=False,
         )
 
     # Extract profiles in selected coordinate frame
-    profile_locations = _select_profile_locations(piv_obj_no_intrp, cast(int, opts["number_of_profiles"]), geometry)
+    profile_locations = _select_profile_locations(piv_obj_no_intrp, cast(int, inputs["number_of_profiles"]), geometry)
 
     profiles = {}
     profile_number = 0
@@ -67,7 +81,7 @@ def extract_data(
             point,
             properties,
             geometry,
-            opts,
+            inputs,
             cfd_reference_conditions=cfd_reference_conditions,
         )
 
@@ -81,7 +95,7 @@ def _extract_normal_profile(
     point: Tuple[float, float],
     properties: NestedDict,
     geometry: Beverli,
-    opts: Dict[str, Union[int, float, str, bool]],
+    inputs: Dict[str, Union[int, float, str, bool]],
     cfd_reference_conditions: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Dict[str, Dict[str, Union[float, np.ndarray]]]]:
     density = properties["fluid"]["density"]
@@ -90,7 +104,7 @@ def _extract_normal_profile(
 
     # Obtain 3D coordinates of the profile
     x_1_m = point[0]
-    if opts["coordinate_system_type"] == "shear":
+    if inputs["coordinate_system_type"] == "shear":
         x_3_m = 0  # Since `shear` coordinates only available for symmetric orientations along centerline.
         nvec = geometry.get_surface_normal_symmetric_hill_centerline(x_1_m)
     else:
@@ -101,13 +115,13 @@ def _extract_normal_profile(
     # Extract surface-normal profiles
     x1q = np.linspace(
         x_1_m,
-        x_1_m + nvec[0] * cast(float, opts["profile_height_m"]),
-        cast(int, opts["number_of_profile_points"]),
+        x_1_m + nvec[0] * cast(float, inputs["profile_height_m"]),
+        cast(int, inputs["number_of_profile_points"]),
     )
     x2q = np.linspace(
         x_2_m,
-        x_2_m + nvec[1] * cast(float, opts["profile_height_m"]),
-        cast(int, opts["number_of_profile_points"]),
+        x_2_m + nvec[1] * cast(float, inputs["profile_height_m"]),
+        cast(int, inputs["number_of_profile_points"]),
     )
 
     data_to_interpolate = [
@@ -151,7 +165,7 @@ def _extract_normal_profile(
         profile["exp"]["turbulence_scales"] = {}
 
     # Interpolate data
-    if opts["coordinate_system_type"] == "shear":
+    if inputs["coordinate_system_type"] == "shear":
         profile["exp"]["coordinates"]["Y_SS"] = np.sqrt(
             (x1q - x_1_m) ** 2 + (x2q - x_2_m) ** 2
         )
@@ -197,7 +211,7 @@ def _extract_normal_profile(
     print("DONE!")
 
     # Rotate profile to shear stress coordinate system
-    if opts["coordinate_system_type"] == "shear":
+    if inputs["coordinate_system_type"] == "shear":
         print("Rotating shear data", end="")
         tangential_angle_rad = np.arccos(
             np.matmul(np.array([nvec[1], -nvec[0], 0]), np.array([1, 0, 0]))
@@ -230,13 +244,13 @@ def _extract_normal_profile(
         print("DONE!")
 
     # Extract equivalent profile from CFD solution
-    if opts["add_cfd"]:
+    if inputs["add_cfd"]:
         cast(dict, profile)["cfd"] = cfd.extract_bl_profile(
             profile_location=(x_1_m, x_2_m, x_3_m),
             number_of_profile_points=500,
             profile_height=0.2,
             use_sigmoid=True,
-            system_type=cast(str, opts["coordinate_system_type"]),
+            system_type=cast(str, inputs["coordinate_system_type"]),
             reference_conditions=cast(Dict[str, float], cfd_reference_conditions),
             reynolds_stress_available=False,
         )
@@ -247,16 +261,16 @@ def _extract_normal_profile(
     profile["exp"]["properties"]["U_REF"] = properties["flow"]["U_ref"]
 
     # Run a spalding fit for surface-normal profiles
-    if opts["coordinate_system_type"] == "shear":
+    if inputs["coordinate_system_type"] == "shear":
         spalding.spalding_fit_profile(
-            profile, add_cfd=cast(bool, opts["add_cfd"])
+            profile, add_cfd=cast(bool, inputs["add_cfd"])
         )  # updates the mutable properties
 
         # calculate bl parameters
         boundary_layer.calculate_boundary_layer_integral_parameters(profile["exp"])
 
     uncertainty.calculate_random_and_rotation_uncertainty(
-        piv_obj_intrp, profile["exp"], n_eff=1000, coordinate_system_type=cast(str, opts["coordinate_system_type"])
+        piv_obj_intrp, profile["exp"], n_eff=1000, coordinate_system_type=cast(str, inputs["coordinate_system_type"])
     )
 
     return profile
