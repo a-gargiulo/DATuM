@@ -144,14 +144,17 @@ def calculate_reference_conditions(
     return reference_conditions
 
 
-def normalize_variables_by_reference(
+def calculate_qoi_and_normalize_by_reference(
     reference_conditions: Dict[str, float],
     include_reynolds_stress: bool = False,
 ) -> None:
     """
-    Normalize C Tecplot variables normalized by reference conditions.
+    Calculate the quantities of interest from the numerical data and normalize by the reference conditions.
+
+    :param refernce_conditions: The reference conditions for the numerical data.
+    :param include_reynolds_stress: A Boolean value that specifies whether the Reynolds stress should be computed.
     """
-    # Hill geometry
+    # TODO: The fixed bump height may be too specific. Change for a more generic code.
     hill_height_m = 0.186944
 
     # Cp

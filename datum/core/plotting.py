@@ -100,13 +100,24 @@ def plot_contour(
 
 
 def point_selector(
-        number_of_points: int,
-        coordinates: Dict[str, np.ndarray],
-        quantity: np.ndarray,
-        properties: NestedDict,
-        geometry: Beverli,
+    number_of_points: int,
+    coordinates: Dict[str, np.ndarray],
+    quantity: np.ndarray,
+    properties: NestedDict,
+    geometry: Beverli,
 ) -> List[Tuple[float, float]]:
-    """Select profile points."""
+    """
+    Generate a contour plot and selector to select the spatial locations for the profile extraction.
+
+    :param number_of_points: The number of spatial points (profiles).
+    :param coordinates: The coordinates of the PIV plane.
+    :param quantity: The values of the PIV quantity to be plotted.
+    :param properties: The fluid, flow, and reference properties.
+    :param geoemtry: An object containing the BeVERLI hill geometry.
+
+    :return: A list of tuples containing the selected locations.
+    :rtype: List[Tuple[float, float]]
+    """
     cmap = plt.get_cmap(cast(str, properties["colormap"]))
     bounds = np.linspace(
         cast(int, properties["contour_range"]["start"]),

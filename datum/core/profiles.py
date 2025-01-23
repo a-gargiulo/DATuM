@@ -63,13 +63,13 @@ def extract_data(
         if cfd_reference_conditions is None:
             return False
 
-        cfd.normalize_variables_by_reference(
+        cfd.calculate_qoi_and_normalize_by_reference(
             reference_conditions=cfd_reference_conditions,
             include_reynolds_stress=False,
         )
 
     # Extract profiles in selected coordinate frame
-    profile_locations = _select_profile_locations(piv_obj_no_intrp, cast(int, inputs["number_of_profiles"]), geometry)
+    profile_locations = _select_profile_locations(piv_obj_no_intrp, int(inputs["number_of_profiles"]), geometry)
 
     profiles = {}
     profile_number = 0
@@ -279,7 +279,6 @@ def _extract_normal_profile(
 def _select_profile_locations(
     piv_obj, number_of_profiles: int, geometry: Beverli,
 ) -> List[Tuple[float, float]]:
-    """Select the locations of the profiles to extract from the analyzed stereo PIV plane."""
     x_1_m = piv_obj.pose.glob[0]
     x_2_m = piv_obj.pose.glob[1]
     x_3_m = piv_obj.pose.glob[2]
@@ -298,6 +297,4 @@ def _select_profile_locations(
         "cbar_label": r"$U_1$ (m/s)",
     }
 
-    return plotting.point_selector(
-        number_of_profiles, coordinates, quantity, properties, geometry
-    )
+    return plotting.point_selector(number_of_profiles, coordinates, quantity, properties, geometry)
