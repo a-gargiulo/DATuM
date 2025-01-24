@@ -23,7 +23,7 @@ from .piv import Piv
 
 def extract_data(
     piv_obj_no_intrp: Piv,
-    piv_obj_intrp: Piv,
+    piv_obj_intrp: Optional[Piv],
     geometry: Beverli,
     inputs: Dict[str, Union[int, float, str, bool]]
 ) -> bool:
@@ -37,7 +37,6 @@ def extract_data(
     """
     # TODO: Create a robust type checking mechanism for the 'inputs' dictionary.
     # TODO: Code is currently specific for air as fluid. Make heat capacity ratio and gas constant a user input later.
-
     properties = expref.calculate_fluid_flow_reference_properties(
         str(inputs["stat_file_path"]),
         1.4,
@@ -70,6 +69,8 @@ def extract_data(
 
     # Extract profiles in selected coordinate frame
     profile_locations = _select_profile_locations(piv_obj_no_intrp, int(inputs["number_of_profiles"]), geometry)
+    if profile_locations is None:
+        return False
 
     profiles = {}
     profile_number = 0
@@ -85,24 +86,24 @@ def extract_data(
             cfd_reference_conditions=cfd_reference_conditions,
         )
 
-    apputils.write_pickle("./Output/profiles.pkl", profiles)
+    apputils.write_pickle("./outputs/profiles.pkl", profiles)
     return True
 
 
 def _extract_normal_profile(
-    piv_obj,
-    piv_obj_intrp,
+    piv_obj: Piv,
+    piv_obj_intrp: Optional[Piv],
     point: Tuple[float, float],
     properties: NestedDict,
     geometry: Beverli,
     inputs: Dict[str, Union[int, float, str, bool]],
     cfd_reference_conditions: Optional[Dict[str, float]] = None,
-) -> Dict[str, Dict[str, Dict[str, Union[float, np.ndarray]]]]:
-    density = properties["fluid"]["density"]
-    dynamic_viscosity = properties["fluid"]["dynamic_viscosity"]
-    kinematic_viscosity = cast(float, dynamic_viscosity) / cast(float, density)
+) -> Optional[Dict[str, Dict[str, Dict[str, Union[float, np.ndarray]]]]]:
+    density = float(cast(dict, properties["fluid"])["density"])
+    dynamic_viscosity = float(cast(dict, properties["fluid"])["dynamic_viscosity"])
+    kinematic_viscosity = dynamic_viscosity / density
 
-    # Obtain 3D coordinates of the profile
+    # Obtain 3D coordinates and normal vector of the profile
     x_1_m = point[0]
     if inputs["coordinate_system_type"] == "shear":
         x_3_m = 0  # Since `shear` coordinates only available for symmetric orientations along centerline.
@@ -115,13 +116,13 @@ def _extract_normal_profile(
     # Extract surface-normal profiles
     x1q = np.linspace(
         x_1_m,
-        x_1_m + nvec[0] * cast(float, inputs["profile_height_m"]),
-        cast(int, inputs["number_of_profile_points"]),
+        x_1_m + nvec[0] * float(inputs["profile_height_m"]),
+        int(inputs["number_of_profile_points"]),
     )
     x2q = np.linspace(
         x_2_m,
-        x_2_m + nvec[1] * cast(float, inputs["profile_height_m"]),
-        cast(int, inputs["number_of_profile_points"]),
+        x_2_m + nvec[1] * float(inputs["profile_height_m"]),
+        int(inputs["number_of_profile_points"]),
     )
 
     data_to_interpolate = [
@@ -129,7 +130,7 @@ def _extract_normal_profile(
         ("reynolds_stress", ["UU", "VV", "WW", "UV", "UW", "VW"]),
     ]
 
-    if piv_obj_intrp:
+    if piv_obj_intrp is not None:
         data_to_interpolate.extend(
             [
                 (
@@ -158,7 +159,7 @@ def _extract_normal_profile(
         }
     }
 
-    if piv_obj_intrp:
+    if piv_obj_intrp is not None:
         profile["exp"]["strain_tensor"] = {}
         profile["exp"]["rotation_tensor"] = {}
         profile["exp"]["normalized_rotation_tensor"] = {}
@@ -176,38 +177,38 @@ def _extract_normal_profile(
     profile["exp"]["coordinates"]["Y"] = x2q
 
     # BIIIIIIIIIG BOTTLENECK DUE TO GRIDDATA!!! Can it be sped up much, though?
+    if piv_obj.data is None:
+        return None
+
     print("Extracting profile data...", end="")
     for quantity, components in data_to_interpolate:
         for component in components:
-            profile["exp"][quantity][component] = griddata(
-                points=(
-                    piv_obj.data["coordinates"]["X"].flatten(),
-                    piv_obj.data["coordinates"]["Y"].flatten(),
+            if quantity not in ["strain_tensor", "rotation_tensor", "normalized_rotation_tensor", "turbulence_scales"]:
+                profile["exp"][quantity][component] = griddata(
+                    points=(
+                        cast(dict, piv_obj.data["coordinates"])["X"].flatten(),
+                        cast(dict, piv_obj.data["coordinates"])["Y"].flatten(),
+                    ),
+                    values=cast(dict, piv_obj.data[quantity])[component].flatten(),
+                    xi=(x1q, x2q),
+                    method="linear",
+                    rescale=True,
                 )
-                if quantity
-                not in [
-                    "strain_tensor",
-                    "rotation_tensor",
-                    "normalized_rotation_tensor",
-                    "turbulence_scales",
-                ]
-                else (
-                    piv_obj_intrp.data["coordinates"]["X"].flatten(),
-                    piv_obj_intrp.data["coordinates"]["Y"].flatten(),
-                ),
-                values=piv_obj.data[quantity][component].flatten()
-                if quantity
-                not in [
-                    "strain_tensor",
-                    "rotation_tensor",
-                    "normalized_rotation_tensor",
-                    "turbulence_scales",
-                ]
-                else piv_obj_intrp.data[quantity][component].flatten(),
-                xi=(x1q, x2q),
-                method="linear",
-                rescale=True,
-            )
+            else:
+                if piv_obj_intrp is None:
+                    return None
+                if piv_obj_intrp.data is None:
+                    return None
+                profile["exp"][quantity][component] = griddata(
+                    points=(
+                        cast(dict, piv_obj_intrp.data["coordinates"])["X"].flatten(),
+                        cast(dict, piv_obj_intrp.data["coordinates"])["Y"].flatten(),
+                    ),
+                    values=cast(dict, piv_obj_intrp.data[quantity])[component].flatten(),
+                    xi=(x1q, x2q),
+                    method="linear",
+                    rescale=True,
+                )
     print("DONE!")
 
     # Rotate profile to shear stress coordinate system
@@ -245,15 +246,20 @@ def _extract_normal_profile(
 
     # Extract equivalent profile from CFD solution
     if inputs["add_cfd"]:
-        cast(dict, profile)["cfd"] = cfd.extract_bl_profile(
+        if cfd_reference_conditions is None:
+            return None
+        sol = cfd.extract_bl_profile(
             profile_location=(x_1_m, x_2_m, x_3_m),
             number_of_profile_points=500,
             profile_height=0.2,
             use_sigmoid=True,
-            system_type=cast(str, inputs["coordinate_system_type"]),
-            reference_conditions=cast(Dict[str, float], cfd_reference_conditions),
+            system_type=str(inputs["coordinate_system_type"]),
+            reference_conditions=cfd_reference_conditions,
             reynolds_stress_available=False,
         )
+        if sol is None:
+            return None
+        profile["cfd"], cfd_ds = sol
 
     profile["exp"]["properties"]["NU"] = kinematic_viscosity
     profile["exp"]["properties"]["RHO"] = density
@@ -263,7 +269,7 @@ def _extract_normal_profile(
     # Run a spalding fit for surface-normal profiles
     if inputs["coordinate_system_type"] == "shear":
         spalding.spalding_fit_profile(
-            profile, add_cfd=cast(bool, inputs["add_cfd"])
+            profile, add_cfd=bool(inputs["add_cfd"])
         )  # updates the mutable properties
 
         # calculate bl parameters
@@ -277,14 +283,17 @@ def _extract_normal_profile(
 
 
 def _select_profile_locations(
-    piv_obj, number_of_profiles: int, geometry: Beverli,
-) -> List[Tuple[float, float]]:
+    piv_obj: Piv, number_of_profiles: int, geometry: Beverli,
+) -> Optional[List[Tuple[float, float]]]:
     x_1_m = piv_obj.pose.glob[0]
     x_2_m = piv_obj.pose.glob[1]
     x_3_m = piv_obj.pose.glob[2]
 
-    coordinates = piv_obj.data["coordinates"]
-    quantity = piv_obj.data["mean_velocity"]["U"]
+    if piv_obj.data is None:
+        return None
+    coordinates = cast(Dict[str, np.ndarray], piv_obj.data["coordinates"])
+    quantity = cast(np.ndarray, piv_obj.data["mean_velocity"]["U"])
+
     properties = {
         "colormap": "jet",
         "contour_range": {"start": 0, "end": 25, "num_of_contours": 100},
@@ -297,4 +306,4 @@ def _select_profile_locations(
         "cbar_label": r"$U_1$ (m/s)",
     }
 
-    return plotting.point_selector(number_of_profiles, coordinates, quantity, properties, geometry)
+    return plotting.points_selector(number_of_profiles, coordinates, quantity, properties, geometry)

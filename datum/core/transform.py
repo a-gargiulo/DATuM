@@ -2,7 +2,7 @@
 PIV coordinate system to the global Cartesian coordinate system of the corresponding
 BeVERLI Hill experiment in the Virginia Tech Stability Wind Tunnel."""
 
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Union, Optional
 
 import numpy as np
 import sys
@@ -381,7 +381,19 @@ def scale_coordinates(piv_obj, scale_factor: float) -> None:
     piv_obj.data["coordinates"]["Y"] *= scale_factor
 
 
-def rotate_profile(profile, rotation_matrix):
+def rotate_profile(
+    profile: Dict[str, Dict[str, Union[np.ndarray, float, int]]],
+    rotation_matrix: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+    """
+    Rotate profile data.
+
+    :param profile: The profile data.
+    :param rotation_matrix: The rotation matrix.
+
+    :return: A tuple containing the rotated quantities.
+    :rtype: Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]
+    """
     velocity_vector = np.array([profile["mean_velocity"][f"{i}"] for i in "UVW"])
 
     components = ["UU", "UV", "UW", "UV", "VV", "VW", "UW", "VW", "WW"]
@@ -396,9 +408,7 @@ def rotate_profile(profile, rotation_matrix):
     )
 
     velocity_vector_rotated = rotation_matrix @ velocity_vector
-    re_stress_tensor_rotated = (
-        rotation_matrix @ re_stress_tensor.transpose(2, 0, 1) @ rotation_matrix.T
-    ).transpose(1, 2, 0)
+    re_stress_tensor_rotated = rotate_tensor_profile(re_stress_tensor, rotation_matrix)
 
     if "strain_tensor" in profile:
         strain_tensor = np.array(
@@ -442,33 +452,44 @@ def rotate_profile(profile, rotation_matrix):
     return velocity_vector_rotated, re_stress_tensor_rotated, None, None, None
 
 
-def rotate_tensor_profile(tensor, rotation_matrix):
-    return (
-        rotation_matrix[None, :, :]
-        @ tensor.transpose(2, 0, 1)
-        @ rotation_matrix.T[None, :, :]
-    ).transpose(1, 2, 0)
+def rotate_tensor_profile(tensor: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
+    """
+    Rotate the profile of a tensor quantity.
+
+    :param tensor: The tensor quantity as a (3, 3, N) array.
+    :param rotation_matrix: The rotation matrix.
+
+    :return: The rotated tensor profile.
+    :rtype: np.ndarray
+    """
+    return (rotation_matrix[None, :, :] @ tensor.transpose(2, 0, 1) @ rotation_matrix.T[None, :, :]).transpose(1, 2, 0)
 
 
 def set_rotated_profiles(
-    profile,
-    velocity_vector_rotated,
-    re_stress_tensor_rotated,
-    strain_tensor_rotated=None,
-    rotation_tensor_rotated=None,
-    normalized_rotation_tensor_rotated=None,
+    profile: Dict[str, Dict[str, Union[np.ndarray, float, int]]],
+    velocity_vector_rotated: np.ndarray,
+    re_stress_tensor_rotated: np.ndarray,
+    strain_tensor_rotated: Optional[np.ndarray] = None,
+    rotation_tensor_rotated: Optional[np.ndarray] = None,
+    normalized_rotation_tensor_rotated: Optional[np.ndarray] = None,
 ):
+    """
+    Set the rotated profile.
+
+    :param profile: The profile data.
+    :param velocity_vector_rotated: The rotated velocity data.
+    :param re_stress_tensor_rotated: The rotated reynolds stress data.
+    :param strain_tensor_rotated: The rotated strain tensor data.
+    :param rotation_tensor_rotated: The rotated rotation tensor data.
+    :param normalized_rotation_tensor_rotated: The rotated normalized rotation tensor data.
+    """
     for index, component in enumerate(["U_SS", "V_SS", "W_SS"]):
         profile["mean_velocity"][component] = velocity_vector_rotated[index, :]
 
     for index, component in enumerate(["UU_SS", "VV_SS", "WW_SS"]):
-        profile["reynolds_stress"][component] = re_stress_tensor_rotated[
-            index, index, :
-        ]
+        profile["reynolds_stress"][component] = re_stress_tensor_rotated[index, index, :]
 
-    for indices, component in zip(
-        [(0, 1), (0, 2), (1, 2)], ["UV_SS", "UW_SS", "VW_SS"]
-    ):
+    for indices, component in zip([(0, 1), (0, 2), (1, 2)], ["UV_SS", "UW_SS", "VW_SS"]):
         profile["reynolds_stress"][component] = re_stress_tensor_rotated[*indices, :]
 
     if (
@@ -477,15 +498,9 @@ def set_rotated_profiles(
         and (normalized_rotation_tensor_rotated is not None)
     ):
         indices_list = [(i, j) for i in range(3) for j in range(3)]
-        strain_tensor_components = [
-            f"S_{i+1}{j+1}_SS" for i in range(3) for j in range(3)
-        ]
-        rotation_tensor_components = [
-            f"W_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
-        ]
-        normalized_rotation_tensor_components = [
-            f"O_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
-        ]
+        strain_tensor_components = [f"S_{i+1}{j+1}_SS" for i in range(3) for j in range(3)]
+        rotation_tensor_components = [f"W_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)]
+        normalized_rotation_tensor_components = [f"O_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)]
 
         for indices, s_component, w_component, o_component in zip(
             indices_list,
@@ -494,9 +509,5 @@ def set_rotated_profiles(
             normalized_rotation_tensor_components,
         ):
             profile["strain_tensor"][s_component] = strain_tensor_rotated[*indices, :]
-            profile["rotation_tensor"][w_component] = rotation_tensor_rotated[
-                *indices, :
-            ]
-            profile["normalized_rotation_tensor"][o_component] = (
-                rotation_tensor_rotated[*indices, :]
-            )
+            profile["rotation_tensor"][w_component] = rotation_tensor_rotated[*indices, :]
+            profile["normalized_rotation_tensor"][o_component] = (rotation_tensor_rotated[*indices, :])

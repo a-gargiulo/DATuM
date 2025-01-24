@@ -308,7 +308,8 @@ def extract_bl_profile(
     reference_conditions: Dict[str, float],
     reynolds_stress_available: bool = False,
 ) -> Optional[Tuple[Dict[str, Dict[str, np.ndarray]], tp.data.Dataset]]:
-    """Extract a hill surface normal profile.
+    """
+    Extract a hill surface normal profile.
 
     :param profile_location: A tuple containing the Cartesian coordinates of the
         desired profile's location, measured in meters.
@@ -322,10 +323,10 @@ def extract_bl_profile(
     :param reynolds_stress_available: A boolean value indicating whether the Reynolds
         stress tensor is available within the dataset. If the value is true, the
         Reynolds stress tensor is considered available.
+
     :return: A tuple containing a nested dictionary with the cfd profile data, and a
         Tecplot dataset object.
     """
-
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
     def sigmoidspace(low, high, number_of_points, shape=1):
@@ -644,5 +645,5 @@ def extract_bl_profile(
     profile["properties"]["RHO"] = rho
     profile["properties"]["U_REF"] = reference_conditions["velocity_ref"]
     profile["properties"]["U_TAU"] = u_tau
-
-    return cast(Tuple[Dict[str, Dict[str, np.ndarray]], tp.data.Dataset], profile)
+    rds = tp.data.Dataset, tp.active_frame().dataset
+    return (profile, cast(tp.data.Dataset, rds))

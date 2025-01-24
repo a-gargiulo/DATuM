@@ -77,7 +77,14 @@ class Beverli:
         return self._probe_analytic_hill(x1, x3)
 
     def get_surface_normal_symmetric_hill_centerline(self, x1: float) -> np.ndarray:
-        """Calculate the surface normal at a specific x1 location along the centerline at symmetric orientations."""
+        """
+        Calculate the surface normal at a specific x1 location along the centerline at symmetric orientations.
+
+        :param x1: The x1 location along the hill centerline, measured in meters.
+
+        :return: The normal vector.
+        :rtype: numpy.ndarray
+        """
         if self.orientation not in [0, 45, 90, 135, 180, 225, 270, 315]:
             raise ValueError("Non-symmetric hill orientations are not supported.")
 
