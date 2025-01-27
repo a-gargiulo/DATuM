@@ -186,3 +186,32 @@ def points_selector(
 
     plt.close()
     return [(float(a), float(b)) for a, b in pts]
+
+
+def profile_reconstructor(
+    wall_model: List[np.ndarray],
+    data: List[np.ndarray],
+    add_points: bool,
+    number_of_added_points: Optional[int] = None
+):
+    fig, axs = plt.subplots(1,1, figsize=(8, 6))
+    axs.semilogx(wall_model[0], wall_model[1], color="red")
+    axs.semilogx(data[0], data[1], linestyle="none", color="blue", marker="o")
+    _ = Cursor(axs, useblit=True, color="gray", linewidth=1)
+    zoom_ok = False
+    print("\nZoom or pan to view, \npress spacebar when ready to click:\n")
+    while not zoom_ok:
+        zoom_ok = plt.waitforbuttonpress()
+    print("Click twice to select the lower and upper threshold.\n\n")
+    pts1 = plt.ginput(n=2, timeout=0, show_clicks=True)
+    pts2 = None
+    if add_points:
+        print(f"Click {number_of_added_points} times to select additional profile points.")
+        pts2 = plt.ginput(n=number_of_added_points, timeout=0, show_clicks=True)
+
+    plt.close()
+
+    lower_cutoff_index = np.where(data[0] >= pts1[0][0])[0][0]
+    upper_cutoff_index = np.where(data[0] >= pts1[1][0])[0][0]
+
+    return pts2, lower_cutoff_index, upper_cutoff_index
