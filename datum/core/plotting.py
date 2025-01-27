@@ -7,7 +7,7 @@ from matplotlib.widgets import Cursor
 from datum.core.my_types import NestedDict
 
 from datum.core.beverli import Beverli
-from typing import cast, Dict, Sequence, List, Tuple, Optional
+from typing import Any, cast, Dict, Sequence, List, Tuple, Optional
 
 
 def plot_contour(
@@ -193,25 +193,51 @@ def profile_reconstructor(
     data: List[np.ndarray],
     add_points: bool,
     number_of_added_points: Optional[int] = None
-):
-    fig, axs = plt.subplots(1,1, figsize=(8, 6))
+) -> Optional[Tuple[Optional[List[Tuple[float, float]]], float, float]]:
+    """Compare an experimental hill-normal profile to the law of the wall.
+
+    Select a lower and upper threshold capturing the range of usable data.Add optional near-wall reconstruction points.
+
+    :param wall_model: The law of the wall data.
+    :param data: The experimental hill-normal profile data.
+    :param add_points: Boolean indicating whether to add near-wall reconstruction points.
+    :param number_of_added_points: Number of reconstruction points.
+
+    :return: A tuple containing the reconstruction points and the lower and upper threshold index of the profile. If the
+        return value is 'None' instead, an error has occured.
+    :rtype: Optional[Tuple[Optional[List[Tuple[float, float]]], float, float]]
+    """
+    fig, axs = plt.subplots(1, 1, figsize=(8, 6))
+
     axs.semilogx(wall_model[0], wall_model[1], color="red")
     axs.semilogx(data[0], data[1], linestyle="none", color="blue", marker="o")
+
     _ = Cursor(axs, useblit=True, color="gray", linewidth=1)
     zoom_ok = False
     print("\nZoom or pan to view, \npress spacebar when ready to click:\n")
     while not zoom_ok:
         zoom_ok = plt.waitforbuttonpress()
+
+    # Threshold selection
     print("Click twice to select the lower and upper threshold.\n\n")
     pts1 = plt.ginput(n=2, timeout=0, show_clicks=True)
+
+    # Reconstruction
     pts2 = None
     if add_points:
+        if number_of_added_points is None:
+            print("[ERROR]: If 'add_points' is True, you must provide 'number_of_added_points'.")
+            return None
         print(f"Click {number_of_added_points} times to select additional profile points.")
         pts2 = plt.ginput(n=number_of_added_points, timeout=0, show_clicks=True)
+        if pts2 is None:
+            print("[ERROR]: No reconstruction points selected.")
+            return None
+        pts2 = [(float(a), float(b)) for a, b in pts2]
 
     plt.close()
 
-    lower_cutoff_index = np.where(data[0] >= pts1[0][0])[0][0]
-    upper_cutoff_index = np.where(data[0] >= pts1[1][0])[0][0]
+    lower_cutoff_index = float(np.where(data[0] >= pts1[0][0])[0][0])
+    upper_cutoff_index = float(np.where(data[0] >= pts1[1][0])[0][0])
 
     return pts2, lower_cutoff_index, upper_cutoff_index

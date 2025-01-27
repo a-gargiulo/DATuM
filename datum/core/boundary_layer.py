@@ -72,7 +72,7 @@ def _get_centerline_pressure(
     return centerline_pressure
 
 
-def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs):
+def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs) -> bool:
     exp_velocity_interpolant = interp1d(
         (
             cast(dict, profile["coordinates"])["Y_SS"][~np.isnan(cast(dict, profile["mean_velocity"])["U_SS"])] -
@@ -84,34 +84,35 @@ def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs):
     )
 
     u_1_plus_spalding = np.linspace(0, 30, 10000)
-    x_2_plus_spalding = spalding_profile(u_1_plus_spalding)
+    x_2_plus_spalding = cast(np.ndarray, spalding_profile(u_1_plus_spalding))
 
-    x_2_ss_wall_model = (x_2_plus_spalding * profile["properties"]["NU"] / profile["properties"]["U_TAU"])
-    u_1_ss_wall_model = u_1_plus_spalding * profile["properties"]["U_TAU"]
-
-    (
-        additional_pts,
-        cutoff_index_lower,
-        cutoff_index_upper,
-    ) = plotting.profile_reconstructor(
-            wall_model=[cast(np.ndarray, x_2_plus_spalding), u_1_plus_spalding],
-            data=[
-                cast(
-                    np.ndarray,
-                    (profile["coordinates"]["Y_SS"] - profile["properties"]["Y_SS_CORRECTION"])
-                    * profile["properties"]["U_TAU"]
-                    / profile["properties"]["NU"]
-                ),
-                cast(
-                    np.ndarray,
-                    profile["mean_velocity"]["U_SS"] / profile["properties"]["U_TAU"]
-                ),
-            ],
-            add_points=input_data["profiles"]["add_reconstruction_points"],
-            number_of_added_points=input_data["profiles"][
-                "number_of_reconstruction_points"
-            ],
+    x_2_ss_wall_model = (
+        x_2_plus_spalding * cast(float, profile["properties"]["NU"]) / cast(float, profile["properties"]["U_TAU"])
     )
+    u_1_ss_wall_model = u_1_plus_spalding * cast(float, profile["properties"]["U_TAU"])
+
+    result = plotting.profile_reconstructor(
+        wall_model=[x_2_plus_spalding, u_1_plus_spalding],
+        data=[
+            cast(
+                np.ndarray,
+                (profile["coordinates"]["Y_SS"] - profile["properties"]["Y_SS_CORRECTION"])
+                * profile["properties"]["U_TAU"]
+                / profile["properties"]["NU"]
+            ),
+            cast(
+                np.ndarray,
+                profile["mean_velocity"]["U_SS"] / profile["properties"]["U_TAU"]
+            ),
+        ],
+        add_points=bool(inputs["add_reconstruction_points"]),
+        number_of_added_points=(
+            int(inputs["num_of_reconstruction_points"]) if inputs["num_of_reconstruction_points"] is not None else None
+        ),
+    )
+    if result is None:
+        return False
+    additional_pts, cutoff_index_lower, cutoff_index_upper = result
 
     # Append additional points
     if additional_pts:
@@ -144,7 +145,7 @@ def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs):
         # Spalding near-wall section
         lower_cutoff_condition = (
             x_2_ss_wall_model
-            < profile["coordinates"]["Y_SS"][cutoff_index_lower]
+            < cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_lower]
             - profile["properties"]["Y_SS_CORRECTION"]
         )
         u_1_ss_wall_model = u_1_ss_wall_model[lower_cutoff_condition]
@@ -154,9 +155,9 @@ def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs):
     x_2_ss_wall_model = np.append(
         x_2_ss_wall_model,
         np.linspace(
-            profile["coordinates"]["Y_SS"][cutoff_index_lower]
+            cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_lower]
             - profile["properties"]["Y_SS_CORRECTION"],
-            profile["coordinates"]["Y_SS"][cutoff_index_upper]
+            cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_upper]
             - profile["properties"]["Y_SS_CORRECTION"],
             1000,
         ),
@@ -165,9 +166,9 @@ def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs):
         u_1_ss_wall_model,
         exp_velocity_interpolant(
             np.linspace(
-                profile["coordinates"]["Y_SS"][cutoff_index_lower]
+                cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_lower]
                 - profile["properties"]["Y_SS_CORRECTION"],
-                profile["coordinates"]["Y_SS"][cutoff_index_upper]
+                cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_upper]
                 - profile["properties"]["Y_SS_CORRECTION"],
                 1000,
             )
@@ -176,6 +177,8 @@ def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs):
 
     profile["mean_velocity"]["U_SS_MODELED"] = u_1_ss_wall_model
     profile["coordinates"]["Y_SS_MODELED"] = x_2_ss_wall_model
+
+    return True
 
 
 def calculate_boundary_layer_integral_parameters(profile: SingleProfile, inputs: UserInputs, properties: Properties):
@@ -203,7 +206,7 @@ def calculate_boundary_layer_integral_parameters(profile: SingleProfile, inputs:
     )
 
     # Reconstruct velocity profile
-    _reconstruct_profile(profile)
+    _reconstruct_profile(profile, inputs)
 
     # Show model profile
     plotting.check_wall_model(
