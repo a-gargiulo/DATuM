@@ -1,5 +1,5 @@
 """Define custom type alias."""
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict, TypedDict, Union
 
 import numpy as np
 import trimesh
@@ -23,3 +23,27 @@ SingleProfileDict = Dict[str, Dict[str, Dict[str, FloatOrArray]]]
 SingleProfile = Dict[str, Dict[str, FloatOrArray]]
 
 Interp1DCallable = Callable[[FloatOrArray], FloatOrArray]
+
+
+class RotationParameters(TypedDict):
+    """Type definition for rotation parameters."""
+
+    angle_1_deg: float
+    angle_2_deg: float
+
+
+class TranslationParameters(TypedDict):
+    """Type definition for translation parameters."""
+
+    x_1_glob_ref_m: float
+    x_2_glob_ref_m: float
+    x_3_glob_ref_m: float
+    x_1_loc_ref_mm: float
+    x_2_loc_ref_mm: float
+
+
+class TransformationParameters(TypedDict):
+    """Type definition for transformation parameters."""
+
+    rotation: RotationParameters
+    translation: TranslationParameters
