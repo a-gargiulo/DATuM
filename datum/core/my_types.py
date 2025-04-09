@@ -8,7 +8,6 @@ UserInputs = Dict[str, Union[bool, float, int, str]]
 
 NestedDict = Dict[str, Union["NestedDict", Any]]
 PivData = Dict[str, Union["PivData", np.ndarray]]
-PoseMeasurement = Dict[str, Union["PoseMeasurement", float]]
 CadGeometry = trimesh.Trimesh
 AnalyticGeometry = Dict[str, np.ndarray]
 HillGeometry = Union[CadGeometry, AnalyticGeometry]
@@ -24,7 +23,8 @@ SingleProfile = Dict[str, Dict[str, FloatOrArray]]
 
 Interp1DCallable = Callable[[FloatOrArray], FloatOrArray]
 
-
+# TRANSFOMRATION PARAMETERS
+# -------------------------
 class RotationParameters(TypedDict):
     """Type definition for rotation parameters."""
 
@@ -47,3 +47,33 @@ class TransformationParameters(TypedDict):
 
     rotation: RotationParameters
     translation: TranslationParameters
+
+
+# POSE MEASUREMENT
+# -------------------------
+class CalibrationPlateLocation(TypedDict):
+    """Type definition for calibration plate location."""
+
+    x_1_m: float
+    x_3_m: float
+
+
+class Triangulation(TypedDict):
+    """Type definition for triangulation."""
+
+    upstream_plate_corner_arclength_position_m: float
+    downstream_plate_corner_arclength_position_m: float
+
+
+class CalibrationPlateAngle(TypedDict):
+    """Type definitin for calibration plate angle."""
+
+    direct_measurement_deg: float
+    triangulation: Triangulation
+
+
+class PoseMeasurement(TypedDict):
+    """Type definition for pose measurement."""
+
+    calibration_plate_angle: CalibrationPlateAngle
+    calibration_plate_location: CalibrationPlateLocation

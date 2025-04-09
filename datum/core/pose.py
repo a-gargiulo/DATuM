@@ -8,16 +8,23 @@ from .my_types import PoseMeasurement
 from scipy import integrate, interpolate
 
 T = TypeVar("T")
+SecParams = Tuple[float, float, float, float, float, float, float]
 
 
 class Pose:
     """
-    This class defines a container for the pose data.
+    Define a container for the pose data.
 
-    It further provides functionalities to calculate and manipulate the pose.
+    Includes functionalities to calculate and manipulate the pose.
     """
 
-    def __init__(self, angle1: float = 0.0, angle2: float = 0.0, loc: List[float] = [0.0, 0.0], glob: List[float] = [0.0, 0.0, 0.0]):
+    def __init__(
+        self,
+        angle1: float = 0.0,
+        angle2: float = 0.0,
+        loc: Tuple[float, float] = (0.0, 0.0),
+        glob: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    ):
         """Initialize a PIV plane pose."""
         self.angle1 = angle1
         self.angle2 = angle2
@@ -26,21 +33,18 @@ class Pose:
 
     def calculate_global_pose(
         self, geometry: Beverli, meas_path: str, opts: Dict[str, bool]
-    ) -> Optional[List[float]]:
+    ) -> Optional[Tuple[float, float, float, float, float, float, float]]:
         """Calculate the global pose of the PIV plane."""
-        measurement = apputils.read_json(meas_path)
+        measurement = apputils.load_pose_measurement(meas_path)
         if measurement is None:
             return None
 
-        # CHECKS ENTIRE MEASUREMENT FILE
-        if not Pose._check_pose_measurement(measurement):
-            print("ISSUE WITH POSE MEASUREMENT.")
-            return None
-
-        x3_profile = cast(float, cast(dict, measurement["calibration_plate_location"])["x_3"])
+        x3_profile = measurement["calibration_plate_location"]["x_3_m"]
         x1_profile, x2_profile = geometry.calculate_x1_x2(x3_profile)
 
-        x2_prime_profile = mathutils.calculate_derivative_1d(x1_profile, x2_profile)
+        x2_prime_profile = mathutils.calculate_derivative_1d(
+            x1_profile, x2_profile
+        )
 
         secant_tangent_parameters = Pose._obtain_secant_tangent_parameters(
             x1_profile, x2_profile, x2_prime_profile, measurement
@@ -60,7 +64,7 @@ class Pose:
         # self.glob[1] = secant_tangent_center_point_x2
         # self.glob[2] = x3_profile
 
-        return secant_tangent_parameters
+        return tuple(secant_tangent_parameters)
 
     @staticmethod
     def _obtain_secant_tangent_parameters(
@@ -68,17 +72,19 @@ class Pose:
         x2_profile: np.ndarray,
         x2_prime_profile: np.ndarray,
         measurement: PoseMeasurement,
-    ) -> List[float]:
+    ) -> SecParams:
         """Obtain the secant parameters for the PIV plane."""
         hill_side = {-1: "windward", 1: "leeward"}
 
-        plate_location = np.sign(cast(float, cast(dict, measurement["calibration_plate_location"])["x_1"]))
-        triangulation = cast(dict, cast(dict, measurement["calibration_plate_angle"])["triangulation"])
+        plate_location = np.sign(
+            measurement["calibration_plate_location"]["x_1_m"]
+        )
+        triangulation = measurement["calibration_plate_angle"]["triangulation"]
 
-        plate_corners_arclength_coordinates = [
-            cast(float, triangulation["upstream_plate_corner_arclength_position"]),
-            cast(float, triangulation["downstream_plate_corner_arclength_position"]),
-        ]
+        plate_corners_arclength_coordinates = (
+            triangulation["upstream_plate_corner_arclength_position_m"],
+            triangulation["downstream_plate_corner_arclength_position_m"]
+        )
 
         # Get secant parameters
         is_windward = hill_side[plate_location] == "windward"
@@ -94,12 +100,12 @@ class Pose:
 
     @staticmethod
     def _calculate_secant_parameters(
-        plate_corners_arclength_coordinates: List[float],
+        plate_corners_arclength_coordinates: Tuple[float, float],
         x1_profile: np.ndarray,
         x2_profile: np.ndarray,
         x2_prime_profile: np.ndarray,
         is_windward: bool,
-    ) -> List[float]:
+    ) -> SecParams:
         calplate_width = 0.106
 
         if is_windward:
@@ -122,8 +128,10 @@ class Pose:
             delta_sign = -1
 
         # Cartesian coordinates of corners:
-        # Corner 1 is upstream for the windward and downstream for the leeward case, respectively.
-        # Corner 2 is downstream for the windward and upstream for the leeward case, respectively.
+        # Corner 1 is upstream for the windward and downstream for the leeward
+        # case, respectively.
+        # Corner 2 is downstream for the windward and upstream for the leeward
+        # case, respectively.
         corner_2_idx = np.where(hill_side_arclength_coordinates * delta_sign <= corner_condition_1 * delta_sign)[0][0]
         corner_2_x1 = x1_profile[hill_side_indices][corner_2_idx]
         corner_2_x2 = x2_profile[hill_side_indices][corner_2_idx]
@@ -163,42 +171,35 @@ class Pose:
             calplate_angle_deg,
         ]
 
-        return secant_parameters
+        return tuple(secant_parameters)
 
     @staticmethod
     def _correct_secant_tangent_parameters(
-        secant_parameters: List[float],
+        secant_parameters: SecParams,
         x1_profile: np.ndarray,
         x2_profile: np.ndarray,
         measurement: PoseMeasurement,
         opts: Dict[str, bool],
-    ) -> List[float]:
+    ) -> SecParams:
         # Initialization
+        sp = [x for x in secant_parameters]
         calplate_width = 0.106
-        measured_angle_deg = float(cast(dict, measurement["calibration_plate_angle"])["direct_measurement"])
+        measured_angle_deg = measurement["calibration_plate_angle"]["direct_measurement_deg"]
 
-        hill_side = np.sign(cast(float, cast(dict, measurement["calibration_plate_location"])["x_1"]))
+        hill_side = np.sign(measurement["calibration_plate_location"]["x_1_m"])
         hill_prof_interpolant = interpolate.interp1d(x1_profile, x2_profile, kind="linear")
         is_on_convex_curvature = opts["apply_convex_curvature_correction"]
         use_manual_angle = opts["use_measured_rotation_angle"]
 
         # Use manual angle
         if use_manual_angle:
-            secant_parameters[6] = -hill_side * measured_angle_deg
-            secant_parameters[2] = secant_parameters[4] + (calplate_width / 2) * np.cos(
-                secant_parameters[6] * np.pi / 180
-            )
-            secant_parameters[3] = secant_parameters[5] + (calplate_width / 2) * np.sin(
-                secant_parameters[6] * np.pi / 180
-            )
-            secant_parameters[0] = secant_parameters[4] - (calplate_width / 2) * np.cos(
-                secant_parameters[6] * np.pi / 180
-            )
-            secant_parameters[1] = secant_parameters[5] - (calplate_width / 2) * np.sin(
-                secant_parameters[6] * np.pi / 180
-            )
+            sp[6] = -hill_side * measured_angle_deg
+            sp[2] = sp[4] + (calplate_width / 2) * np.cos(sp[6] * np.pi / 180)
+            sp[3] = sp[5] + (calplate_width / 2) * np.sin(sp[6] * np.pi / 180)
+            sp[0] = sp[4] - (calplate_width / 2) * np.cos(sp[6] * np.pi / 180)
+            sp[1] = sp[5] - (calplate_width / 2) * np.sin(sp[6] * np.pi / 180)
 
-            return secant_parameters
+            return tuple(sp)
 
         # PIV plane is on convex curvature
         if is_on_convex_curvature:
@@ -224,57 +225,3 @@ class Pose:
             return secant_parameters
 
         return secant_parameters
-
-    @staticmethod
-    def _check_pose_measurement(measurement: PoseMeasurement) -> bool:
-        keys = [
-            ("calibration_plate_angle", dict, ["calibration_plate_angle"]),
-            ("direct_measurement", float, ["calibration_plate_angle", "direct_measurement"]),
-            ("triangulation", dict, ["calibration_plate_angle", "triangulation"]),
-            (
-                "upstream_plate_corner_arclength_position",
-                float,
-                ["calibration_plate_angle", "triangulation", "upstream_plate_corner_arclength_position"]
-            ),
-            (
-                "downstream_plate_corner_arclength_position",
-                float,
-                ["calibration_plate_angle", "triangulation", "downstream_plate_corner_arclength_position"]
-            ),
-            ("calibration_plate_location", dict, ["calibration_plate_location"]),
-            ("x_1", float, ["calibration_plate_location", "x_1"]),
-            ("x_3", float, ["calibration_plate_location", "x_3"]),
-        ]
-
-        keys_ok = all([apputils.search_nested_dict(measurement, key[0]) for key in keys])
-        if not keys_ok:
-            return False
-
-        types_ok = all(
-            [
-                Pose._check_measurement_type(
-                    Pose._retrieve_from_measurement(measurement, key[2], len(key[2])), key[0], key[1]
-                ) for key in keys
-            ]
-        )
-
-        if not types_ok:
-            return False
-
-        return True
-
-    @staticmethod
-    def _retrieve_from_measurement(measurement: PoseMeasurement, keys: List[str], lvl: int):
-        if lvl == 1:
-            return measurement[keys[0]]
-        elif lvl == 2:
-            return cast(dict, measurement[keys[0]])[keys[1]]
-        elif lvl == 3:
-            return cast(dict, cast(dict, measurement[keys[0]])[keys[1]])[keys[2]]
-
-    @staticmethod
-    def _check_measurement_type(value: Any, name: str, clss: Type[T]) -> bool:
-        if not isinstance(value, clss):
-            print(f"[Error]: Expected {clss.__name__} type for {name}, got {type(value).__name__}.")
-            return False
-        return True

@@ -34,6 +34,9 @@ LayoutFuncSC = Optional[
     ]
 ]
 
+# Constants
+PAD_S = STYLES["pad"]["small"]
+
 
 class Button(BaseButton):
     """Define a custom button."""
@@ -43,7 +46,8 @@ class Button(BaseButton):
 
         :param parent: Parent window or widget.
         :param text: Button label.
-        :param command: Callback function to be executed when the button is pressed.
+        :param command: Callback function to be executed when the button is
+            pressed.
         """
         super().__init__(
             parent,
@@ -117,8 +121,8 @@ class FileLoader(tk.Frame):
         :param title: Title label.
         :param filetypes: List of allowed file types.
         :param category: Style category to be applied to the file loader.
-        :param isCheckable: Whether the file loader should be linked to a checkbox.
-            Defaults to True.
+        :param isCheckable: Whether the file loader should be linked to a
+            checkbox. Defaults to True.
         """
         self._parent = parent
         self._title = title
@@ -126,7 +130,9 @@ class FileLoader(tk.Frame):
         self._category = category
         self._isCheckable = isCheckable
 
-        super().__init__(parent, bg=STYLES["color"][f"s{category}_content"], **kwargs)
+        super().__init__(
+            parent, bg=STYLES["color"][f"s{category}_content"], **kwargs
+        )
 
         self._create_widgets()
         self._layout_widgets()
@@ -163,33 +169,16 @@ class FileLoader(tk.Frame):
         idx = 1
         if self._isCheckable:
             idx = 0
-            self.checkbox.grid(
-                row=0,
-                column=0,
-                sticky="w",
-                padx=STYLES["pad"]["small"],
-            )
+            self.checkbox.grid(row=0, column=0, sticky="w", padx=PAD_S)
 
         self.load_button.grid(
-            row=0,
-            column=1 - idx,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
-            sticky="nsew",
+            row=0, column=1 - idx, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
         self.listbox.grid(
-            row=0,
-            column=2 - idx,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
-            sticky="nsew",
+            row=0, column=2 - idx, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
         self.status_label.grid(
-            row=0,
-            column=3 - idx,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
-            sticky="nsew",
+            row=0, column=3 - idx, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -240,7 +229,9 @@ class Frame(tk.Frame):
         :param parent: Parent window or widget.
         :param category: Style category to be applied to the frame.
         """
-        super().__init__(parent, bg=STYLES["color"][f"s{category}_content"], **kwargs)
+        super().__init__(
+            parent, bg=STYLES["color"][f"s{category}_content"], **kwargs
+        )
 
 
 class Label(tk.Label):
@@ -277,10 +268,12 @@ class ScrollableCanvas:
     ):
         """Construct a scrollable canvas with optional scrollbars.
 
-        :param frame: Parent frame to which the canvas and scrollbars are added.
+        :param frame: Parent frame to which a canvas and scrollbars are added.
         :param vertical: Whether to add a vertical scrollbar. Defaults to True.
-        :param horizontal: Whether to add a horizontal scrollbar. Defaults to True.
-        :param layout: A custom layout function to position the canvas and scrollbars.
+        :param horizontal: Whether to add a horizontal scrollbar. Defaults to
+            True.
+        :param layout: A custom layout function to position the canvas and
+            scrollbars.
         :param canvas_kwargs: Optional canvas keyword arguments.
         :param scrollbar_kwargs: Optional scrollbar keyword arguments.
         :param frame_kwargs: Optional frame keyword arguments.
@@ -319,11 +312,15 @@ class ScrollableCanvas:
             self.canvas.configure(xscrollcommand=self.h_scrollbar.set)
 
         if layout:
-            layout(self._parent, self.canvas, self.v_scrollbar, self.h_scrollbar)
+            layout(
+                self._parent, self.canvas, self.v_scrollbar, self.h_scrollbar
+            )
         else:
             self._default_layout()
 
-        self.frame = tk.Frame(self.canvas, bg=STYLES["color"]["base"], **frame_kwargs)
+        self.frame = tk.Frame(
+            self.canvas, bg=STYLES["color"]["base"], **frame_kwargs
+        )
         self._frame_window = self.canvas.create_window(
             (0, 0), window=self.frame, anchor="nw"
         )
@@ -355,7 +352,7 @@ class ScrollableCanvas:
         self.canvas.xview_scroll(-1 * event.delta, "units")
 
     def configure_frame(self):
-        """Update the frame's dimensions based on the canvas and scrollbar sizes."""
+        """Update the frame's dimensions."""
         self.frame.update_idletasks()
 
         width = self.frame.winfo_reqwidth()
@@ -366,13 +363,17 @@ class ScrollableCanvas:
             height = max(height, self._parent.winfo_height())
         elif not self.v_scrollbar and self.h_scrollbar:
             width = max(width, self._parent.winfo_width())
-            height = self._parent.winfo_height() - self.h_scrollbar.winfo_height()
+            height = (
+                self._parent.winfo_height() - self.h_scrollbar.winfo_height()
+            )
         elif self.v_scrollbar and self.h_scrollbar:
             width = max(
-                width, self._parent.winfo_width() - self.v_scrollbar.winfo_height()
+                width,
+                self._parent.winfo_width() - self.v_scrollbar.winfo_height(),
             )
             height = max(
-                height, self._parent.winfo_height() - self.h_scrollbar.winfo_height()
+                height,
+                self._parent.winfo_height() - self.h_scrollbar.winfo_height(),
             )
         else:
             width = self._parent.winfo_width()
@@ -411,21 +412,18 @@ class Section(tk.Frame):
             bd=1,
             relief="solid",
         )
-        self.content = tk.Frame(self, bd=0, bg=STYLES["color"][f"s{category}_content"])
+        self.content = tk.Frame(
+            self, bd=0, bg=STYLES["color"][f"s{category}_content"]
+        )
 
         self.label.grid(
-            row=0,
-            column=0,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
-            ipady=STYLES["pad"]["small"],
-            sticky="ew",
+            row=0, column=0, padx=PAD_S, pady=PAD_S, ipady=PAD_S, sticky="ew"
         )
         self.content.grid(
             row=1,
             column=0,
-            padx=STYLES["pad"]["small"],
-            pady=STYLES["pad"]["small"],
+            padx=PAD_S,
+            pady=PAD_S,
             sticky="nsew",
         )
         self.grid_columnconfigure(0, weight=1)

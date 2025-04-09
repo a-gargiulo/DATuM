@@ -14,6 +14,7 @@ from matplotlib.widgets import Cursor
 from ..core import transform
 from ..core.beverli import Beverli
 from ..core.piv import Piv
+from ..core.my_types import TransformationParameters
 from ..utility import apputils, tputils
 from ..utility.configure import STYLES
 from .widgets import (
@@ -36,11 +37,12 @@ CALCULATION_MODES = [
     "LOAD global / CALCULATE local",
     "CALCULATE global / CALCULATE local",
 ]
+CAL_IMG_SKIPROWS = 4
 PAD_S = STYLES["pad"]["small"]
 
 
 class PoseWindow:
-    """Class for the pose calculator window."""
+    """The pose calculator window."""
 
     def __init__(
         self,
@@ -70,11 +72,13 @@ class PoseWindow:
         self.root.geometry(f"{WINDOW_SIZE[0]}x{WINDOW_SIZE[1]}")
         self.root.resizable(False, False)
         self.root.configure(bg=STYLES["color"]["base"])
-        self.root.option_add("*Font", (STYLES["font"], STYLES["font_size"]["regular"]))
+        self.root.option_add(
+            "*Font", (STYLES["font"], STYLES["font_size"]["regular"])
+        )
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def on_closing(self):
-        """Free the resources after closing the window."""
+        """Free resources after closing the window."""
         if hasattr(self, "cal_fig"):
             plt.close(self.cal_fig)
         if hasattr(self, "cal_canvas"):
@@ -91,9 +95,7 @@ class PoseWindow:
         self.main_frame = self.scrollable_canvas.frame
         self.options_section = Section(self.main_frame, "Settings", 1)
         self.checkbox_diagonal = Checkbutton(
-            self.options_section.content,
-            category=1,
-            text="Plane is diagonal",
+            self.options_section.content, category=1, text="Plane is diagonal"
         )
         self.mode_selector_label = Label(
             self.options_section.content,
@@ -109,12 +111,17 @@ class PoseWindow:
             *CALCULATION_MODES,
         )
         self.submit_button = Button(
-            self.main_frame, text="Submit Transformation File", command=self.submit_file
+            self.main_frame,
+            text="Submit Transformation File",
+            command=self.submit_file,
         )
         self.parameters_loader = FileLoader(
             self.options_section.content,
             title="Transformation Parameters:",
-            filetypes=[("Transformation Parameters", "*.json"), ("All Files", "*.*")],
+            filetypes=[
+                ("Transformation Parameters", "*.json"),
+                ("All Files", "*.*"),
+            ],
             category=1,
             isCheckable=False,
         )
@@ -128,7 +135,9 @@ class PoseWindow:
         self.calplate_loader.status_label_var.trace(
             "w",
             lambda *args: (
-                self.create_local_pose_selector(self.mode_selector_var.get(), *args)
+                self.create_local_pose_selector(
+                    self.mode_selector_var.get(), *args
+                )
                 if self.calplate_loader.status_label_var.get() == "File Loaded"
                 and self.global_loader.status_label_var.get() == "File Loaded"
                 else None
@@ -137,14 +146,19 @@ class PoseWindow:
         self.global_loader = FileLoader(
             self.options_section.content,
             title="Global parameters:",
-            filetypes=[("Transformation Parameters", "*.json"), ("All Files", "*.*")],
+            filetypes=[
+                ("Transformation Parameters", "*.json"),
+                ("All Files", "*.*"),
+            ],
             category=1,
             isCheckable=False,
         )
         self.global_loader.status_label_var.trace(
             "w",
             lambda *args: (
-                self.create_local_pose_selector(self.mode_selector_var.get(), *args)
+                self.create_local_pose_selector(
+                    self.mode_selector_var.get(), *args
+                )
                 if self.calplate_loader.status_label_var.get() == "File Loaded"
                 and self.global_loader.status_label_var.get() == "File Loaded"
                 else None
@@ -160,7 +174,9 @@ class PoseWindow:
         self.measurement_loader.status_label_var.trace(
             "w",
             lambda *args: (
-                self.create_global_pose_calculator(self.mode_selector_var.get(), *args)
+                self.create_global_pose_calculator(
+                    self.mode_selector_var.get(), *args
+                )
                 if self.calplate_loader.status_label_var.get() == "File Loaded"
                 and self.measurement_loader.status_label_var.get()
                 == "File Loaded"
@@ -170,14 +186,18 @@ class PoseWindow:
         self.calplate_loader.status_label_var.trace(
             "w",
             lambda *args: (
-                self.create_global_pose_calculator(self.mode_selector_var.get(), *args)
+                self.create_global_pose_calculator(
+                    self.mode_selector_var.get(), *args
+                )
                 if self.calplate_loader.status_label_var.get() == "File Loaded"
                 and self.measurement_loader.status_label_var.get()
                 == "File Loaded"
                 else None
             ),
         )
-        self.local_section = Section(self.main_frame, title="Local Pose", category=2)
+        self.local_section = Section(
+            self.main_frame, title="Local Pose", category=2
+        )
         self.calplate_plot = Frame(
             self.local_section.content, category=2, bd=2, relief="solid"
         )
@@ -206,7 +226,9 @@ class PoseWindow:
             textvariable=self.ypick_var,
             state="readonly",
         )
-        self.global_section = Section(self.main_frame, title="Global Pose", category=2)
+        self.global_section = Section(
+            self.main_frame, title="Global Pose", category=2
+        )
         self.global_plot = Frame(
             self.global_section.content, category=2, bd=2, relief="solid"
         )
@@ -227,7 +249,7 @@ class PoseWindow:
         )
 
     def layout_widgets(self, calculation_level: str):
-        """Layout all the widgets on the window for each specific calcualtion mode.
+        """Layout all widgets on the window for each specific calcualtion mode.
 
         :param calculation_level: Identifier for the specific calculation mode.
         """
@@ -240,7 +262,7 @@ class PoseWindow:
             self.layout_widgets_local()
 
     def reset_layout(self):
-        """Restore the default layout when working in a particular calculation mode."""
+        """Restore default layout when working in a particular mode."""
         self.calplate_loader.reset()
         self.calplate_loader.grid_forget()
         self.global_loader.reset()
@@ -256,7 +278,7 @@ class PoseWindow:
         self.global_section.grid_forget()
 
     def layout_widgets_default(self):
-        """Generate the layout for the default mode window."""
+        """Generate layout for the default mode window."""
         self.reset_layout()
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.options_section.grid(
@@ -270,9 +292,16 @@ class PoseWindow:
         self.mode_selector_label.grid(
             row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="w"
         )
-        self.mode_selector.grid(row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="ew")
+        self.mode_selector.grid(
+            row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="ew"
+        )
         self.parameters_loader.grid(
-            row=2, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
         )
         self.submit_button.grid(row=1, column=0, padx=PAD_S, pady=PAD_S)
         self.scrollable_canvas.configure_frame()
@@ -284,10 +313,20 @@ class PoseWindow:
         self.mode_selector.grid(row=0)
         self.mode_selector_label.grid(row=0)
         self.calplate_loader.grid(
-            row=1, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
         )
         self.global_loader.grid(
-            row=2, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
         )
         self.submit_button.grid(row=2, column=0, padx=PAD_S, pady=PAD_S)
         self.scrollable_canvas.configure_frame()
@@ -299,10 +338,20 @@ class PoseWindow:
         self.mode_selector.grid(row=0)
         self.mode_selector_label.grid(row=0)
         self.calplate_loader.grid(
-            row=1, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
         )
         self.measurement_loader.grid(
-            row=2, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
         )
         self.submit_button.grid(row=2, column=0, padx=PAD_S, pady=PAD_S)
         self.scrollable_canvas.configure_frame()
@@ -328,11 +377,15 @@ class PoseWindow:
         else:
             self.cal_fig = plt.figure(figsize=(7, 6))
             self.cal_ax = self.cal_fig.add_axes((0.12, 0.12, 0.85, 0.87))
-            self.cal_canvas = FigureCanvasTkAgg(self.cal_fig, master=self.calplate_plot)
-            self.cal_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+            self.cal_canvas = FigureCanvasTkAgg(
+                self.cal_fig, master=self.calplate_plot
+            )
+            self.cal_canvas.get_tk_widget().grid(
+                row=0, column=0, sticky="nsew"
+            )
 
         cal_img_path = self.calplate_loader.get_listbox_content()
-        cal_img = np.loadtxt(cal_img_path, skiprows=4)
+        cal_img = np.loadtxt(cal_img_path, skiprows=CAL_IMG_SKIPROWS)
         dims = tputils.get_ijk(cal_img_path)
         img_coords_mm = np.array(
             [np.reshape(cal_img[:, i], (dims[1], dims[0])) for i in range(2)]
@@ -341,25 +394,29 @@ class PoseWindow:
 
         rotation_angle_deg = 0.0
         if case == CALCULATION_MODES[1]:
-            transformation_parameters_path = self.global_loader.get_listbox_content()
-            transformation_parameters = apputils.read_json(
-                transformation_parameters_path
-            )
-            if transformation_parameters is None:
-                sys.exit(1)  # TODO: Handle more elegantly.
-            rotation_angle_deg = float(
-                cast(dict, transformation_parameters["rotation"])["angle_deg"]
-            )
+            tp_path = self.global_loader.get_listbox_content()
+            tp = apputils.load_transformation_parameters(tp_path)
+            if tp is None:
+                self.layout_widgets("local")
+                return
+            rotation_angle_deg = tp["rotation"]["angle_1_deg"]
         elif case == CALCULATION_MODES[2]:
             rotation_angle_deg = float(cast(list, self.global_pose)[6])
-        rotation_matrix = transform.get_rotation_matrix(rotation_angle_deg, (0, 0, 1))
+        rotation_matrix = transform.get_rotation_matrix(
+            rotation_angle_deg, (0, 0, 1)
+        )
         img_coords_mm = transform.rotate_planar_vector_field(
             img_coords_mm, rotation_matrix
         )
 
         cmap = plt.get_cmap("gray")
         self.cal_ax.pcolormesh(
-            img_coords_mm[0], img_coords_mm[1], img_vals, cmap=cmap, vmin=0, vmax=4000
+            img_coords_mm[0],
+            img_coords_mm[1],
+            img_vals,
+            cmap=cmap,
+            vmin=0,
+            vmax=4000,
         )
         self.cal_ax.set_xlabel(r"$x_1$ (mm)", labelpad=10)
         self.cal_ax.set_ylabel(r"$x_2$ (mm)", labelpad=10)
@@ -387,7 +444,10 @@ class PoseWindow:
         self.cal_canvas.draw_idle()
         self.xpick_var.set(f"{pts[0][0]}")
         self.ypick_var.set(f"{pts[0][1]}")
-        self.local_pose = [float(self.xpick_var.get()), float(self.ypick_var.get())]
+        self.local_pose = [
+            float(self.xpick_var.get()),
+            float(self.ypick_var.get()),
+        ]
 
     def create_local_pose_selector(self, case: str, *args):
         """
@@ -404,8 +464,12 @@ class PoseWindow:
         self.local_section.grid(
             row=row, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
-        self.calplate_plot.grid(row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.local_section.get_content_frame().grid_columnconfigure(1, weight=1)
+        self.calplate_plot.grid(
+            row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.local_section.get_content_frame().grid_columnconfigure(
+            1, weight=1
+        )
         self.local_section.get_content_frame().grid_rowconfigure(0, weight=1)
         self.submit_button.grid(row=row + 1)
         self.plot_calplate(case)
@@ -421,8 +485,12 @@ class PoseWindow:
         self.ypick_entry_label.grid(
             row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
-        self.xpick_entry.grid(row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.ypick_entry.grid(row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew")
+        self.xpick_entry.grid(
+            row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.ypick_entry.grid(
+            row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
 
     def create_global_pose_calculator(self, case: str, *args):
         """
@@ -431,10 +499,18 @@ class PoseWindow:
         :param case: Calculation mode identifier.
         :param *args: Additional arguments.
         """
-        self.global_section.grid(row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.global_section.get_content_frame().grid_columnconfigure(0, weight=1)
-        self.global_section.get_content_frame().grid_columnconfigure(1, weight=1)
-        self.global_section.get_content_frame().grid_columnconfigure(2, weight=1)
+        self.global_section.grid(
+            row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.global_section.get_content_frame().grid_columnconfigure(
+            0, weight=1
+        )
+        self.global_section.get_content_frame().grid_columnconfigure(
+            1, weight=1
+        )
+        self.global_section.get_content_frame().grid_columnconfigure(
+            2, weight=1
+        )
         self.is_convex_option.grid(
             row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
@@ -457,8 +533,12 @@ class PoseWindow:
         else:
             self.glob_fig = plt.figure(figsize=(10, 4))
             self.glob_ax = self.glob_fig.add_axes((0.12, 0.12, 0.85, 0.87))
-            self.glob_canvas = FigureCanvasTkAgg(self.glob_fig, master=self.global_plot)
-            self.glob_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+            self.glob_canvas = FigureCanvasTkAgg(
+                self.glob_fig, master=self.global_plot
+            )
+            self.glob_canvas.get_tk_widget().grid(
+                row=0, column=0, sticky="nsew"
+            )
 
         x1_prof, x2_prof = self.geometry.calculate_x1_x2(secant[7])
         self.glob_ax.plot(x1_prof, x2_prof, color="blue")
@@ -475,8 +555,12 @@ class PoseWindow:
         )
         rect = patches.Rectangle(
             (secant[0], secant[1]),
-            np.sqrt((secant[0] - secant[2]) ** 2 + (secant[1] - secant[3]) ** 2),
-            np.sqrt((secant[0] - secant[2]) ** 2 + (secant[1] - secant[3]) ** 2),
+            np.sqrt(
+                (secant[0] - secant[2]) ** 2 + (secant[1] - secant[3]) ** 2
+            ),
+            np.sqrt(
+                (secant[0] - secant[2]) ** 2 + (secant[1] - secant[3]) ** 2
+            ),
             angle=secant[6],
             color="red",
             alpha=0.5,
@@ -510,7 +594,12 @@ class PoseWindow:
     def calculate_global(self):
         """Calculate the global pose parameters."""
         self.global_plot.grid(
-            row=1, column=0, columnspan=3, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
         )
         opts = {
             "apply_convex_curvature_correction": bool(
@@ -540,36 +629,56 @@ class PoseWindow:
             )
             if transformation_parameters is None:
                 sys.exit(-1)
-            if self.checkbox_diagonal and bool(self.checkbox_diagonal.get_var().get()):
+            if self.checkbox_diagonal and bool(
+                self.checkbox_diagonal.get_var().get()
+            ):
                 self.piv.pose.angle1 = float(
-                    cast(dict, transformation_parameters["rotation"])["angle_1_deg"]
+                    cast(dict, transformation_parameters["rotation"])[
+                        "angle_1_deg"
+                    ]
                 )
                 self.piv.pose.angle2 = float(
-                    cast(dict, transformation_parameters["rotation"])["angle_2_deg"]
+                    cast(dict, transformation_parameters["rotation"])[
+                        "angle_2_deg"
+                    ]
                 )
             else:
                 self.piv.pose.angle1 = float(
-                    cast(dict, transformation_parameters["rotation"])["angle_deg"]
+                    cast(dict, transformation_parameters["rotation"])[
+                        "angle_deg"
+                    ]
                 )
             self.piv.pose.loc[0] = float(
-                cast(dict, transformation_parameters["translation"])["x_1_loc_ref_mm"]
+                cast(dict, transformation_parameters["translation"])[
+                    "x_1_loc_ref_mm"
+                ]
             )
             self.piv.pose.loc[1] = float(
-                cast(dict, transformation_parameters["translation"])["x_2_loc_ref_mm"]
+                cast(dict, transformation_parameters["translation"])[
+                    "x_2_loc_ref_mm"
+                ]
             )
             self.piv.pose.glob[0] = float(
-                cast(dict, transformation_parameters["translation"])["x_1_glob_ref_m"]
+                cast(dict, transformation_parameters["translation"])[
+                    "x_1_glob_ref_m"
+                ]
             )
             self.piv.pose.glob[1] = float(
-                cast(dict, transformation_parameters["translation"])["x_2_glob_ref_m"]
+                cast(dict, transformation_parameters["translation"])[
+                    "x_2_glob_ref_m"
+                ]
             )
             self.piv.pose.glob[2] = float(
-                cast(dict, transformation_parameters["translation"])["x_3_glob_ref_m"]
+                cast(dict, transformation_parameters["translation"])[
+                    "x_3_glob_ref_m"
+                ]
             )
             self.status.set(True)
             self.on_closing()
         elif case == CALCULATION_MODES[1]:
-            transformation_parameters_path = self.global_loader.get_listbox_content()
+            transformation_parameters_path = (
+                self.global_loader.get_listbox_content()
+            )
             transformation_parameters = apputils.read_json(
                 transformation_parameters_path
             )
@@ -579,13 +688,19 @@ class PoseWindow:
                 cast(dict, transformation_parameters["rotation"])["angle_deg"]
             )
             self.piv.pose.glob[0] = float(
-                cast(dict, transformation_parameters["translation"])["x_1_glob_ref_m"]
+                cast(dict, transformation_parameters["translation"])[
+                    "x_1_glob_ref_m"
+                ]
             )
             self.piv.pose.glob[1] = float(
-                cast(dict, transformation_parameters["translation"])["x_2_glob_ref_m"]
+                cast(dict, transformation_parameters["translation"])[
+                    "x_2_glob_ref_m"
+                ]
             )
             self.piv.pose.glob[2] = float(
-                cast(dict, transformation_parameters["translation"])["x_3_glob_ref_m"]
+                cast(dict, transformation_parameters["translation"])[
+                    "x_3_glob_ref_m"
+                ]
             )
             self.piv.pose.loc[0] = float(self.xpick_var.get())
             self.piv.pose.loc[1] = float(self.ypick_var.get())
@@ -599,7 +714,9 @@ class PoseWindow:
                     "x_2_loc_ref_mm": self.piv.pose.loc[1],
                 },
             }
-            apputils.write_json("./outputs/transformation_parameters.json", parameters)
+            apputils.write_json(
+                "./outputs/transformation_parameters.json", parameters
+            )
             self.status.set(True)
             self.on_closing()
         else:
@@ -619,6 +736,8 @@ class PoseWindow:
                     "x_2_loc_ref_mm": self.piv.pose.loc[1],
                 },
             }
-            apputils.write_json("./outputs/transformation_parameters.json", parameters)
+            apputils.write_json(
+                "./outputs/transformation_parameters.json", parameters
+            )
             self.status.set(True)
             self.on_closing()

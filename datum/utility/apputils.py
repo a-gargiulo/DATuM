@@ -6,7 +6,16 @@ import pickle
 from typing import Optional
 
 # from . import parser
-from ..core.my_types import NestedDict
+from ..core.my_types import (
+    NestedDict,
+    RotationParameters,
+    TranslationParameters,
+    TransformationParameters,
+    CalibrationPlateAngle,
+    CalibrationPlateLocation,
+    Triangulation,
+    PoseMeasurement,
+)
 
 
 # def construct_file_path(root_folder: str, subfolders: List[str], file_name: str) -> str:
@@ -81,6 +90,112 @@ def find_file(root_folder: str, target_filename: str) -> Optional[str]:
     except FileNotFoundError as err:
         print(f"-->ERROR: {err}")
         sys.exit(1)
+
+
+def load_pose_measurement(path: str) -> Optional[PoseMeasurement]:
+    """Load pose measurement from .json file."""
+    try:
+        with open(path, "r") as f:
+            raw = json.load(f)
+
+        if not isinstance(raw, dict):
+            raise ValueError("Top-level JSON must be a dictionary.")
+
+        angle_raw = raw.get("calibration_plate_angle")
+        loc_raw = raw.get("calibration_plate_location")
+
+        if not isinstance(angle_raw, dict) or not isinstance(loc_raw, dict):
+            raise ValueError(
+                "Missing or malformed 'calibration_plate_angle' "
+                "or 'calibration_plate_location'."
+            )
+
+        triang_raw = angle_raw.get("triangulation")
+        if not isinstance(triang_raw, dict):
+            raise ValueError("Missing or malformed 'triangulation' section.")
+
+        # Build typed structures
+        triangulation: Triangulation = {
+            "upstream_plate_corner_arclength_position_m": float(
+                triang_raw["upstream_plate_corner_arclength_position_m"]
+            ),
+            "downstream_plate_corner_arclength_position_m": float(
+                triang_raw["downstream_plate_corner_arclength_position_m"]
+            ),
+        }
+
+        calibration_plate_angle: CalibrationPlateAngle = {
+            "direct_measurement_deg": float(
+                angle_raw["direct_measurement_deg"]
+            ),
+            "triangulation": triangulation,
+        }
+
+        calibration_plate_location: CalibrationPlateLocation = {
+            "x_1_m": float(loc_raw["x_1_m"]),
+            "x_3_m": float(loc_raw["x_3_m"]),
+        }
+
+        return {
+            "calibration_plate_angle": calibration_plate_angle,
+            "calibration_plate_location": calibration_plate_location,
+        }
+
+    except (
+        json.JSONDecodeError, OSError, ValueError, KeyError, TypeError
+    ) as e:
+        print(f"[ERROR] Failed to load pose measurement: {e}")
+        return None
+
+
+def load_transformation_parameters(
+    path: str
+) -> Optional[TransformationParameters]:
+    """Load transformation parameters from .json file.
+
+    :param path: File path.
+
+    :return: PIV transformation parameters.
+    :rtype: TransformationParameters
+    """
+    try:
+        with open(path, "r") as f:
+            raw = json.load(f)
+
+        if not isinstance(raw, dict):
+            raise ValueError("Expected a top-level dictionary.")
+
+        rot_raw = raw.get("rotation")
+        trans_raw = raw.get("translation")
+
+        if not isinstance(rot_raw, dict) or not isinstance(trans_raw, dict):
+            raise ValueError(
+                "Missing or malformed 'rotation' or 'translation' sections."
+            )
+
+        rotation: RotationParameters = {
+            "angle_1_deg": float(rot_raw["angle_1_deg"]),
+            "angle_2_deg": float(rot_raw["angle_2_deg"]),
+        }
+
+        translation: TranslationParameters = {
+            "x_1_glob_ref_m": float(trans_raw["x_1_glob_ref_m"]),
+            "x_2_glob_ref_m": float(trans_raw["x_2_glob_ref_m"]),
+            "x_3_glob_ref_m": float(trans_raw["x_3_glob_ref_m"]),
+            "x_1_loc_ref_mm": float(trans_raw["x_1_loc_ref_mm"]),
+            "x_2_loc_ref_mm": float(trans_raw["x_2_loc_ref_mm"]),
+        }
+
+        return {
+            "rotation": rotation,
+            "translation": translation,
+        }
+
+    except (
+        json.JSONDecodeError, OSError, ValueError, KeyError, TypeError
+    ) as e:
+        print(f"[ERROR] Failed to load transformation parameters: {e}")
+        return None
 
 
 def read_json(file_path: str) -> Optional[NestedDict]:
