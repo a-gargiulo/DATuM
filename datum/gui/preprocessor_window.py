@@ -12,8 +12,16 @@ from ..core.beverli import Beverli
 from ..core.piv import Piv
 from ..utility.configure import STYLES, system
 from .pose_window import PoseWindow
-from .widgets import (Button, Checkbutton, Entry, FileLoader, Frame, Label,
-                      ScrollableCanvas, Section)
+from .widgets import (
+    Button,
+    Checkbutton,
+    Entry,
+    FileLoader,
+    Frame,
+    Label,
+    ScrollableCanvas,
+    Section,
+)
 
 # Constants
 WINDOW_TITLE = "Preprocessor"
@@ -23,11 +31,11 @@ PAD_M = STYLES["pad"]["medium"]
 
 
 class PreprocessorWindow:
-    """Class for the preprocessor window."""
+    """Define the preprocessor window."""
 
     def __init__(self, master: tk.Tk):
         """
-        Class constructor.
+        Create the preprocessor window.
 
         :param master: Parent window handle.
         """
@@ -47,157 +55,281 @@ class PreprocessorWindow:
         self.root.geometry(f"{WINDOW_SIZE[0]}x{WINDOW_SIZE[1]}")
         self.root.resizable(False, False)
         self.root.configure(bg=STYLES["color"]["base"])
-        self.root.option_add("*Font", (STYLES["font"], STYLES["font_size"]["regular"]))
+        self.root.option_add(
+            "*Font", (STYLES["font"], STYLES["font_size"]["regular"])
+        )
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.vfcmd = self.root.register(self.validate_float)
 
     def create_widgets(self):
         """Create all widget entities."""
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
-        self.main_frame = self.scrollable_canvas.get_frame()
-        self.geometry_section = Section(self.main_frame, title="Geometry", category=1)
-        self.hill_plot_frame = Frame(self.geometry_section.get_content_frame(), category=1, bd=2, relief="solid")
-        self.general_section = Section(self.geometry_section.get_content_frame(), title="General", category=2)
-        self.hill_orientation_label = Label(
-            self.general_section.get_content_frame(), text="Hill Orientation [deg]:", category=2
+        self.main_frame = self.scrollable_canvas.frame
+        self.geometry_section = Section(
+            self.main_frame, title="Geometry", category=1
         )
-        self.hill_orientation_entry = Entry(self.general_section.get_content_frame(), category=2)
-        self.hill_orientation_entry.config(validate="focusout", validatecommand=(self.vfcmd, "%P"))
+        self.hill_plot_frame = Frame(
+            self.geometry_section.content, category=1, bd=2, relief="solid"
+        )
+        self.general_section = Section(
+            self.geometry_section.content, title="General", category=2
+        )
+        self.hill_orientation_label = Label(
+            self.general_section.content,
+            text="Hill Orientation [deg]:",
+            category=2,
+        )
+        self.hill_orientation_entry = Entry(
+            self.general_section.content, category=2
+        )
+        self.hill_orientation_entry.config(
+            validate="focusout", validatecommand=(self.vfcmd, "%P")
+        )
         self.hill_orientation_entry.insert(0, "0")
         self.hill_orientation = 0.0
         self.hill_orientation_button = Button(
-            self.general_section.get_content_frame(), text="Confirm", command=self.confirm_orientation
+            self.general_section.content,
+            text="Confirm",
+            command=self.confirm_orientation,
         )
         self.orientation_is_confirmed = False
         self.transformation_section = Section(
-            self.geometry_section.get_content_frame(),
+            self.geometry_section.content,
             title="Pose & Transformation (Local PIV -> Global SWT)",
             category=2,
         )
         self.pose_button = Button(
-            self.transformation_section.get_content_frame(),
+            self.transformation_section.content,
             text="Load/Calculate Tranformation Matrix",
             command=self.open_pose,
         )
         self.pose_button.config(width=200 if system == "Darwin" else 20)
         self.pose_status_label = Label(
-            self.transformation_section.get_content_frame(), text="Nothing Loaded", category=2
+            self.transformation_section.content,
+            text="Nothing Loaded",
+            category=2,
         )
         self.pose_status_label.config(fg="red")
         self.pose_status_var = tk.BooleanVar(value=False)
-        self.pose_status_var.trace("w", lambda *args: self.toggle_pose_status(*args))
+        self.pose_status_var.trace(
+            "w", lambda *args: self.toggle_pose_status(*args)
+        )
         self.checkbox_interpolation = Checkbutton(
-            self.transformation_section.get_content_frame(),
+            self.transformation_section.content,
             category=2,
             text="Interpolate data to regular grid",
             command=self.toggle_interpolation,
         )
-        self.checkbox_interpolation_var = self.checkbox_interpolation.get_var()
+        self.checkbox_interpolation_var = self.checkbox_interpolation.var
         self.interpolation_pts_label = Label(
-            self.transformation_section.get_content_frame(),
+            self.transformation_section.content,
             text="Number of interp. grid points:",
             category=2,
             state="disabled",
         )
         self.interpolation_pts_entry = Entry(
-            self.transformation_section.get_content_frame(), category=2, state="disabled"
+            self.transformation_section.content, category=2, state="disabled"
         )
-        self.data_section = Section(self.main_frame, title="Raw (Matlab) Data", category=2)
+        self.data_section = Section(
+            self.main_frame, title="Raw (Matlab) Data", category=2
+        )
         mat_type = [("Matlab Files", "*.mat"), ("All Files", "*.*")]
         self.velocity_loader = FileLoader(
-            self.data_section.get_content_frame(), title="Mean Velocity", filetypes=mat_type, category=2
+            self.data_section.content,
+            title="Mean Velocity",
+            filetypes=mat_type,
+            category=2,
         )
-        self.velocity_loader.get_checkbox_var().set(1)
-        self.velocity_loader.get_checkbox().config(state="disabled")
-        self.velocity_loader.get_load_button().config(state="normal")
-        self.velocity_loader.get_listbox().config(state="normal")
-        self.velocity_loader.get_status_label().config(state="normal")
-        self.checkbox_flip_u3 = Checkbutton(self.data_section.content, category=2, text="Flip U3 Velocity")
-        self.checkbox_flip_u3_var = self.checkbox_flip_u3.get_var()
+        self.velocity_loader.checkbox_var.set(1)
+        self.velocity_loader.checkbox.config(state="disabled")
+        self.velocity_loader.load_button.config(state="normal")
+        self.velocity_loader.listbox.config(state="normal")
+        self.velocity_loader.status_label.config(state="normal")
+        self.checkbox_flip_u3 = Checkbutton(
+            self.data_section.content, category=2, text="Flip U3 Velocity"
+        )
+        self.checkbox_flip_u3_var = self.checkbox_flip_u3.var
         self.stress_loader = FileLoader(
-            self.data_section.get_content_frame(), title="Reynolds Stress", filetypes=mat_type, category=2
+            self.data_section.content,
+            title="Reynolds Stress",
+            filetypes=mat_type,
+            category=2,
         )
         self.dissipation_loader = FileLoader(
-            self.data_section.get_content_frame(), title="Turbulence Dissipation", filetypes=mat_type, category=2
+            self.data_section.content,
+            title="Turbulence Dissipation",
+            filetypes=mat_type,
+            category=2,
         )
         self.inst_velocity_loader = FileLoader(
-            self.data_section.get_content_frame(), title="Velocity Frame", filetypes=mat_type, category=2
+            self.data_section.content,
+            title="Velocity Frame",
+            filetypes=mat_type,
+            category=2,
         )
-        self.cfd_section = Section(self.main_frame, title="Mean Velocity Gradient Tensor", category=1)
+        self.cfd_section = Section(
+            self.main_frame, title="Mean Velocity Gradient Tensor", category=1
+        )
         self.checkbox_gradient = Checkbutton(
-            self.cfd_section.get_content_frame(),
+            self.cfd_section.content,
             category=1,
             text="Enable combutation",
             command=self.toggle_gradient,
             state="disabled",
         )
-        self.checkbox_gradient_var = self.checkbox_gradient.get_var()
+        self.checkbox_gradient_var = self.checkbox_gradient.var
         self.checkbox_gradient_opt = Checkbutton(
-            self.cfd_section.get_content_frame(), category=1, text=r"dUdZ and dVdZ from CFD", state="disabled"
+            self.cfd_section.content,
+            category=1,
+            text=r"dUdZ and dVdZ from CFD",
+            state="disabled",
         )
-        self.checkbox_gradient_opt_var = self.checkbox_gradient_opt.get_var()
+        self.checkbox_gradient_opt_var = self.checkbox_gradient_opt.var
         self.slice_loader = FileLoader(
-            self.cfd_section.get_content_frame(),
+            self.cfd_section.content,
             title="CFD Slice",
             filetypes=[("Tecplot Slice", "*.dat"), ("All Files", "*.*")],
             category=1,
             isCheckable=False,
         )
-        self.slice_loader.get_load_button().config(state="disabled")
-        self.slice_loader.get_listbox().config(state="disabled")
-        self.slice_loader.get_status_label().config(state="disabled")
+        self.slice_loader.load_button.config(state="disabled")
+        self.slice_loader.listbox.config(state="disabled")
+        self.slice_loader.status_label.config(state="disabled")
         self.slice_zone_name_label = Label(
-            self.cfd_section.get_content_frame(), text="Slice Zone Name:", category=1, state="disabled"
+            self.cfd_section.content,
+            text="Slice Zone Name:",
+            category=1,
+            state="disabled",
         )
-        self.slice_zone_name = Entry(self.cfd_section.get_content_frame(), 1, state="disabled")
-        self.process_button = Button(self.main_frame, text="Preprocess Data", command=self.preprocess_data)
+        self.slice_zone_name = Entry(
+            self.cfd_section.content, 1, state="disabled"
+        )
+        self.process_button = Button(
+            self.main_frame,
+            text="Preprocess Data",
+            command=self.preprocess_data,
+        )
         self.process_button.config(width=200 if system == "Darwin" else 20)
 
     def layout_widgets(self):
         """Layout all widgets on the window."""
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(1, weight=1)
-        self.geometry_section.grid(row=0, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew")
+        self.geometry_section.grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
+        )
         self.geometry_section.content.grid(columnspan=2)
         self.geometry_section.content.grid_columnconfigure(0, weight=0)
         self.geometry_section.content.grid_columnconfigure(1, weight=1)
-        self.hill_plot_frame.grid(row=0, column=0, rowspan=2, padx=(0, PAD_S), pady=PAD_S, sticky="nsew")
-        self.general_section.grid(row=0, column=1, padx=(PAD_S, 0), pady=PAD_S, sticky="nsew")
+        self.hill_plot_frame.grid(
+            row=0,
+            column=0,
+            rowspan=2,
+            padx=(0, PAD_S),
+            pady=PAD_S,
+            sticky="nsew",
+        )
+        self.general_section.grid(
+            row=0, column=1, padx=(PAD_S, 0), pady=PAD_S, sticky="nsew"
+        )
         self.general_section.content.grid(columnspan=3)
         self.general_section.content.grid_columnconfigure(0, weight=0)
         self.general_section.content.grid_columnconfigure(1, weight=1)
         self.general_section.content.grid_columnconfigure(2, weight=1)
-        self.hill_orientation_label.grid(row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw")
-        self.hill_orientation_entry.grid(row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.hill_orientation_button.grid(row=0, column=2, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.transformation_section.grid(row=1, column=1, padx=(PAD_S, 0), pady=PAD_S, sticky="nsew")
+        self.hill_orientation_label.grid(
+            row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw"
+        )
+        self.hill_orientation_entry.grid(
+            row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.hill_orientation_button.grid(
+            row=0, column=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.transformation_section.grid(
+            row=1, column=1, padx=(PAD_S, 0), pady=PAD_S, sticky="nsew"
+        )
         self.transformation_section.content.grid(columnspan=3)
         self.transformation_section.content.grid_columnconfigure(0, weight=1)
         self.transformation_section.content.grid_columnconfigure(1, weight=1)
         self.transformation_section.content.grid_columnconfigure(2, weight=1)
-        self.pose_button.grid(row=0, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew")
+        self.pose_button.grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
+        )
         self.pose_status_label.grid(row=0, column=2, padx=PAD_S, sticky="nsew")
-        self.checkbox_interpolation.grid(row=1, column=0, padx=PAD_S, sticky="nsew")
-        self.interpolation_pts_label.grid(row=2, column=0, padx=PAD_S, pady=PAD_S, columnspan=2, sticky="nsw")
-        self.interpolation_pts_entry.grid(row=2, column=2, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.data_section.grid(row=2, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew")
+        self.checkbox_interpolation.grid(
+            row=1, column=0, padx=PAD_S, sticky="nsew"
+        )
+        self.interpolation_pts_label.grid(
+            row=2, column=0, padx=PAD_S, pady=PAD_S, columnspan=2, sticky="nsw"
+        )
+        self.interpolation_pts_entry.grid(
+            row=2, column=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.data_section.grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
+        )
         self.data_section.content.grid_columnconfigure(0, weight=1)
-        self.velocity_loader.grid(row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.checkbox_flip_u3.grid(row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.stress_loader.grid(row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.dissipation_loader.grid(row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.inst_velocity_loader.grid(row=3, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.cfd_section.grid(row=3, column=0, columnspan=2, padx=PAD_S, pady=PAD_S, sticky="nsew")
+        self.velocity_loader.grid(
+            row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.checkbox_flip_u3.grid(
+            row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.stress_loader.grid(
+            row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.dissipation_loader.grid(
+            row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.inst_velocity_loader.grid(
+            row=3, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.cfd_section.grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
+        )
         self.cfd_section.content.grid(columnspan=3)
         self.cfd_section.content.grid_columnconfigure(0, weight=1)
         self.cfd_section.content.grid_columnconfigure(1, weight=1)
         self.cfd_section.content.grid_columnconfigure(2, weight=1)
         self.checkbox_gradient.grid(row=0, column=0, sticky="nsew")
         self.checkbox_gradient_opt.grid(row=0, column=1, sticky="nsew")
-        self.slice_loader.grid(row=1, column=0, columnspan=3, padx=PAD_S, pady=PAD_S, sticky="nsew")
-        self.slice_zone_name_label.grid(row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw")
-        self.slice_zone_name.grid(row=2, column=1, padx=PAD_S, pady=PAD_S, sticky="nsw")
-        self.process_button.grid(row=4, column=0, columnspan=2, pady=PAD_S, padx=PAD_M)
+        self.slice_loader.grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
+        )
+        self.slice_zone_name_label.grid(
+            row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw"
+        )
+        self.slice_zone_name.grid(
+            row=2, column=1, padx=PAD_S, pady=PAD_S, sticky="nsw"
+        )
+        self.process_button.grid(
+            row=4, column=0, columnspan=2, pady=PAD_S, padx=PAD_M
+        )
 
     def validate_float(self, input_value: str):
         """
@@ -256,9 +388,9 @@ class PreprocessorWindow:
             self.checkbox_gradient_var.set(0)
             self.checkbox_gradient_opt.config(state="disabled")
             self.checkbox_gradient_opt_var.set(0)
-            self.slice_loader.get_load_button().config(state="disabled")
-            self.slice_loader.get_listbox().config(state="disabled")
-            self.slice_loader.get_status_label().config(state="disabled")
+            self.slice_loader.load_button.config(state="disabled")
+            self.slice_loader.listbox.config(state="disabled")
+            self.slice_loader.status_label.config(state="disabled")
             self.slice_zone_name.config(state="disabled")
 
     def toggle_gradient(self):
@@ -269,9 +401,9 @@ class PreprocessorWindow:
             self.checkbox_gradient_opt_var.set(0)
 
         self.checkbox_gradient_opt.config(state=state)
-        self.slice_loader.get_load_button().config(state=state)
-        self.slice_loader.get_listbox().config(state=state)
-        self.slice_loader.get_status_label().config(state=state)
+        self.slice_loader.load_button.config(state=state)
+        self.slice_loader.listbox.config(state=state)
+        self.slice_loader.status_label.config(state=state)
         self.slice_zone_name_label.config(state=state)
         self.slice_zone_name.config(state=state)
 
@@ -282,8 +414,12 @@ class PreprocessorWindow:
         else:
             self.hill_fig = plt.figure(figsize=(2.5, 2.4))
             self.hill_ax = self.hill_fig.add_axes((0.28, 0.3, 0.75, 0.65))
-            self.hill_canvas = FigureCanvasTkAgg(self.hill_fig, master=self.hill_plot_frame)
-            self.hill_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+            self.hill_canvas = FigureCanvasTkAgg(
+                self.hill_fig, master=self.hill_plot_frame
+            )
+            self.hill_canvas.get_tk_widget().grid(
+                row=0, column=0, sticky="nsew"
+            )
 
         px, pz = self.geometry.calculate_perimeter()
         self.hill_ax.plot(px, pz, color="blue")
@@ -306,16 +442,22 @@ class PreprocessorWindow:
         """Indicate the loading status of the pose parameters."""
         status = self.pose_status_var.get()
         if status:
-            self.pose_status_label.config(fg="green", text="Successfully Loaded")
+            self.pose_status_label.config(
+                fg="green", text="Successfully Loaded"
+            )
         else:
             self.pose_status_label.config(fg="red", text="Nothing Loaded")
 
     def open_pose(self):
         """Open the pose app."""
         if self.orientation_is_confirmed:
-            PoseWindow(self.root, self.piv, self.geometry, self.pose_status_var)
+            PoseWindow(
+                self.root, self.piv, self.geometry, self.pose_status_var
+            )
         else:
-            messagebox.showwarning("Warning", "You must first confirm the hill orientation.")
+            messagebox.showwarning(
+                "Warning", "You must first confirm the hill orientation."
+            )
 
     def validate_inputs(self) -> bool:
         """
@@ -324,7 +466,10 @@ class PreprocessorWindow:
         :return: Boolean indicating whether all inputs are valid or not.
         """
         if not self.pose_status_var.get():
-            messagebox.showwarning("Warning", "Pose data has not been loaded! Please load the pose data.")
+            messagebox.showwarning(
+                "Warning",
+                "Pose data has not been loaded! Please load the pose data.",
+            )
             return False
 
         loaders = [
@@ -335,9 +480,12 @@ class PreprocessorWindow:
             self.slice_loader,
         ]
         for loader in loaders:
-            if loader.get_load_button().cget("state") == "normal":
-                if loader.get_status_label_var().get() == "Nothing Loaded":
-                    messagebox.showwarning("Warning", "Not all raw data has been loaded! Please load all raw data.")
+            if loader.load_button.cget("state") == "normal":
+                if loader.status_label_var.get() == "Nothing Loaded":
+                    messagebox.showwarning(
+                        "Warning",
+                        "Not all raw data has been loaded! Please load all raw data.",
+                    )
                     return False
 
         return True
@@ -359,7 +507,7 @@ class PreprocessorWindow:
         ]
 
         for loader in loaders:
-            if loader[0].get_load_button().cget("state") == "normal":
+            if loader[0].load_button.cget("state") == "normal":
                 data_paths[loader[1]] = loader[0].get_listbox_content()
 
         return data_paths
@@ -372,10 +520,14 @@ class PreprocessorWindow:
         data_paths = self.fetch_raw_data_paths()
 
         should_load = {
-            "mean_velocity": bool(self.velocity_loader.get_checkbox_var().get()),
-            "reynolds_stress": bool(self.stress_loader.get_checkbox_var().get()),
-            "turbulence_dissipation": bool(self.dissipation_loader.get_checkbox_var().get()),
-            "instantaneous_velocity_frame": bool(self.inst_velocity_loader.get_checkbox_var().get()),
+            "mean_velocity": bool(self.velocity_loader.checkbox_var.get()),
+            "reynolds_stress": bool(self.stress_loader.checkbox_var.get()),
+            "turbulence_dissipation": bool(
+                self.dissipation_loader.checkbox_var.get()
+            ),
+            "instantaneous_velocity_frame": bool(
+                self.inst_velocity_loader.checkbox_var.get()
+            ),
         }
 
         state = {
@@ -387,15 +539,25 @@ class PreprocessorWindow:
         }
 
         opts = {
-            "flip_out_of_plane_component": bool(self.checkbox_flip_u3_var.get()),
-            "use_dwdx_and_dwdy_from_cfd": bool(self.checkbox_gradient_opt_var.get()),
+            "flip_out_of_plane_component": bool(
+                self.checkbox_flip_u3_var.get()
+            ),
+            "use_dwdx_and_dwdy_from_cfd": bool(
+                self.checkbox_gradient_opt_var.get()
+            ),
         }
 
-        if preprocessing.preprocess_data(self.piv, state, opts, data_paths, should_load):
-            messagebox.showinfo("Info", "PREPROCESSING SUCCESSFUL! Check output folder for preprocessed data.")
+        if preprocessing.preprocess_data(
+            self.piv, state, opts, data_paths, should_load
+        ):
+            messagebox.showinfo(
+                "Info",
+                "PREPROCESSING SUCCESSFUL! Check output folder for preprocessed data.",
+            )
             return
         else:
             messagebox.showwarning(
-                "Warning", "OOPS! Something went wrong during preprocessing. Check your inputs and try again."
+                "Warning",
+                "OOPS! Something went wrong during preprocessing. Check your inputs and try again.",
             )
             return
