@@ -1,8 +1,7 @@
 """Pose calculator application window."""
 
 import sys
-import tkinter as tk
-from typing import List, cast
+import tkinter as tk from typing import List, cast
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -29,42 +28,57 @@ from .widgets import (
 )
 
 
-# Constants
+# CONSTANTS
 WINDOW_TITLE = "Pose Calculator"
 WINDOW_SIZE = (1000, 600)
-CALCULATION_MODES = [
-    "LOAD ALL transformation parameters",
-    "LOAD global / CALCULATE local",
-    "CALCULATE global / CALCULATE local",
-]
-CAL_IMG_SKIPROWS = 4
+CALCULATION_MODES = (
+    ("none", "LOAD all transformation parameters"),
+    ("local", "LOAD global / CALCULATE local"),
+    ("all", "CALCULATE global / CALCULATE local"),
+)
+CALIBRATION_IMG_SKIPROWS = 4
 PAD_S = STYLES["pad"]["small"]
 
 
 class PoseWindow:
-    """The pose calculator window."""
+    """Pose calculator window."""
 
     def __init__(
         self,
         master: tk.Toplevel,
         piv: Piv,
         geometry: Beverli,
-        parameters_status: tk.BooleanVar,
+        calculation_status: tk.BooleanVar,
     ):
         """Construct the pose calculator window.
 
         :param master: Parent window handle.
+        :param piv: Object containing the PIV data.
+        :param geometry: Object containing the BeVERLI Hill geometry.
+        :param calculation_status: Variable monitoring the calculation status.
         """
         # Resources
-        self.status = parameters_status
         self.piv = piv
         self.geometry = geometry
+        self.status = calculation_status
 
         # GUI
         self.root = tk.Toplevel(master)
         self.configure_root()
         self.create_widgets()
-        self.layout_widgets("default")
+        self.layout_widgets(calculation_mode="none")
+
+    def on_closing(self):
+        """Free resources upon closing the pose calculator."""
+        if hasattr(self, "cal_fig"):
+            plt.close(self.cal_fig)
+        if hasattr(self, "cal_canvas"):
+            self.cal_canvas.get_tk_widget().destroy()
+        if hasattr(self, "glob_fig"):
+            plt.close(self.glob_fig)
+        if hasattr(self, "glob_canvas"):
+            self.glob_canvas.get_tk_widget().destroy()
+        self.root.destroy()
 
     def configure_root(self):
         """Configure the window."""
@@ -77,38 +91,24 @@ class PoseWindow:
         )
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-    def on_closing(self):
-        """Free resources after closing the window."""
-        if hasattr(self, "cal_fig"):
-            plt.close(self.cal_fig)
-        if hasattr(self, "cal_canvas"):
-            self.cal_canvas.get_tk_widget().destroy()
-        if hasattr(self, "glob_fig"):
-            plt.close(self.glob_fig)
-        if hasattr(self, "glob_canvas"):
-            self.glob_canvas.get_tk_widget().destroy()
-        self.root.destroy()
-
     def create_widgets(self):
         """Create all widget entities."""
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
         self.main_frame = self.scrollable_canvas.frame
+
+        # SECTION -- OPTIONS
         self.options_section = Section(self.main_frame, "Settings", 1)
         self.checkbox_diagonal = Checkbutton(
-            self.options_section.content, category=1, text="Plane is diagonal"
+            self.options_section.content, category=1, text="Plane is Diagonal"
         )
         self.mode_selector_label = Label(
-            self.options_section.content,
-            text="Select Calculation Mode:",
-            category=1,
+            self.options_section.content, text="Select Calculation Mode:", category=1
         )
         self.mode_selector_var = tk.StringVar()
-        self.mode_selector_var.set(CALCULATION_MODES[0])
+        self.mode_selector_var.set(CALCULATION_MODES[0][1])
         self.mode_selector_var.trace("w", self.on_mode_selection)
         self.mode_selector = tk.OptionMenu(
-            self.options_section.content,
-            self.mode_selector_var,
-            *CALCULATION_MODES,
+            self.options_section.content, self.mode_selector_var, *[x for _, x in CALCULATION_MODES]
         )
         self.submit_button = Button(
             self.main_frame,
@@ -248,18 +248,17 @@ class PoseWindow:
             command=self.calculate_global,
         )
 
-    def layout_widgets(self, calculation_level: str):
+    def layout_widgets(self, calculation_mode: str):
         """Layout all widgets on the window for each specific calcualtion mode.
 
         :param calculation_level: Identifier for the specific calculation mode.
         """
-        lvl = calculation_level.lower()
-        if lvl == "default":
+        if calculation_mode == "none":
             self.layout_widgets_default()
-        elif lvl == "global":
-            self.layout_widgets_global()
-        elif lvl == "local":
+        elif calculation_mode == "local":
             self.layout_widgets_local()
+        elif calculation_mode == "all":
+            self.layout_widgets_global()
 
     def reset_layout(self):
         """Restore default layout when working in a particular mode."""
@@ -359,12 +358,12 @@ class PoseWindow:
     def on_mode_selection(self, *args):
         """Activate the mode-specific window layout when a mode is selected."""
         selected_option = self.mode_selector_var.get()
-        if selected_option == CALCULATION_MODES[0]:
-            lvl = "default"
-        elif selected_option == CALCULATION_MODES[1]:
-            lvl = "local"
+        if selected_option == CALCULATION_MODES[0][1]:
+            lvl = CALCULATION_MODES[0][0]
+        elif selected_option == CALCULATION_MODES[1][1]:
+            lvl = CALCULATION_MODES[1][0]
         else:
-            lvl = "global"
+            lvl = CALCULATION_MODES[2][0]
         self.layout_widgets(lvl)
 
     def plot_calplate(self, case: str):
@@ -385,7 +384,7 @@ class PoseWindow:
             )
 
         cal_img_path = self.calplate_loader.get_listbox_content()
-        cal_img = np.loadtxt(cal_img_path, skiprows=CAL_IMG_SKIPROWS)
+        cal_img = np.loadtxt(cal_img_path, skiprows=CALIBRATION_IMG_SKIPROWS)
         dims = tputils.get_ijk(cal_img_path)
         img_coords_mm = np.array(
             [np.reshape(cal_img[:, i], (dims[1], dims[0])) for i in range(2)]
@@ -393,14 +392,14 @@ class PoseWindow:
         img_vals = np.reshape(cal_img[:, 2], (dims[1], dims[0]))
 
         rotation_angle_deg = 0.0
-        if case == CALCULATION_MODES[1]:
+        if case == CALCULATION_MODES[1][1]:
             tp_path = self.global_loader.get_listbox_content()
             tp = apputils.load_transformation_parameters(tp_path)
             if tp is None:
                 self.layout_widgets("local")
                 return
             rotation_angle_deg = tp["rotation"]["angle_1_deg"]
-        elif case == CALCULATION_MODES[2]:
+        elif case == CALCULATION_MODES[2][1]:
             rotation_angle_deg = float(cast(list, self.global_pose)[6])
         rotation_matrix = transform.get_rotation_matrix(
             rotation_angle_deg, (0, 0, 1)
@@ -620,7 +619,7 @@ class PoseWindow:
     def submit_file(self):
         """Generate the pose parameters file."""
         case = self.mode_selector_var.get()
-        if case == CALCULATION_MODES[0]:
+        if case == CALCULATION_MODES[0][1]:
             transformation_parameters_path = (
                 self.parameters_loader.get_listbox_content()
             )
@@ -675,7 +674,7 @@ class PoseWindow:
             )
             self.status.set(True)
             self.on_closing()
-        elif case == CALCULATION_MODES[1]:
+        elif case == CALCULATION_MODES[1][1]:
             transformation_parameters_path = (
                 self.global_loader.get_listbox_content()
             )
