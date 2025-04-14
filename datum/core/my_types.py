@@ -1,5 +1,5 @@
 """Define custom type alias."""
-from typing import Any, Callable, Dict, TypedDict, Union
+from typing import Any, Callable, Dict, Tuple, TypedDict, Union
 
 import numpy as np
 import trimesh
@@ -22,6 +22,7 @@ SingleProfileDict = Dict[str, Dict[str, Dict[str, FloatOrArray]]]
 SingleProfile = Dict[str, Dict[str, FloatOrArray]]
 
 Interp1DCallable = Callable[[FloatOrArray], FloatOrArray]
+
 
 # TRANSFOMRATION PARAMETERS
 # -------------------------
@@ -77,3 +78,6 @@ class PoseMeasurement(TypedDict):
 
     calibration_plate_angle: CalibrationPlateAngle
     calibration_plate_location: CalibrationPlateLocation
+
+
+SecParams = Tuple[float, float, float, float, float, float, float, float]

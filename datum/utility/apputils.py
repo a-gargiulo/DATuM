@@ -219,7 +219,7 @@ def read_json(file_path: str) -> Optional[NestedDict]:
         return None
 
 
-def write_json(file_path: str, dictionary: NestedDict) -> None:
+def write_json(file_path: str, dictionary: dict) -> None:
     """Write a dictionary to a json formatted file.
 
     :param file_path: System path to the json file.

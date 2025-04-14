@@ -1,7 +1,8 @@
 """Pose calculator application window."""
 
 import sys
-import tkinter as tk from typing import List, cast
+import tkinter as tk
+from typing import Tuple, cast
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -12,8 +13,8 @@ from matplotlib.widgets import Cursor
 
 from ..core import transform
 from ..core.beverli import Beverli
-from ..core.piv import Piv
 from ..core.my_types import TransformationParameters
+from ..core.piv import Piv
 from ..utility import apputils, tputils
 from ..utility.configure import STYLES
 from .widgets import (
@@ -26,7 +27,6 @@ from .widgets import (
     ScrollableCanvas,
     Section,
 )
-
 
 # CONSTANTS
 WINDOW_TITLE = "Pose Calculator"
@@ -95,20 +95,22 @@ class PoseWindow:
         """Create all widget entities."""
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
         self.main_frame = self.scrollable_canvas.frame
-
-        # SECTION -- OPTIONS
         self.options_section = Section(self.main_frame, "Settings", 1)
         self.checkbox_diagonal = Checkbutton(
             self.options_section.content, category=1, text="Plane is Diagonal"
         )
         self.mode_selector_label = Label(
-            self.options_section.content, text="Select Calculation Mode:", category=1
+            self.options_section.content,
+            text="Select Calculation Mode:",
+            category=1,
         )
         self.mode_selector_var = tk.StringVar()
         self.mode_selector_var.set(CALCULATION_MODES[0][1])
         self.mode_selector_var.trace("w", self.on_mode_selection)
         self.mode_selector = tk.OptionMenu(
-            self.options_section.content, self.mode_selector_var, *[x for _, x in CALCULATION_MODES]
+            self.options_section.content,
+            self.mode_selector_var,
+            *[x for _, x in CALCULATION_MODES],
         )
         self.submit_button = Button(
             self.main_frame,
@@ -251,7 +253,7 @@ class PoseWindow:
     def layout_widgets(self, calculation_mode: str):
         """Layout all widgets on the window for each specific calcualtion mode.
 
-        :param calculation_level: Identifier for the specific calculation mode.
+        :param calculation_mode: Identifier for the specific calculation mode.
         """
         if calculation_mode == "none":
             self.layout_widgets_default()
@@ -331,7 +333,7 @@ class PoseWindow:
         self.scrollable_canvas.configure_frame()
 
     def layout_widgets_global(self):
-        """Generate the layout for the local mode window."""
+        """Generate the layout for the global mode window."""
         self.layout_widgets_default()
         self.checkbox_diagonal.grid_forget()
         self.mode_selector.grid(row=0)
@@ -400,7 +402,10 @@ class PoseWindow:
                 return
             rotation_angle_deg = tp["rotation"]["angle_1_deg"]
         elif case == CALCULATION_MODES[2][1]:
-            rotation_angle_deg = float(cast(list, self.global_pose)[6])
+            if self.global_pose is None:
+                self.layout_widgets("all")
+                return
+            rotation_angle_deg = self.global_pose[6]
         rotation_matrix = transform.get_rotation_matrix(
             rotation_angle_deg, (0, 0, 1)
         )
@@ -450,7 +455,7 @@ class PoseWindow:
 
     def create_local_pose_selector(self, case: str, *args):
         """
-        Create a selector to identify the local pose from the calibration image.
+        Create selector to identify the local pose from the calibration image.
 
         :param case: Calculation mode identifier.
         :param *args: Additional arguments.
@@ -466,10 +471,8 @@ class PoseWindow:
         self.calplate_plot.grid(
             row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
-        self.local_section.get_content_frame().grid_columnconfigure(
-            1, weight=1
-        )
-        self.local_section.get_content_frame().grid_rowconfigure(0, weight=1)
+        self.local_section.content.grid_columnconfigure(1, weight=1)
+        self.local_section.content.grid_rowconfigure(0, weight=1)
         self.submit_button.grid(row=row + 1)
         self.plot_calplate(case)
         self.picker_frame.grid(row=0, column=1, padx=PAD_S, pady=PAD_S)
@@ -493,7 +496,7 @@ class PoseWindow:
 
     def create_global_pose_calculator(self, case: str, *args):
         """
-        Create a calculator for the global pose. The calculator uses the pose measurements.
+        Create calculator for the global pose.
 
         :param case: Calculation mode identifier.
         :param *args: Additional arguments.
@@ -501,15 +504,9 @@ class PoseWindow:
         self.global_section.grid(
             row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
-        self.global_section.get_content_frame().grid_columnconfigure(
-            0, weight=1
-        )
-        self.global_section.get_content_frame().grid_columnconfigure(
-            1, weight=1
-        )
-        self.global_section.get_content_frame().grid_columnconfigure(
-            2, weight=1
-        )
+        self.global_section.content.grid_columnconfigure(0, weight=1)
+        self.global_section.content.grid_columnconfigure(1, weight=1)
+        self.global_section.content.grid_columnconfigure(2, weight=1)
         self.is_convex_option.grid(
             row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
@@ -521,11 +518,15 @@ class PoseWindow:
         )
         self.submit_button.grid(row=3)
 
-    def plot_global(self, secant: List[float]):
+    def plot_global(
+        self,
+        secant: Tuple[float, float, float, float, float, float, float, float],
+    ):
         """
         Generate a plot that visualizes the global pose.
 
-        :param secant: The global pose parameters obtained from the global pose calculation.
+        :param secant: Global pose parameters obtained from the global pose
+            calculation.
         """
         if hasattr(self, "glob_fig") and hasattr(self, "glob_canvas"):
             self.glob_ax.clear()
@@ -602,10 +603,10 @@ class PoseWindow:
         )
         opts = {
             "apply_convex_curvature_correction": bool(
-                self.is_convex_option.get_var().get()
+                self.is_convex_option.var.get()
             ),
             "use_measured_rotation_angle": bool(
-                self.use_measured_angle_option.get_var().get()
+                self.use_measured_angle_option.var.get()
             ),
         }
         self.global_pose = self.piv.pose.calculate_global_pose(
@@ -620,91 +621,52 @@ class PoseWindow:
         """Generate the pose parameters file."""
         case = self.mode_selector_var.get()
         if case == CALCULATION_MODES[0][1]:
-            transformation_parameters_path = (
-                self.parameters_loader.get_listbox_content()
-            )
-            transformation_parameters = apputils.read_json(
-                transformation_parameters_path
-            )
-            if transformation_parameters is None:
-                sys.exit(-1)
+            tp_path = self.parameters_loader.get_listbox_content()
+            tp = apputils.load_transformation_parameters(tp_path)
+            if tp is None:
+                self.layout_widgets("none")
+                return
             if self.checkbox_diagonal and bool(
-                self.checkbox_diagonal.get_var().get()
+                self.checkbox_diagonal.var.get()
             ):
-                self.piv.pose.angle1 = float(
-                    cast(dict, transformation_parameters["rotation"])[
-                        "angle_1_deg"
-                    ]
-                )
-                self.piv.pose.angle2 = float(
-                    cast(dict, transformation_parameters["rotation"])[
-                        "angle_2_deg"
-                    ]
-                )
+                self.piv.pose.angle1 = tp["rotation"]["angle_1_deg"]
+                self.piv.pose.angle2 = tp["rotation"]["angle_2_deg"]
             else:
-                self.piv.pose.angle1 = float(
-                    cast(dict, transformation_parameters["rotation"])[
-                        "angle_deg"
-                    ]
-                )
-            self.piv.pose.loc[0] = float(
-                cast(dict, transformation_parameters["translation"])[
-                    "x_1_loc_ref_mm"
-                ]
+                self.piv.pose.angle1 = tp["rotation"]["angle_1_deg"]
+                self.piv.pose.angle2 = 0.0
+            self.piv.pose.loc = (
+                tp["translation"]["x_1_loc_ref_mm"],
+                tp["translation"]["x_2_loc_ref_mm"],
             )
-            self.piv.pose.loc[1] = float(
-                cast(dict, transformation_parameters["translation"])[
-                    "x_2_loc_ref_mm"
-                ]
-            )
-            self.piv.pose.glob[0] = float(
-                cast(dict, transformation_parameters["translation"])[
-                    "x_1_glob_ref_m"
-                ]
-            )
-            self.piv.pose.glob[1] = float(
-                cast(dict, transformation_parameters["translation"])[
-                    "x_2_glob_ref_m"
-                ]
-            )
-            self.piv.pose.glob[2] = float(
-                cast(dict, transformation_parameters["translation"])[
-                    "x_3_glob_ref_m"
-                ]
+            self.piv.pose.glob = (
+                tp["translation"]["x_1_glob_ref_m"],
+                tp["translation"]["x_2_glob_ref_m"],
+                tp["translation"]["x_3_glob_ref_m"],
             )
             self.status.set(True)
             self.on_closing()
         elif case == CALCULATION_MODES[1][1]:
-            transformation_parameters_path = (
-                self.global_loader.get_listbox_content()
+            tp_path = self.global_loader.get_listbox_content()
+            tp = apputils.load_transformation_parameters(tp_path)
+            if tp is None:
+                self.layout_widgets("local")
+                return
+            self.piv.pose.angle1 = tp["rotation"]["angle_1_deg"]
+            self.piv.pose.angle2 = 0.0
+            self.piv.pose.glob = (
+                tp["translation"]["x_1_glob_ref_m"],
+                tp["translation"]["x_2_glob_ref_m"],
+                tp["translation"]["x_3_glob_ref_m"],
             )
-            transformation_parameters = apputils.read_json(
-                transformation_parameters_path
+            self.piv.pose.loc = (
+                float(self.xpick_var.get()),
+                float(self.ypick_var.get()),
             )
-            if transformation_parameters is None:
-                sys.exit(-1)
-            self.piv.pose.angle1 = float(
-                cast(dict, transformation_parameters["rotation"])["angle_deg"]
-            )
-            self.piv.pose.glob[0] = float(
-                cast(dict, transformation_parameters["translation"])[
-                    "x_1_glob_ref_m"
-                ]
-            )
-            self.piv.pose.glob[1] = float(
-                cast(dict, transformation_parameters["translation"])[
-                    "x_2_glob_ref_m"
-                ]
-            )
-            self.piv.pose.glob[2] = float(
-                cast(dict, transformation_parameters["translation"])[
-                    "x_3_glob_ref_m"
-                ]
-            )
-            self.piv.pose.loc[0] = float(self.xpick_var.get())
-            self.piv.pose.loc[1] = float(self.ypick_var.get())
-            parameters = {
-                "rotation": {"angle_deg": self.piv.pose.angle1},
+            parameters: TransformationParameters = {
+                "rotation": {
+                    "angle_1_deg": self.piv.pose.angle1,
+                    "angle_2_deg": self.piv.pose.angle2,
+                },
                 "translation": {
                     "x_1_glob_ref_m": self.piv.pose.glob[0],
                     "x_2_glob_ref_m": self.piv.pose.glob[1],
@@ -714,19 +676,31 @@ class PoseWindow:
                 },
             }
             apputils.write_json(
-                "./outputs/transformation_parameters.json", parameters
+                "./outputs/transformation_parameters.json",
+                cast(dict, parameters),
             )
             self.status.set(True)
             self.on_closing()
         else:
-            self.piv.pose.angle1 = float(cast(list, self.global_pose)[6])
-            self.piv.pose.glob[0] = float(cast(list, self.global_pose)[4])
-            self.piv.pose.glob[1] = float(cast(list, self.global_pose)[5])
-            self.piv.pose.glob[2] = float(cast(list, self.global_pose)[7])
-            self.piv.pose.loc[0] = float(self.xpick_var.get())
-            self.piv.pose.loc[1] = float(self.ypick_var.get())
+            if self.global_pose is None:
+                self.layout_widgets("all")
+                return
+            self.piv.pose.angle1 = self.global_pose[6]
+            self.piv.pose.angle2 = 0.0
+            self.piv.pose.glob = (
+                self.global_pose[4],
+                self.global_pose[5],
+                self.global_pose[7],
+            )
+            self.piv.pose.loc = (
+                float(self.xpick_var.get()),
+                float(self.ypick_var.get()),
+            )
             parameters = {
-                "rotation": {"angle_deg": self.piv.pose.angle1},
+                "rotation": {
+                    "angle_1_deg": self.piv.pose.angle1,
+                    "angle_2_deg": self.piv.pose.angle2,
+                },
                 "translation": {
                     "x_1_glob_ref_m": self.piv.pose.glob[0],
                     "x_2_glob_ref_m": self.piv.pose.glob[1],
@@ -736,7 +710,8 @@ class PoseWindow:
                 },
             }
             apputils.write_json(
-                "./outputs/transformation_parameters.json", parameters
+                "./outputs/transformation_parameters.json",
+                cast(dict, parameters),
             )
             self.status.set(True)
             self.on_closing()
