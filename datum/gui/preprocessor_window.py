@@ -1,4 +1,4 @@
-"""Preprocessor application window."""
+"""Preprocessor application window."""  # -- DONE -- 04/15/25
 
 import tkinter as tk
 from tkinter import messagebox
@@ -23,7 +23,7 @@ from .widgets import (
     Section,
 )
 
-# Constants
+# CONSTANTS
 WINDOW_TITLE = "Preprocessor"
 WINDOW_SIZE = (800, 600)
 PAD_S = STYLES["pad"]["small"]
@@ -31,17 +31,19 @@ PAD_M = STYLES["pad"]["medium"]
 
 
 class PreprocessorWindow:
-    """Define the preprocessor window."""
+    """The preprocessor window."""
 
     def __init__(self, master: tk.Tk):
         """
-        Create the preprocessor window.
+        Construct the preprocessor window.
 
         :param master: Parent window handle.
         """
+        # Resoures
         self.geometry = Beverli(use_cad=True)
         self.piv = Piv()
 
+        # GUI
         self.root = tk.Toplevel(master)
         self.configure_root()
         self.create_widgets()
@@ -331,7 +333,7 @@ class PreprocessorWindow:
             row=4, column=0, columnspan=2, pady=PAD_S, padx=PAD_M
         )
 
-    def validate_float(self, input_value: str):
+    def validate_float(self, input_value: str) -> bool:
         """
         Check the user input hill orientation.
 
@@ -433,10 +435,6 @@ class PreprocessorWindow:
     def confirm_orientation(self):
         """Confirm the user input hill orientation."""
         self.orientation_is_confirmed = True
-        # print(self.piv.pose.angle1)
-        # print(self.piv.pose.angle2)
-        # print(self.piv.pose.loc)
-        # print(self.piv.pose.glob)
 
     def toggle_pose_status(self, *args):
         """Indicate the loading status of the pose parameters."""
@@ -484,7 +482,10 @@ class PreprocessorWindow:
                 if loader.status_label_var.get() == "Nothing Loaded":
                     messagebox.showwarning(
                         "Warning",
-                        "Not all raw data has been loaded! Please load all raw data.",
+                        (
+                            r"Not all raw data has been loaded! "
+                            r"Please load all raw data."
+                        ),
                     )
                     return False
 
@@ -494,7 +495,7 @@ class PreprocessorWindow:
         """
         Fetch the paths for the raw PIV data to be loaded.
 
-        :return: A dictionary containing the raw data file paths.
+        :return: Raw data file paths.
         :rtype: Dict[str, str]
         """
         data_paths = {}
@@ -552,12 +553,18 @@ class PreprocessorWindow:
         ):
             messagebox.showinfo(
                 "Info",
-                "PREPROCESSING SUCCESSFUL! Check output folder for preprocessed data.",
+                (
+                    "PREPROCESSING SUCCESSFUL! "
+                    "Check output folder for preprocessed data."
+                ),
             )
             return
         else:
             messagebox.showwarning(
                 "Warning",
-                "OOPS! Something went wrong during preprocessing. Check your inputs and try again.",
+                (
+                    "OOPS! Something went wrong during preprocessing. "
+                    "Check your inputs and try again."
+                ),
             )
             return

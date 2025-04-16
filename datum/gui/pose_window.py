@@ -1,4 +1,4 @@
-"""Pose calculator application window."""
+"""Pose calculator application window."""  # -- Editing DONE -- 04/15/2025
 
 import sys
 import tkinter as tk
@@ -50,12 +50,12 @@ class PoseWindow:
         geometry: Beverli,
         calculation_status: tk.BooleanVar,
     ):
-        """Construct the pose calculator window.
+        """Construct the window.
 
         :param master: Parent window handle.
-        :param piv: Object containing the PIV data.
-        :param geometry: Object containing the BeVERLI Hill geometry.
-        :param calculation_status: Variable monitoring the calculation status.
+        :param piv: PIV data.
+        :param geometry: BeVERLI Hill geometry.
+        :param calculation_status: Monitor variable for calculation status.
         """
         # Resources
         self.piv = piv
@@ -69,7 +69,7 @@ class PoseWindow:
         self.layout_widgets(calculation_mode="none")
 
     def on_closing(self):
-        """Free resources upon closing the pose calculator."""
+        """Free resources after closing the pose calculator."""
         if hasattr(self, "cal_fig"):
             plt.close(self.cal_fig)
         if hasattr(self, "cal_canvas"):

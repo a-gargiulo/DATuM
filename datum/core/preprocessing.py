@@ -8,26 +8,45 @@ from .load import load_raw_data
 from . import analysis, transform
 
 
-def preprocess_data(piv_obj: Piv, state: Dict[str, Union[bool, int, str]], opts: Dict[str, bool], data_paths: Dict[str, str], should_load: Dict[str, bool]) -> bool:
-    """Enter docstring here."""
+def preprocess_data(
+    piv_obj: Piv,
+    state: Dict[str, Union[bool, int, str]],
+    opts: Dict[str, bool],
+    data_paths: Dict[str, str],
+    should_load: Dict[str, bool]
+) -> bool:
+    """Core preprocessing function.
+
+    :param piv_obj: PIV data container.
+    :param state: User input variables from the GUI.
+    :param opts: User input options from the GUI.
+    :param data_paths: System paths to PIV datasets.
+    :param should_load: PIV datasets to be loaded.
+
+    :return: `False` in case of an error, and `True` otherwise.
+    :rtype: bool
+    """
     load_raw_data(piv_obj, data_paths, should_load, opts)
     if piv_obj.data is None:
         return False
     if not state["compute_gradients"]:
-        transform.rotate_data(piv_obj)
-        transform.translate_data(piv_obj)
-        transform.scale_coordinates(piv_obj, scale_factor=1e-3)
+        transform_data_no_interp(piv_obj)
         if piv_obj.pose.angle2 != 0.0:
             piv_obj.data["coordinates"]["Z"] = piv_obj.data["coordinates"]["X"]
     else:
-        transform.rotate_data(piv_obj)
-        transform.interpolate_data(piv_obj, state["num_interpolation_pts"])
-        transform.translate_data(piv_obj)
-        transform.scale_coordinates(piv_obj, scale_factor=1e-3)
-
-        if state["compute_gradients"] and piv_obj.pose.angle2 == 0.0:
+        transform_data(piv_obj, cast(int, state["num_interpolation_pts"]))
+        if piv_obj.pose.angle2 != 0.0:
+            print(
+                "[ERROR]: Gradient computation is not allowed "
+                "for diagonal planes."
+            )
+            return False
+        else:
             compute_velocity_gradient(
-                piv_obj, cast(str, state["slice_path"]), cast(str, state["slice_name"]), opts
+                piv_obj,
+                cast(str, state["slice_path"]),
+                cast(str, state["slice_name"]),
+                opts
             )
             get_strain_and_rotation_tensor(piv_obj)
             get_eddy_viscosity(piv_obj)
@@ -36,18 +55,49 @@ def preprocess_data(piv_obj: Piv, state: Dict[str, Union[bool, int, str]], opts:
     return True
 
 
-def compute_velocity_gradient(piv_obj: Piv, slice_path: str, zone_name: str, opts: Dict[str, bool]) -> None:
-    """Computes the mean velocity gradient tensor from the BeVERLI Hill stereo PIV mean
-    velocity data. Note that this function should be used with interpolated data!
+def transform_data_no_interp(piv_obj: Piv):
+    """Rotate, translate, and scale the PIV data.
 
-    This function directly edits the :py:type:`Piv` object that is passed to it.
+    :param piv_obj: PIV data.
+    """
+    transform.rotate_data(piv_obj)
+    transform.translate_data(piv_obj)
+    transform.scale_coordinates(piv_obj, scale_factor=1e-3)
 
-    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
+
+def transform_data(piv_obj: Piv, num_interp_pts: int):
+    """Rotate, interpolate, translate, and scale the PIV data.
+
+    :param piv_obj: PIV data.
+    :param num_interp_pts: Number of grid points for interpolation.
+    """
+    transform.rotate_data(piv_obj)
+    transform.interpolate_data(piv_obj, num_interp_pts)
+    transform.translate_data(piv_obj)
+    transform.scale_coordinates(piv_obj, scale_factor=1e-3)
+
+
+def compute_velocity_gradient(
+    piv_obj: Piv,
+    slice_path: str,
+    zone_name: str,
+    opts: Dict[str, bool]
+):
+    """Compute the mean velocity gradient tensor from the PIV data.
+
+    Note, this function should be used with interpolated data.
+
+    :param piv_obj: PIV data.
+    :param slice_path: System path to the CFD data slice.
+    :param zone_name: Name of the relevant zone of the CFD slice.
+    :param opts: User input options from the GUI.
     """
     mean_vel_grad = {}
 
     # Obtain computable gradient components
-    computable_components = _get_computable_velocity_gradient_components(piv_obj)
+    computable_components = _get_computable_velocity_gradient_components(
+        piv_obj
+    )
     apputils.update_nested_dict(mean_vel_grad, computable_components)
 
     # Use incompressibility assumption for dWdZ
@@ -55,7 +105,10 @@ def compute_velocity_gradient(piv_obj: Piv, slice_path: str, zone_name: str, opt
 
     # Get missing gradient components from CFD data
     print("Getting Tecplot derivatives... ", end="")
-    x1_q, x2_q = (cast(dict, piv_obj.data)["coordinates"]["X"], cast(dict, piv_obj.data)["coordinates"]["Y"])
+    x1_q, x2_q = (
+        cast(dict, cast(dict, piv_obj.data)["coordinates"])["X"],
+        cast(dict, cast(dict, piv_obj.data)["coordinates"])["Y"]
+    )
     cfd_data = tputils.get_tecplot_derivatives(slice_path, zone_name, opts)
     # cfd_coords = 1000 * np.column_stack(
     #     (cfd_data["X"].flatten(), cfd_data["Y"].flatten())
@@ -74,20 +127,11 @@ def compute_velocity_gradient(piv_obj: Piv, slice_path: str, zone_name: str, opt
     cast(dict, piv_obj.data)["mean_velocity_gradient"] = mean_vel_grad
 
 
-def _get_computable_velocity_gradient_components(piv_obj: Piv) -> Dict[str, np.ndarray]:
-    """Calculates the directly computable components of the mean velocity gradient
-    tensor from the BeVERLI Hill stereo PIV mean velocity data.
-
-    :param piv_obj: Object containing the BeVERLI Hill stereo PIV data.
-    :return: A dictionary containing NumPy ndarrays of shape (m, n), where m and n
-        represent the number of available data points in the :math:`x_1`- and
-        :math:`x_2`-direction. Each array represents a computable component of the mean
-        velocity gradient tensor.
-    """
-    if piv_obj.data is None:
-        sys.exit(-1)
-    coords = piv_obj.data["coordinates"]
-    mean_vel = piv_obj.data["mean_velocity"]
+def _get_computable_velocity_gradient_components(
+    piv_obj: Piv
+) -> Dict[str, np.ndarray]:
+    coords = cast(dict, piv_obj.data)["coordinates"]
+    mean_vel = cast(dict, piv_obj.data)["mean_velocity"]
     computable_gradients = [("dUdX", "dUdY"), ("dVdX", "dVdY"), ("dWdX", "dWdY")]
 
     components = {}
