@@ -10,6 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from ..core import preprocessing
 from ..core.beverli import Beverli
 from ..core.piv import Piv
+from .geometry_section import GeometrySection
 from ..utility.configure import STYLES, system
 from .pose_window import PoseWindow
 from .widgets import (
@@ -31,7 +32,7 @@ PAD_M = STYLES["pad"]["medium"]
 
 
 class PreprocessorWindow:
-    """The preprocessor window."""
+    """Preprocessor window."""
 
     def __init__(self, master: tk.Tk):
         """
@@ -40,7 +41,7 @@ class PreprocessorWindow:
         :param master: Parent window handle.
         """
         # Resoures
-        self.geometry = Beverli(use_cad=True)
+        self.hill = Beverli(use_cad=True)
         self.piv = Piv()
 
         # GUI
@@ -64,74 +65,21 @@ class PreprocessorWindow:
         self.vfcmd = self.root.register(self.validate_float)
 
     def create_widgets(self):
-        """Create all widget entities."""
+        """Create widget entities."""
+        self.create_geometry_section()
+        self.create_data_section()
+        self.create_cfd_section()
+        self.create_final_controls()
+
+        self.hill_orientation = 0.0
+        self.hill_orientation_confirmed = False
+
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
         self.main_frame = self.scrollable_canvas.frame
-        self.geometry_section = Section(
-            self.main_frame, title="Geometry", category=1
-        )
-        self.hill_plot_frame = Frame(
-            self.geometry_section.content, category=1, bd=2, relief="solid"
-        )
-        self.general_section = Section(
-            self.geometry_section.content, title="General", category=2
-        )
-        self.hill_orientation_label = Label(
-            self.general_section.content,
-            text="Hill Orientation [deg]:",
-            category=2,
-        )
-        self.hill_orientation_entry = Entry(
-            self.general_section.content, category=2
-        )
-        self.hill_orientation_entry.config(
-            validate="focusout", validatecommand=(self.vfcmd, "%P")
-        )
-        self.hill_orientation_entry.insert(0, "0")
-        self.hill_orientation = 0.0
-        self.hill_orientation_button = Button(
-            self.general_section.content,
-            text="Confirm",
-            command=self.confirm_orientation,
-        )
-        self.orientation_is_confirmed = False
-        self.transformation_section = Section(
-            self.geometry_section.content,
-            title="Pose & Transformation (Local PIV -> Global SWT)",
-            category=2,
-        )
-        self.pose_button = Button(
-            self.transformation_section.content,
-            text="Load/Calculate Tranformation Matrix",
-            command=self.open_pose,
-        )
-        self.pose_button.config(width=200 if system == "Darwin" else 20)
-        self.pose_status_label = Label(
-            self.transformation_section.content,
-            text="Nothing Loaded",
-            category=2,
-        )
-        self.pose_status_label.config(fg="red")
-        self.pose_status_var = tk.BooleanVar(value=False)
-        self.pose_status_var.trace(
-            "w", lambda *args: self.toggle_pose_status(*args)
-        )
-        self.checkbox_interpolation = Checkbutton(
-            self.transformation_section.content,
-            category=2,
-            text="Interpolate data to regular grid",
-            command=self.toggle_interpolation,
-        )
-        self.checkbox_interpolation_var = self.checkbox_interpolation.var
-        self.interpolation_pts_label = Label(
-            self.transformation_section.content,
-            text="Number of interp. grid points:",
-            category=2,
-            state="disabled",
-        )
-        self.interpolation_pts_entry = Entry(
-            self.transformation_section.content, category=2, state="disabled"
-        )
+
+# ---
+        self.geometry_section = GeometrySection(self.main_frame, self)
+
         self.data_section = Section(
             self.main_frame, title="Raw (Matlab) Data", category=2
         )
@@ -340,25 +288,25 @@ class PreprocessorWindow:
         :param input_value: User input value.
         """
         if input_value == "":
-            self.geometry.rotate(-self.hill_orientation)
+            self.hill.rotate(-self.hill_orientation)
             self.hill_orientation = 0.0
-            self.geometry.orientation = self.hill_orientation
+            self.hill.orientation = self.hill_orientation
             self.orientation_is_confirmed = False
             self.plot_hill()
             return True
         try:
             float(input_value)
-            self.geometry.rotate(float(input_value) - self.hill_orientation)
+            self.hill.rotate(float(input_value) - self.hill_orientation)
             self.hill_orientation = float(input_value)
-            self.geometry.orientation = self.hill_orientation
+            self.hill.orientation = self.hill_orientation
             self.orientation_is_confirmed = False
             self.plot_hill()
             return True
         except ValueError:
             self.on_invalid_input()
-            self.geometry.rotate(-self.hill_orientation)
+            self.hill.rotate(-self.hill_orientation)
             self.hill_orientation = 0.0
-            self.geometry.orientation = self.hill_orientation
+            self.hill.orientation = self.hill_orientation
             self.orientation_is_confirmed = False
             return False
 
@@ -377,23 +325,6 @@ class PreprocessorWindow:
 
         self.root.destroy()
 
-    def toggle_interpolation(self):
-        """Turn the data interpolation on/off."""
-        is_interpolation_enabled = self.checkbox_interpolation_var.get()
-        state = "normal" if is_interpolation_enabled else "disabled"
-
-        self.interpolation_pts_entry.config(state=state)
-        self.interpolation_pts_label.config(state=state)
-        self.checkbox_gradient.config(state=state)
-
-        if not is_interpolation_enabled:
-            self.checkbox_gradient_var.set(0)
-            self.checkbox_gradient_opt.config(state="disabled")
-            self.checkbox_gradient_opt_var.set(0)
-            self.slice_loader.load_button.config(state="disabled")
-            self.slice_loader.listbox.config(state="disabled")
-            self.slice_loader.status_label.config(state="disabled")
-            self.slice_zone_name.config(state="disabled")
 
     def toggle_gradient(self):
         """Turn the gradient calculation on/off."""
@@ -423,7 +354,7 @@ class PreprocessorWindow:
                 row=0, column=0, sticky="nsew"
             )
 
-        px, pz = self.geometry.calculate_perimeter()
+        px, pz = self.hill.calculate_perimeter()
         self.hill_ax.plot(px, pz, color="blue")
         self.hill_ax.set_xlabel(r"$x_1$ (m)", labelpad=10)
         self.hill_ax.set_ylabel(r"$x_3$ (m)", labelpad=10)
@@ -432,30 +363,7 @@ class PreprocessorWindow:
         self.hill_ax.set_aspect("equal")
         self.hill_canvas.draw()
 
-    def confirm_orientation(self):
-        """Confirm the user input hill orientation."""
-        self.orientation_is_confirmed = True
 
-    def toggle_pose_status(self, *args):
-        """Indicate the loading status of the pose parameters."""
-        status = self.pose_status_var.get()
-        if status:
-            self.pose_status_label.config(
-                fg="green", text="Successfully Loaded"
-            )
-        else:
-            self.pose_status_label.config(fg="red", text="Nothing Loaded")
-
-    def open_pose(self):
-        """Open the pose app."""
-        if self.orientation_is_confirmed:
-            PoseWindow(
-                self.root, self.piv, self.geometry, self.pose_status_var
-            )
-        else:
-            messagebox.showwarning(
-                "Warning", "You must first confirm the hill orientation."
-            )
 
     def validate_inputs(self) -> bool:
         """

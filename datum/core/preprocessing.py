@@ -1,15 +1,13 @@
-"""Define preprocessing functions."""
-import sys
+"""Define preprocessing core functions."""
 import numpy as np
 from typing import cast, Dict, Union
 from .piv import Piv
 from ..utility import apputils, mathutils, tputils
-from .load import load_raw_data
-from . import analysis, transform
+from . import analysis, load, transform
 
 
 def preprocess_data(
-    piv_obj: Piv,
+    piv: Piv,
     state: Dict[str, Union[bool, int, str]],
     opts: Dict[str, bool],
     data_paths: Dict[str, str],
@@ -17,7 +15,7 @@ def preprocess_data(
 ) -> bool:
     """Core preprocessing function.
 
-    :param piv_obj: PIV data container.
+    :param piv: PIV plane.
     :param state: User input variables from the GUI.
     :param opts: User input options from the GUI.
     :param data_paths: System paths to PIV datasets.
@@ -26,7 +24,7 @@ def preprocess_data(
     :return: `False` in case of an error, and `True` otherwise.
     :rtype: bool
     """
-    load_raw_data(piv_obj, data_paths, should_load, opts)
+    load.load_raw_data(piv, data_paths, should_load, opts)
     if piv_obj.data is None:
         return False
     if not state["compute_gradients"]:
