@@ -10,7 +10,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from ..core import preprocessing
 from ..core.beverli import Beverli
 from ..core.piv import Piv
+from .data_section import DataSection
 from .geometry_section import GeometrySection
+from .cfd_section import CfdSection
 from ..utility.configure import STYLES, system
 from .pose_window import PoseWindow
 from .widgets import (
@@ -40,9 +42,12 @@ class PreprocessorWindow:
 
         :param master: Parent window handle.
         """
-        # Resoures
+        # Shared resources
         self.hill = Beverli(use_cad=True)
         self.piv = Piv()
+
+        self.hill_orientation = 0.0
+        self.hill_orientation_confirmed = False
 
         # GUI
         self.root = tk.Toplevel(master)
@@ -66,98 +71,13 @@ class PreprocessorWindow:
 
     def create_widgets(self):
         """Create widget entities."""
-        self.create_geometry_section()
-        self.create_data_section()
-        self.create_cfd_section()
-        self.create_final_controls()
-
-        self.hill_orientation = 0.0
-        self.hill_orientation_confirmed = False
-
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
         self.main_frame = self.scrollable_canvas.frame
-
-# ---
         self.geometry_section = GeometrySection(self.main_frame, self)
-
-        self.data_section = Section(
-            self.main_frame, title="Raw (Matlab) Data", category=2
-        )
-        mat_type = [("Matlab Files", "*.mat"), ("All Files", "*.*")]
-        self.velocity_loader = FileLoader(
-            self.data_section.content,
-            title="Mean Velocity",
-            filetypes=mat_type,
-            category=2,
-        )
-        self.velocity_loader.checkbox_var.set(1)
-        self.velocity_loader.checkbox.config(state="disabled")
-        self.velocity_loader.load_button.config(state="normal")
-        self.velocity_loader.listbox.config(state="normal")
-        self.velocity_loader.status_label.config(state="normal")
-        self.checkbox_flip_u3 = Checkbutton(
-            self.data_section.content, category=2, text="Flip U3 Velocity"
-        )
-        self.checkbox_flip_u3_var = self.checkbox_flip_u3.var
-        self.stress_loader = FileLoader(
-            self.data_section.content,
-            title="Reynolds Stress",
-            filetypes=mat_type,
-            category=2,
-        )
-        self.dissipation_loader = FileLoader(
-            self.data_section.content,
-            title="Turbulence Dissipation",
-            filetypes=mat_type,
-            category=2,
-        )
-        self.inst_velocity_loader = FileLoader(
-            self.data_section.content,
-            title="Velocity Frame",
-            filetypes=mat_type,
-            category=2,
-        )
-        self.cfd_section = Section(
-            self.main_frame, title="Mean Velocity Gradient Tensor", category=1
-        )
-        self.checkbox_gradient = Checkbutton(
-            self.cfd_section.content,
-            category=1,
-            text="Enable combutation",
-            command=self.toggle_gradient,
-            state="disabled",
-        )
-        self.checkbox_gradient_var = self.checkbox_gradient.var
-        self.checkbox_gradient_opt = Checkbutton(
-            self.cfd_section.content,
-            category=1,
-            text=r"dUdZ and dVdZ from CFD",
-            state="disabled",
-        )
-        self.checkbox_gradient_opt_var = self.checkbox_gradient_opt.var
-        self.slice_loader = FileLoader(
-            self.cfd_section.content,
-            title="CFD Slice",
-            filetypes=[("Tecplot Slice", "*.dat"), ("All Files", "*.*")],
-            category=1,
-            isCheckable=False,
-        )
-        self.slice_loader.load_button.config(state="disabled")
-        self.slice_loader.listbox.config(state="disabled")
-        self.slice_loader.status_label.config(state="disabled")
-        self.slice_zone_name_label = Label(
-            self.cfd_section.content,
-            text="Slice Zone Name:",
-            category=1,
-            state="disabled",
-        )
-        self.slice_zone_name = Entry(
-            self.cfd_section.content, 1, state="disabled"
-        )
+        self.data_section = DataSection(self.main_frame, self)
+        self.cfd_section = CfdSection(self.main_frame, self)
         self.process_button = Button(
-            self.main_frame,
-            text="Preprocess Data",
-            command=self.preprocess_data,
+            self.main_frame, "Preprocess Data", command=self.preprocess_data,
         )
         self.process_button.config(width=200 if system == "Darwin" else 20)
 
@@ -165,14 +85,8 @@ class PreprocessorWindow:
         """Layout all widgets on the window."""
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(1, weight=1)
-        self.geometry_section.grid(
-            row=0,
-            column=0,
-            columnspan=2,
-            padx=PAD_S,
-            pady=PAD_S,
-            sticky="nsew",
-        )
+
+       
         self.geometry_section.content.grid(columnspan=2)
         self.geometry_section.content.grid_columnconfigure(0, weight=0)
         self.geometry_section.content.grid_columnconfigure(1, weight=1)
@@ -325,21 +239,6 @@ class PreprocessorWindow:
 
         self.root.destroy()
 
-
-    def toggle_gradient(self):
-        """Turn the gradient calculation on/off."""
-        is_gradient_enabled = self.checkbox_gradient_var.get()
-        state = "normal" if is_gradient_enabled else "disabled"
-        if state == "disabled":
-            self.checkbox_gradient_opt_var.set(0)
-
-        self.checkbox_gradient_opt.config(state=state)
-        self.slice_loader.load_button.config(state=state)
-        self.slice_loader.listbox.config(state=state)
-        self.slice_loader.status_label.config(state=state)
-        self.slice_zone_name_label.config(state=state)
-        self.slice_zone_name.config(state=state)
-
     def plot_hill(self):
         """Plot the hill contour."""
         if hasattr(self, "hill_fig") and hasattr(self, "hill_canvas"):
@@ -371,7 +270,7 @@ class PreprocessorWindow:
 
         :return: Boolean indicating whether all inputs are valid or not.
         """
-        if not self.pose_status_var.get():
+        if not self.geometry_section.pose_status_var.get():
             messagebox.showwarning(
                 "Warning",
                 "Pose data has not been loaded! Please load the pose data.",
