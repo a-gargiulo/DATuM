@@ -6,7 +6,7 @@ import numpy as np
 
 from ..utility import mathutils
 
-def calculate_eddy_viscosities(base_tensors: Dict[str, np.ndarray]) -> np.ndarray:
+def calculate_eddy_viscosity(base_tensors: Dict[str, np.ndarray]) -> np.ndarray:
     """Calculate the eddy viscosity from the experimental data.
 
     :param base_tensors: A dictionary containing the base tensors relevant to the

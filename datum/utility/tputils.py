@@ -25,7 +25,7 @@ def get_ijk(file_path: str) -> Tuple[int, ...]:
     return tuple(dimensions)
 
 
-def get_tecplot_derivatives(slice_path: str, zone_name: str, opts: Dict[str, bool]) -> Dict[str, np.ndarray]:
+def get_tecplot_derivatives(slice_path: str, zone_name: str, use_all: bool) -> Dict[str, np.ndarray]:
     """Extract the non-computable components of the mean velocity gradient tensor from
     CFD data using Tecplot.
 
@@ -34,8 +34,6 @@ def get_tecplot_derivatives(slice_path: str, zone_name: str, opts: Dict[str, boo
         the number of points in the x:sub:`1` and x:sub:`2 direction, respectively.
     """
     cfd_data = {}
-
-    use_all = opts["use_dwdx_and_dwdy_from_cfd"]
 
     tp.new_layout()
     dataset = tp.data.load_tecplot(slice_path)

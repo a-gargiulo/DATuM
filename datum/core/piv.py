@@ -1,6 +1,6 @@
 """This module defines the main PIV data container."""
 
-from typing import Optional
+from typing import Optional, TypedDict
 
 from ..utility import apputils
 from .my_types import PivData

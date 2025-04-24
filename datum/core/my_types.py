@@ -1,5 +1,5 @@
 """Define custom type alias."""
-from typing import Any, Callable, Dict, Tuple, TypedDict, Union
+from typing import Any, Callable, Dict, Tuple, TypedDict, Union, Optional
 
 import numpy as np
 import trimesh
@@ -7,7 +7,6 @@ import trimesh
 UserInputs = Dict[str, Union[bool, float, int, str]]
 
 NestedDict = Dict[str, Union["NestedDict", Any]]
-PivData = Dict[str, Union["PivData", np.ndarray]]
 CadGeometry = trimesh.Trimesh
 AnalyticGeometry = Dict[str, np.ndarray]
 HillGeometry = Union[CadGeometry, AnalyticGeometry]
@@ -78,6 +77,133 @@ class PoseMeasurement(TypedDict):
 
     calibration_plate_angle: CalibrationPlateAngle
     calibration_plate_location: CalibrationPlateLocation
+
+
+# PREPROCESSOR USER INPUTS 
+# -------------------------
+class PPInputs(TypedDict):
+    """Type definition for preprocessor user inputs."""
+
+    piv_data_paths: Dict[str, str]
+    load_set: Dict[str, bool]
+    flip_u3: bool
+    interpolate_data: bool
+    num_interpolation_pts: int
+    compute_gradients: bool
+    use_cfd_dwdx_and_dwdy: bool
+    slice_path: str
+    slice_name: str
+
+
+class Coordinates(TypedDict):
+    """Type definition for PIV coordinates."""
+
+    X: np.ndarray
+    Y: np.ndarray
+    Z: Optional[np.ndarray]
+
+
+class MeanVelocity(TypedDict):
+    """Type definition for PIV mean velocity."""
+
+    U: np.ndarray
+    V: np.ndarray
+    W: np.ndarray
+
+
+class ReynoldsStress(TypedDict):
+    """Type definition for PIV Reynolds stress."""
+
+    UU: np.ndarray
+    VV: np.ndarray
+    WW: np.ndarray
+    UV: np.ndarray
+    UW: np.ndarray
+    VW: np.ndarray
+
+
+class InstVelFrame(TypedDict):
+    """Type definition for PIV inst. velocity frame."""
+
+    U: np.ndarray
+    V: np.ndarray
+    W: np.ndarray
+
+
+class TurbulenceScales(TypedDict):
+    """Type definition for PIV turbulence scales."""
+
+    TKE: np.ndarray
+    EPSILON: Optional[np.ndarray]
+    NUT: Optional[np.ndarray]
+
+
+class MeanVelocityGradient(TypedDict):
+    """Type definition for PIV mean velocity gradient."""
+
+    dUdX: np.ndarray
+    dUdY: np.ndarray
+    dUdZ: np.ndarray
+    dVdX: np.ndarray
+    dVdY: np.ndarray
+    dVdZ: np.ndarray
+    dWdX: np.ndarray
+
+
+class StrainTensor(TypedDict):
+    """Type definition for PIV strain tensor."""
+
+    S11: np.ndarray
+    S12: np.ndarray
+    S13: np.ndarray
+    S21: np.ndarray
+    S22: np.ndarray
+    S23: np.ndarray
+    S31: np.ndarray
+    S32: np.ndarray
+    S33: np.ndarray
+
+
+class RotationTensor(TypedDict):
+    """Type definition for PIV rotation tensor."""
+
+    W11: np.ndarray
+    W12: np.ndarray
+    W13: np.ndarray
+    W21: np.ndarray
+    W22: np.ndarray
+    W23: np.ndarray
+    W31: np.ndarray
+    W32: np.ndarray
+    W33: np.ndarray
+
+
+class NormalizedRotationTensor(TypedDict):
+    """Type definition for PIV normalized rotation tensor."""
+
+    O11: np.ndarray
+    O12: np.ndarray
+    O13: np.ndarray
+    O21: np.ndarray
+    O22: np.ndarray
+    O23: np.ndarray
+    O31: np.ndarray
+    O32: np.ndarray
+    O33: np.ndarray
+
+
+class PivData(TypedDict):
+    """Type definition for PIV data structure."""
+
+    coordinates: Coordinates
+    mean_velocity: MeanVelocity
+    reynolds_stress: Optional[ReynoldsStress]
+    instantaneous_velocity_frame: Optional[InstVelFrame]
+    turbulence_scales: Optional[TurbulenceScales]
+    mean_velocity_gradient: Optional[MeanVelocityGradient]
+    strain_tensor: Optional[StrainTensor]
+    rotation_tensor: Optional[RotationTensor]
+    normalized_rotation_tensor: Optional[NormalizedRotationTensor]
 
 
 SecParams = Tuple[float, float, float, float, float, float, float, float]

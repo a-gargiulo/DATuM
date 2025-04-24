@@ -3,16 +3,19 @@
 import tkinter as tk
 from typing import TYPE_CHECKING
 
+from ..utility.configure import STYLES
 from .widgets import Checkbutton, FileLoader, Section
 
 if TYPE_CHECKING:
     from .preprocessor_window import PreprocessorWindow
 
+PAD_S = STYLES["pad"]["small"]
+
 
 class DataSection:
     """Data section of the preprocessor window."""
 
-    def __init__(self, parent: tk.Frame, controller: PreprocessorWindow):
+    def __init__(self, parent: tk.Frame, controller: "PreprocessorWindow"):
         """Construct the data section.
 
         :param parent: Parent frame handle.
@@ -56,4 +59,31 @@ class DataSection:
             "Velocity Frame",
             mat_type,
             2,
+        )
+
+    def layout(self):
+        """Layout all widget entities."""
+        self.section.grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
+        )
+        self.content.grid_columnconfigure(0, weight=1)
+        self.velocity_loader.grid(
+            row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.checkbox_flip_u3.grid(
+            row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.stress_loader.grid(
+            row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.dissipation_loader.grid(
+            row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.inst_velocity_loader.grid(
+            row=3, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )

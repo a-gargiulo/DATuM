@@ -1,4 +1,4 @@
-"""Pose calculator application window."""  # -- Editing DONE -- 04/15/2025
+"""Pose calculator application window."""
 
 import sys
 import tkinter as tk

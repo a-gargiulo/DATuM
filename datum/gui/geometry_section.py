@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class GeometrySection:
     """Geometry section of the preprocessor window."""
 
-    def __init__(self, parent: tk.Frame, controller: PreprocessorWindow):
+    def __init__(self, parent: tk.Frame, controller: "PreprocessorWindow"):
         """Construct the geometry section.
 
         :param parent: Parent frame handle.
@@ -28,7 +28,6 @@ class GeometrySection:
         self.section = Section(parent, "Geometry", 1)
         self.content = self.section.content
         self.hill_plot = Frame(self.content, 1, bd=2, relief="solid")
-
         self.general_section = Section(self.content, "General", 2)
         self.general = self.general_section.content
         self.hill_orientation_lbl = Label(
@@ -44,7 +43,6 @@ class GeometrySection:
             "Confirm",
             command=self.confirm_hill_orientation,
         )
-
         self.transformation_section = Section(
             self.content, "Pose & Transformation (Local PIV -> Global SWT)", 2
         )
@@ -69,7 +67,7 @@ class GeometrySection:
         )
         self.checkbox_interpolation_var = self.checkbox_interpolation.var
         self.interpolation_pts_lbl = Label(
-            self.transformation_section.content,
+            self.transformation,
             text="Number of interp. grid points:",
             category=2,
             state="disabled",
@@ -78,8 +76,9 @@ class GeometrySection:
             self.transformation, 2, state="disabled"
         )
 
-    def layout():
-        self.geometry_section.grid(
+    def layout(self):
+        """Layout all widgets entities."""
+        self.section.grid(
             row=0,
             column=0,
             columnspan=2,
@@ -87,7 +86,58 @@ class GeometrySection:
             pady=PAD_S,
             sticky="nsew",
         )
-
+        self.content.grid(columnspan=2)
+        self.content.grid_columnconfigure(0, weight=0)
+        self.content.grid_columnconfigure(1, weight=1)
+        self.hill_plot.grid(
+            row=0,
+            column=0,
+            rowspan=2,
+            padx=(0, PAD_S),
+            pady=PAD_S,
+            sticky="nsew",
+        )
+        self.general_section.grid(
+            row=0, column=1, padx=(PAD_S, 0), pady=PAD_S, sticky="nsew"
+        )
+        self.general.grid(columnspan=3)
+        self.general.grid_columnconfigure(0, weight=0)
+        self.general.grid_columnconfigure(1, weight=1)
+        self.general.grid_columnconfigure(2, weight=1)
+        self.hill_orientation_lbl.grid(
+            row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw"
+        )
+        self.hill_orientation_entry.grid(
+            row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.hill_orientation_button.grid(
+            row=0, column=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.transformation_section.grid(
+            row=1, column=1, padx=(PAD_S, 0), pady=PAD_S, sticky="nsew"
+        )
+        self.transformation.grid(columnspan=3)
+        self.transformation.grid_columnconfigure(0, weight=1)
+        self.transformation.grid_columnconfigure(1, weight=1)
+        self.transformation.grid_columnconfigure(2, weight=1)
+        self.pose_button.grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
+        )
+        self.pose_status_lbl.grid(row=0, column=2, padx=PAD_S, sticky="nsew")
+        self.checkbox_interpolation.grid(
+            row=1, column=0, padx=PAD_S, sticky="nsew"
+        )
+        self.interpolation_pts_lbl.grid(
+            row=2, column=0, padx=PAD_S, pady=PAD_S, columnspan=2, sticky="nsw"
+        )
+        self.interpolation_pts_entry.grid(
+            row=2, column=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
 
     def confirm_hill_orientation(self):
         """Confirm the hill orientation input by the user."""
@@ -108,16 +158,26 @@ class GeometrySection:
 
         self.interpolation_pts_entry.config(state=state)
         self.interpolation_pts_lbl.config(state=state)
-        self.controller.checkbox_gradient.config(state=state)
+        self.controller.cfd_section.checkbox_gradient.config(state=state)
 
         if not interpolation_enabled:
-            self.controller.checkbox_gradient_var.set(0)
-            self.controller.checkbox_gradient_opt.config(state="disabled")
-            self.controller.checkbox_gradient_opt_var.set(0)
-            self.controller.slice_loader.load_button.config(state="disabled")
-            self.controller.slice_loader.listbox.config(state="disabled")
-            self.controller.slice_loader.status_label.config(state="disabled")
-            self.controller.slice_zone_name.config(state="disabled")
+            self.controller.cfd_section.checkbox_gradient_var.set(0)
+            self.controller.cfd_section.checkbox_gradient_opt.config(
+                state="disabled"
+            )
+            self.controller.cfd_section.checkbox_gradient_opt_var.set(0)
+            self.controller.cfd_section.slice_loader.load_button.config(
+                state="disabled"
+            )
+            self.controller.cfd_section.slice_loader.listbox.config(
+                state="disabled"
+            )
+            self.controller.cfd_section.slice_loader.status_label.config(
+                state="disabled"
+            )
+            self.controller.cfd_section.slice_zone_name.config(
+                state="disabled"
+            )
 
     def open_pose_window(self):
         """Open the pose calculator window."""
