@@ -6,7 +6,15 @@ import numpy as np
 
 from ..utility import apputils, mathutils, tputils
 from . import analysis, load, transform
-from .my_types import PivData, PPInputs, MeanVelocityGradient, StrainTensor, RotationTensor, NormalizedRotationTensor, TurbulenceScales
+from .my_types import (
+    MeanVelocityGradient,
+    NestedDict,
+    NormalizedRotationTensor,
+    PPInputs,
+    RotationTensor,
+    StrainTensor,
+    TurbulenceScales,
+)
 
 if TYPE_CHECKING:
     from .piv import Piv
@@ -40,7 +48,9 @@ def preprocess_data(piv: "Piv", ui: PPInputs) -> bool:
         if piv.pose.angle2 != 0.0:
             piv.data["coordinates"]["Z"] = piv.data["coordinates"]["X"]
 
-    apputils.write_pickle("./outputs/preprocessed.pkl", piv.data)
+    apputils.write_pickle(
+        "./outputs/preprocessed.pkl", cast(NestedDict, piv.data)
+    )
     return True
 
 
@@ -146,12 +156,12 @@ def calculate_strain_and_rotation_tensor(piv: "Piv"):
         for j in range(3)
     }
     piv.data["rotation_tensor"] = cast(RotationTensor, W)
-    OW = {
+    Wn = {
         f"O_{i+1}{j+1}": base_tensors["O"][i, j]
         for i in range(3)
         for j in range(3)
     }
-    piv.data["normalized_rotation_tensor"] = cast(NormalizedRotationTensor, OW)
+    piv.data["normalized_rotation_tensor"] = cast(NormalizedRotationTensor, Wn)
 
 
 def calculate_eddy_viscosity(piv: "Piv"):
@@ -162,6 +172,6 @@ def calculate_eddy_viscosity(piv: "Piv"):
     assert piv.data is not None
 
     base_tensors = analysis.get_base_tensors(piv)
-    (
-        cast(TurbulenceScales, piv.data["turbulence_scales"])["NUT"]
-    ) = analysis.calculate_eddy_viscosity(base_tensors)
+    (cast(TurbulenceScales, piv.data["turbulence_scales"])["NUT"]) = (
+        analysis.calculate_eddy_viscosity(base_tensors)
+    )

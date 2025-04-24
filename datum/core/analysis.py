@@ -9,10 +9,11 @@ from ..utility import mathutils
 def calculate_eddy_viscosity(base_tensors: Dict[str, np.ndarray]) -> np.ndarray:
     """Calculate the eddy viscosity from the experimental data.
 
-    :param base_tensors: A dictionary containing the base tensors relevant to the
-        constitutive relations
-    :return: The eddy viscosity as a NumPy ndarray of shape (n, n), where n represents
-        the available number of data points on the interpolation grid.
+    :param base_tensors: A dictionary containing the base tensors
+        relevant to the constitutive relations
+    :return: The eddy viscosity as a NumPy ndarray of shape (n, n),
+        where n represents the available number of data points on the
+        interpolation grid.
     """
     r_mat = base_tensors["R"]
     s_mat = base_tensors["S"]
@@ -28,7 +29,8 @@ def calculate_eddy_viscosity(base_tensors: Dict[str, np.ndarray]) -> np.ndarray:
 
 
 def get_base_tensors(piv_obj) -> Dict[str, np.ndarray]:
-    """Obtain the base tensors for the analysis of the selected constitutive relations.
+    """Obtain the base tensors for the analysis of the selected constitutive
+    relations.
 
     :param piv_obj: An instance of the :py:class:`datum.piv.Piv` class, containing the
         BeVERLI stereo PIV data.
@@ -178,18 +180,22 @@ def construct_mean_velocity_gradient_tensor(piv_obj) -> np.ndarray:
 
 
 def calculate_alignment_tensor(lhs: np.ndarray, rhs: np.ndarray) -> np.ndarray:
-    """Calculate the "cosine" angle between two model tensors, i.e., the left-hand-side
-    and right-hand-side tensors of the analyzed constitutive relation.
+    """Calculate the "cosine" angle between two model tensors, i.e., the left-
+    hand-side and right-hand-side tensors of the analyzed constitutive
+    relation.
 
-    :param lhs: A NumPy ndarray of shape (3, 3, n, n), representing the left-hand-side
-        tensor of the analyzed constitutive relation at each spatial point of the
-        interpolation grid, where n is the number of grid points.
-    :param rhs: A NumPy ndarray of shape (3, 3, n, n), representing the right-hand-side
-        tensor of the analyzed constitutive relation at each spatial point of the
-        interpolation grid, where n is the number of grid points.
-    :return: A NumPy ndarray of shape (n, n) representing the cosine angle between the
-        left-hand-side and the right-hand-side tensors of the analyzed constitutive
-        relation at each spatial point of the interpolation grid.
+    :param lhs: A NumPy ndarray of shape (3, 3, n, n), representing the
+        left-hand-side tensor of the analyzed constitutive relation at
+        each spatial point of the interpolation grid, where n is the
+        number of grid points.
+    :param rhs: A NumPy ndarray of shape (3, 3, n, n), representing the
+        right-hand-side tensor of the analyzed constitutive relation at
+        each spatial point of the interpolation grid, where n is the
+        number of grid points.
+    :return: A NumPy ndarray of shape (n, n) representing the cosine
+        angle between the left-hand-side and the right-hand-side tensors
+        of the analyzed constitutive relation at each spatial point of
+        the interpolation grid.
     """
     # Reshaping
     lhs_reshaped = lhs.transpose(2, 3, 0, 1)
@@ -224,10 +230,10 @@ def calculate_alignment_tensor(lhs: np.ndarray, rhs: np.ndarray) -> np.ndarray:
 def boussinesq_alignment(base_tensors: Dict[str, np.ndarray]) -> np.ndarray:
     """Perform the alignment analysis for the Boussinesq model.
 
-    :param base_tensors: A dictionary containing the base tensors relevant to the
-        constitutive relations
-    :return: A NumPy ndarray of shape (n, n), where n represents the available number
-        of data points on the interpolation grid.
+    :param base_tensors: A dictionary containing the base tensors
+        relevant to the constitutive relations
+    :return: A NumPy ndarray of shape (n, n), where n represents the
+        available number of data points on the interpolation grid.
     """
     r_mat = base_tensors["R"]
     s_mat = base_tensors["S"]
@@ -243,12 +249,12 @@ def boussinesq_alignment(base_tensors: Dict[str, np.ndarray]) -> np.ndarray:
 def qcr_alignment(base_tensors: Dict[str, np.ndarray], version: int) -> np.ndarray:
     """Perform the alignment analysis for the QCR model.
 
-    :param base_tensors: A dictionary containing the base tensors relevant to the
-        constitutive relations
-    :param version: An integer representing the specific version of the QCR model to
-        test.
-    :return: A NumPy ndarray of shape (n, n), where n represents the available number
-        of data points on the interpolation grid.
+    :param base_tensors: A dictionary containing the base tensors
+        relevant to the constitutive relations
+    :param version: An integer representing the specific version of the
+        QCR model to test.
+    :return: A NumPy ndarray of shape (n, n), where n represents the
+        available number of data points on the interpolation grid.
     """
     # Constants
     c_qcr_1 = 0.3
@@ -580,7 +586,7 @@ def construct_pope_integrity_basis(
 
 
 def threshold_map(rank: int, model_order: int) -> int:
-    """Map for thresholding
+    """Map for thresholding.
 
     :param rank: The rank of the tensor
     :param model_order: The model order
