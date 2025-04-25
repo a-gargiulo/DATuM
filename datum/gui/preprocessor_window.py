@@ -222,9 +222,6 @@ class PreprocessorWindow:
         ui: PPInputs = {
             "piv_data_paths": self.fetch_raw_data_paths(),
             "load_set": {
-                "mean_velocity": bool(
-                    self.data_section.velocity_loader.checkbox_var.get()
-                ),
                 "reynolds_stress": bool(
                     self.data_section.stress_loader.checkbox_var.get()
                 ),

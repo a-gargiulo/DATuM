@@ -15,76 +15,10 @@ if TYPE_CHECKING:
     from .piv import Piv
 
 
-def get_rotation_matrix(
-    rotation_angle_deg: float, rotation_axis: Tuple[float, float, float]
-) -> np.ndarray:
-    """Get the rotation matrix.
-
-    The matrix is for a body's Euler rotation about a specified axis of its
-    Cartesian coordinate system.
-
-    :param rotation_angle_deg: Rotation angle in degrees.
-    :param rotation_axis: 3D vector components of the axis of rotation.
-
-    :return: Rotation matrix as NumPy array of shape (3, 3).
-    :rtype: np.ndarray
-    """
-    angle_rad = np.deg2rad(rotation_angle_deg)
-    axis = calculate_unit_vector(rotation_axis)
-
-    cosa = np.cos(angle_rad)
-    sina = np.sin(angle_rad)
-
-    # rotation matrix around unit vector
-    matrix = np.diag([cosa, cosa, cosa])
-    matrix += np.outer(axis, axis) * (1.0 - cosa)
-    axis = axis * sina
-    matrix += np.array(
-        [
-            [0.0, -axis[2], axis[1]],
-            [axis[2], 0.0, -axis[0]],
-            [-axis[1], axis[0], 0.0],
-        ]
-    )
-
-    return matrix
 
 
-def calculate_unit_vector(data: Tuple[float, float, float]) -> np.ndarray:
-    """Normalize a 3D vector.
-
-    :param data: 3D vector components.
-
-    :return: The normalized vector as NumPy array of shape (3, ).
-    :rtype: np.ndarray
-    """
-    np_data = np.array(data, dtype=np.float64)
-    np_data /= np.sqrt(np.dot(np_data, np_data))
-    return np_data
 
 
-def rotate_data(piv: "Piv"):
-    """Rotate all PIV data from local to global coordinates."""
-    rotation_matrix = _obtain_rotation_matrix(piv)
-
-    data_to_rotate = [
-        ("coordinates", ["X", "Y"]),
-        ("mean_velocity", ["U", "V", "W"]),
-        (
-            "reynolds_stress",
-            ["UU", "UV", "UW", "UV", "VV", "VW", "UW", "VW", "WW"],
-        ),
-        ("instantaneous_velocity_frame", ["U", "V", "W"]),
-    ]
-
-    # Rotate data
-    for quantity, components in data_to_rotate:
-        is_avail = piv.search(quantity)
-
-        if is_avail:
-            rotate_flow_quantity(
-                piv, quantity, components, rotation_matrix
-            )
 
 
 def _obtain_rotation_matrix(piv: "Piv"):

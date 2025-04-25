@@ -95,12 +95,12 @@ class PPInputs(TypedDict):
     slice_name: str
 
 
-class Coordinates(TypedDict):
+class Coordinates(TypedDict, total=False):
     """Type definition for PIV coordinates."""
 
     X: np.ndarray
     Y: np.ndarray
-    Z: Optional[np.ndarray]
+    Z: np.ndarray
 
 
 class MeanVelocity(TypedDict):
@@ -130,12 +130,12 @@ class InstVelFrame(TypedDict):
     W: np.ndarray
 
 
-class TurbulenceScales(TypedDict):
+class TurbulenceScales(TypedDict, total=False):
     """Type definition for PIV turbulence scales."""
 
     TKE: np.ndarray
-    EPSILON: Optional[np.ndarray]
-    NUT: Optional[np.ndarray]
+    EPSILON: np.ndarray
+    NUT: np.ndarray
 
 
 class MeanVelocityGradient(TypedDict):
@@ -192,18 +192,20 @@ class NormalizedRotationTensor(TypedDict):
     O33: np.ndarray
 
 
-class PivData(TypedDict):
+class PivData(TypedDict, total=False):
     """Type definition for PIV data structure."""
 
     coordinates: Coordinates
     mean_velocity: MeanVelocity
-    reynolds_stress: Optional[ReynoldsStress]
-    instantaneous_velocity_frame: Optional[InstVelFrame]
-    turbulence_scales: Optional[TurbulenceScales]
-    mean_velocity_gradient: Optional[MeanVelocityGradient]
-    strain_tensor: Optional[StrainTensor]
-    rotation_tensor: Optional[RotationTensor]
-    normalized_rotation_tensor: Optional[NormalizedRotationTensor]
+    reynolds_stress: ReynoldsStress
+    instantaneous_velocity_frame: InstVelFrame
+    turbulence_scales: TurbulenceScales
+    mean_velocity_gradient: MeanVelocityGradient
+    strain_tensor: StrainTensor
+    rotation_tensor: RotationTensor
+    normalized_rotation_tensor: NormalizedRotationTensor
 
 
 SecParams = Tuple[float, float, float, float, float, float, float, float]
+
+Vec3 = Tuple[float, float, float]

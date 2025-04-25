@@ -30,28 +30,29 @@ def preprocess_data(piv: "Piv", ui: PPInputs) -> bool:
     :rtype: bool
     """
     load.load_raw_data(piv, ui)
-    if piv.data is None:
-        print("[ERROR]: PIV data could not be loaded correctly.")
+
+    try:
+        if ui["interpolate_data"]:
+            if piv.pose.angle2 != 0.0:
+                print("[ERROR]: Interpolation not allowed for diagonal planes.")
+                return False
+            transform_data(piv, ui["num_interpolation_pts"])
+            if ui["compute_gradients"]:
+                calculate_velocity_gradient(piv, ui)
+                calculate_strain_and_rotation_tensor(piv)
+                calculate_eddy_viscosity(piv)
+        else:
+            transform_data_no_interp(piv)
+            if piv.pose.angle2 != 0.0:
+                piv.data["coordinates"]["Z"] = piv.data["coordinates"]["X"]
+
+        apputils.write_pickle(
+            "./outputs/preprocessed.pkl", cast(NestedDict, piv.data)
+        )
+        return True
+    except ValueError:
+        print("[ERROR]: PIV data was not loaded correctly.")
         return False
-
-    if ui["interpolate_data"]:
-        if piv.pose.angle2 != 0.0:
-            print("[ERROR]: Interpolation not allowed for diagonal planes.")
-            return False
-        transform_data(piv, ui["num_interpolation_pts"])
-        if ui["compute_gradients"]:
-            calculate_velocity_gradient(piv, ui)
-            calculate_strain_and_rotation_tensor(piv)
-            calculate_eddy_viscosity(piv)
-    else:
-        transform_data_no_interp(piv)
-        if piv.pose.angle2 != 0.0:
-            piv.data["coordinates"]["Z"] = piv.data["coordinates"]["X"]
-
-    apputils.write_pickle(
-        "./outputs/preprocessed.pkl", cast(NestedDict, piv.data)
-    )
-    return True
 
 
 def transform_data(piv: "Piv", num_interp_pts: int):

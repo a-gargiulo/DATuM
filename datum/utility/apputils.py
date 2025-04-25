@@ -3,7 +3,9 @@ import json
 import sys
 import os
 import pickle
-from typing import Optional
+from typing import Optional, Dict
+import scipy.io as scio
+import numpy as np
 
 # from . import parser
 from ..core.my_types import (
@@ -254,6 +256,13 @@ def write_pickle(file_path: str, dictionary: NestedDict) -> None:
         pickle.dump(dictionary, file)
     print(f"--> File '{os.path.basename(file_path)}' created.\n")
 
+
+def safe_loadmat(path: str) -> Dict[str, np.ndarray]:
+    """Safely load a .mat file, raising a descriptive error if it fails."""
+    try:
+        return scio.loadmat(path)
+    except Exception as e:
+        raise RuntimeError(f"Failed to load .mat file at {path}: {e}") from e
 
 # def get_output_file_path() -> str:
 #     """Obtains the output file system path for the processed BeVERLI Hill stereo
