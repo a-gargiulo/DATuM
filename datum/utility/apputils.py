@@ -3,7 +3,7 @@ import json
 import sys
 import os
 import pickle
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 import scipy.io as scio
 import numpy as np
 
@@ -17,6 +17,7 @@ from ..core.my_types import (
     CalibrationPlateLocation,
     Triangulation,
     PoseMeasurement,
+    PivData
 )
 
 

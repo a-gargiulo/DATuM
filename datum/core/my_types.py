@@ -79,7 +79,7 @@ class PoseMeasurement(TypedDict):
     calibration_plate_location: CalibrationPlateLocation
 
 
-# PREPROCESSOR USER INPUTS 
+# PREPROCESSOR USER INPUTS
 # -------------------------
 class PPInputs(TypedDict):
     """Type definition for preprocessor user inputs."""
@@ -95,12 +95,12 @@ class PPInputs(TypedDict):
     slice_name: str
 
 
-class Coordinates(TypedDict, total=False):
+class Coordinates(TypedDict):
     """Type definition for PIV coordinates."""
 
     X: np.ndarray
     Y: np.ndarray
-    Z: np.ndarray
+    Z: Optional[np.ndarray]
 
 
 class MeanVelocity(TypedDict):
@@ -122,7 +122,7 @@ class ReynoldsStress(TypedDict):
     VW: np.ndarray
 
 
-class InstVelFrame(TypedDict):
+class VelocitySnapshot(TypedDict):
     """Type definition for PIV inst. velocity frame."""
 
     U: np.ndarray
@@ -130,12 +130,12 @@ class InstVelFrame(TypedDict):
     W: np.ndarray
 
 
-class TurbulenceScales(TypedDict, total=False):
+class TurbulenceScales(TypedDict):
     """Type definition for PIV turbulence scales."""
 
-    TKE: np.ndarray
-    EPSILON: np.ndarray
-    NUT: np.ndarray
+    TKE: Optional[np.ndarray]
+    EPSILON: Optional[np.ndarray]
+    NUT: Optional[np.ndarray]
 
 
 class MeanVelocityGradient(TypedDict):
@@ -192,18 +192,18 @@ class NormalizedRotationTensor(TypedDict):
     O33: np.ndarray
 
 
-class PivData(TypedDict, total=False):
+class PivData(TypedDict):
     """Type definition for PIV data structure."""
 
     coordinates: Coordinates
     mean_velocity: MeanVelocity
-    reynolds_stress: ReynoldsStress
-    instantaneous_velocity_frame: InstVelFrame
-    turbulence_scales: TurbulenceScales
-    mean_velocity_gradient: MeanVelocityGradient
-    strain_tensor: StrainTensor
-    rotation_tensor: RotationTensor
-    normalized_rotation_tensor: NormalizedRotationTensor
+    reynolds_stress: Optional[ReynoldsStress]
+    velocity_snapshot: Optional[VelocitySnapshot]
+    turbulence_scales: Optional[TurbulenceScales]
+    mean_velocity_gradient: Optional[MeanVelocityGradient]
+    strain_tensor: Optional[StrainTensor]
+    rotation_tensor: Optional[RotationTensor]
+    normalized_rotation_tensor: Optional[NormalizedRotationTensor]
 
 
 SecParams = Tuple[float, float, float, float, float, float, float, float]

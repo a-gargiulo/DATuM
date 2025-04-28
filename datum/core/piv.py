@@ -1,9 +1,9 @@
 """This module defines the main PIV data container."""
 
-from typing import Optional, TypedDict
+from typing import Optional, cast
 
 from ..utility import apputils
-from .my_types import PivData
+from .my_types import PivData, NestedDict
 from .pose import Pose
 
 
@@ -39,7 +39,10 @@ class Piv:
 
         :param quantity: Quantity to be searched within the PIV data.
         """
-        if self.data:
-            return apputils.search_nested_dict(self.data, quantity)
-        else:
+        try:
+            return apputils.search_nested_dict(
+                cast(NestedDict, self.data), quantity
+            )
+        except ValueError as e:
+            print(f"[ERROR]: {e}")
             return False

@@ -207,7 +207,7 @@ class PreprocessorWindow:
             (self.data_section.dissipation_loader, "turbulence_dissipation"),
             (
                 self.data_section.inst_velocity_loader,
-                "instantaneous_velocity_frame",
+                "velocity_snapshot",
             ),
         ]
 
@@ -228,7 +228,7 @@ class PreprocessorWindow:
                 "turbulence_dissipation": bool(
                     self.data_section.dissipation_loader.checkbox_var.get()
                 ),
-                "instantaneous_velocity_frame": bool(
+                "velocity_snapshot": bool(
                     self.data_section.inst_velocity_loader.checkbox_var.get()
                 ),
             },

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, cast
 import numpy as np
 
 from ..utility import apputils, mathutils, tputils
-from . import analysis, load, transform
+from . import analysis, io, transform
 from .my_types import (
     MeanVelocityGradient,
     NestedDict,
@@ -30,7 +30,7 @@ def preprocess_data(piv: "Piv", ui: PPInputs) -> bool:
     :rtype: bool
     """
     try:
-        load.load_raw_data(piv, ui)
+        io.load.load_raw_data(piv, ui)
         if ui["interpolate_data"]:
             if piv.pose.angle2 != 0.0:
                 raise ValueError("No interpolation for diagonal planes.")
@@ -42,11 +42,7 @@ def preprocess_data(piv: "Piv", ui: PPInputs) -> bool:
         else:
             transform_data_no_interp(piv)
             if piv.pose.angle2 != 0.0:
-                coordinates = piv.data.get("coordinates")
-                if coordinates is not None and "X" in coordinates:
-                    coordinates["Z"] = coordinates["X"]
-                else:
-                    raise ValueError("PIV coordinates were not loaded.")
+                piv.data["coordinates"]["Z"] = piv.data["coordinates"]["X"]
 
         apputils.write_pickle(
             "./outputs/preprocessed.pkl", cast(NestedDict, piv.data)
@@ -63,10 +59,10 @@ def transform_data(piv: "Piv", num_interp_pts: int):
     :param piv: PIV data.
     :param num_interp_pts: Number of grid points for interpolation.
     """
-    transform.rotate_data(piv)
-    transform.interpolate_data(piv, num_interp_pts)
-    transform.translate_data(piv)
-    transform.scale_coordinates(piv, scale_factor=1e-3)
+    transform.rotation.rotate_all(piv)
+    transform.interpolation.interpolate_all(piv, num_interp_pts)
+    transform.translation.translate_all(piv)
+    transform.scaling.scale_all(piv, scale_factor=1e-3)
 
 
 def transform_data_no_interp(piv: "Piv"):
@@ -74,9 +70,9 @@ def transform_data_no_interp(piv: "Piv"):
 
     :param piv: PIV data.
     """
-    transform.rotate_data(piv)
-    transform.translate_data(piv)
-    transform.scale_coordinates(piv, scale_factor=1e-3)
+    transform.rotation.rotate_all(piv)
+    transform.translation.translate_all(piv)
+    transform.scaling.scale_all(piv, scale_factor=1e-3)
 
 
 def calculate_velocity_gradient(piv: "Piv", ui: PPInputs):
