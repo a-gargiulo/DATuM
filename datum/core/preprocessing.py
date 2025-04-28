@@ -29,13 +29,11 @@ def preprocess_data(piv: "Piv", ui: PPInputs) -> bool:
     :return: False in case of an error. True otherwise.
     :rtype: bool
     """
-    load.load_raw_data(piv, ui)
-
     try:
+        load.load_raw_data(piv, ui)
         if ui["interpolate_data"]:
             if piv.pose.angle2 != 0.0:
-                print("[ERROR]: Interpolation not allowed for diagonal planes.")
-                return False
+                raise ValueError("No interpolation for diagonal planes.")
             transform_data(piv, ui["num_interpolation_pts"])
             if ui["compute_gradients"]:
                 calculate_velocity_gradient(piv, ui)
@@ -44,14 +42,18 @@ def preprocess_data(piv: "Piv", ui: PPInputs) -> bool:
         else:
             transform_data_no_interp(piv)
             if piv.pose.angle2 != 0.0:
-                piv.data["coordinates"]["Z"] = piv.data["coordinates"]["X"]
+                coordinates = piv.data.get("coordinates")
+                if coordinates is not None and "X" in coordinates:
+                    coordinates["Z"] = coordinates["X"]
+                else:
+                    raise ValueError("PIV coordinates were not loaded.")
 
         apputils.write_pickle(
             "./outputs/preprocessed.pkl", cast(NestedDict, piv.data)
         )
         return True
-    except ValueError:
-        print("[ERROR]: PIV data was not loaded correctly.")
+    except Exception as e:
+        print(f"[ERROR]: PIV data was not loaded correctly. {e}.")
         return False
 
 
