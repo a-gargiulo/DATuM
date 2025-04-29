@@ -27,6 +27,7 @@ class GeometrySection:
 
         self.section = Section(parent, "Geometry", 1)
         self.content = self.section.content
+
         self.hill_plot = Frame(self.content, 1, bd=2, relief="solid")
         self.general_section = Section(self.content, "General", 2)
         self.general = self.general_section.content
@@ -42,6 +43,9 @@ class GeometrySection:
             self.general,
             "Confirm",
             command=self.confirm_hill_orientation,
+        )
+        self.hill_orientation_entry.bind(
+            "<Return>", self.on_hill_orientation_return
         )
         self.transformation_section = Section(
             self.content, "Pose & Transformation (Local PIV -> Global SWT)", 2
@@ -75,6 +79,13 @@ class GeometrySection:
         self.interpolation_pts_entry = Entry(
             self.transformation, 2, state="disabled"
         )
+
+    def on_hill_orientation_return(self, event):
+        """Binding function for hill orientation entry."""
+        self.hill_orientation_entry.bind(
+            "<Return>", self.hill_plot.focus_set()
+        )
+        self.confirm_hill_orientation()
 
     def layout(self):
         """Layout all widgets entities."""
@@ -142,6 +153,11 @@ class GeometrySection:
     def confirm_hill_orientation(self):
         """Confirm the hill orientation input by the user."""
         self.controller.hill_orientation_confirmed = True
+        messagebox.showinfo(
+            "SUCCESS!",
+            "Hill orientation confirmed.",
+            parent=self.controller.root
+        )
 
     def toggle_pose_status(self, *args):
         """Indicate the completion status of the PIV plane pose calculation."""

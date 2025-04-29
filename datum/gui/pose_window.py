@@ -2,6 +2,7 @@
 
 import sys
 import tkinter as tk
+from tkinter import messagebox
 from typing import Tuple, cast
 
 import matplotlib.pyplot as plt
@@ -11,7 +12,7 @@ from matplotlib import patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.widgets import Cursor
 
-from ..core import transform
+from datum.core import transform
 from ..core.beverli import Beverli
 from ..core.my_types import TransformationParameters
 from ..core.piv import Piv
@@ -63,6 +64,7 @@ class PoseWindow:
         self.status = calculation_status
 
         # GUI
+        self.master = master
         self.root = tk.Toplevel(master)
         self.configure_root()
         self.create_widgets()
@@ -79,6 +81,7 @@ class PoseWindow:
         if hasattr(self, "glob_canvas"):
             self.glob_canvas.get_tk_widget().destroy()
         self.root.destroy()
+        self.master.lift()
 
     def configure_root(self):
         """Configure the window."""
@@ -368,7 +371,7 @@ class PoseWindow:
             lvl = CALCULATION_MODES[2][0]
         self.layout_widgets(lvl)
 
-    def plot_calplate(self, case: str):
+    def plot_calplate(self, case: str) -> None:
         """Plot the calibration plate image.
 
         :param case: Calculation mode identifier.
@@ -386,8 +389,18 @@ class PoseWindow:
             )
 
         cal_img_path = self.calplate_loader.get_listbox_content()
+
+        # try:
         cal_img = np.loadtxt(cal_img_path, skiprows=CALIBRATION_IMG_SKIPROWS)
         dims = tputils.get_ijk(cal_img_path)
+        # except Exception as e:
+        #     messagebox.showerror(
+        #         "ERROR!",
+        #         "Invalid calibration plate image. Reload a valid image and "
+        #         "try again."
+        #     )
+        #     return
+
         img_coords_mm = np.array(
             [np.reshape(cal_img[:, i], (dims[1], dims[0])) for i in range(2)]
         )
@@ -406,10 +419,10 @@ class PoseWindow:
                 self.layout_widgets("all")
                 return
             rotation_angle_deg = self.global_pose[6]
-        rotation_matrix = transform.get_rotation_matrix(
-            rotation_angle_deg, (0, 0, 1)
+        rotation_matrix = transform.rotation.get_rotation_matrix(
+            rotation_angle_deg, "z"
         )
-        img_coords_mm = transform.rotate_planar_vector_field(
+        img_coords_mm = transform.rotation.rotate_vector_planar(
             img_coords_mm, rotation_matrix
         )
 

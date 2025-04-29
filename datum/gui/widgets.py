@@ -188,6 +188,8 @@ class FileLoader(tk.Frame):
 
     def _load_files(self):
         file_path = filedialog.askopenfilename(filetypes=self._filetypes)
+        self._parent.lift()
+        self._parent.focus_force()
 
         self.listbox.delete(0, tk.END)
 

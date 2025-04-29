@@ -10,8 +10,12 @@ def get_ijk(file_path: str) -> Tuple[int, ...]:
     """Obtain the dimensions of an ijk-ordered Tecplot data set.
 
     :param file_path: The path to the Tecplot file.
-
+    :raises FileNotFoundError: If the file does not exist.
+    :raises ValueError: If the file contains non-numeric data or has
+        inconsistent row lengths.
+    :raises OSError: For other I/O related errors (e.g., permission issues).
     :return: The dimensions of the data.
+    :rtype: Tuple[int, ...]
     """
     dimensions = []
     with open(file_path, "r", encoding="utf-8") as file:
