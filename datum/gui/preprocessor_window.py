@@ -7,6 +7,7 @@ from typing import Dict
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+from datum.utility.logging import logger
 from ..core import preprocessing
 from ..core.beverli import Beverli
 from ..core.my_types import PPInputs
@@ -23,7 +24,6 @@ WINDOW_SIZE = (800, 600)
 PAD_S = STYLES["pad"]["small"]
 PAD_M = STYLES["pad"]["medium"]
 MSG_SUCCESS = "PREPROCESSING SUCCESSFUL! Data saved in the output folder."
-MSG_FAIL = "OOPS! Something went wrong. Check your inputs and try again."
 
 
 class PreprocessorWindow:
@@ -258,9 +258,16 @@ class PreprocessorWindow:
 
         ui = self.collect_user_inputs()
 
-        if preprocessing.preprocess_data(self.piv, ui):
-            messagebox.showinfo("Info", MSG_SUCCESS)
+        try:
+            preprocessing.preprocess_all(self.piv, ui)
+        except (ValueError, RuntimeError) as e:
+            logger.error(f"Preprocessing failed: {e}")
+            messagebox.showwarning(
+                "Warning",
+                "Preprocessing failed! Check log file for details, "
+                "correct errors, and try again."
+            )
             return
-        else:
-            messagebox.showwarning("Warning", MSG_FAIL)
-            return
+
+        messagebox.showinfo("Info", MSG_SUCCESS)
+        return

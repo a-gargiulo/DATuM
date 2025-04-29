@@ -28,7 +28,7 @@ from .widgets import (
     Section,
 )
 
-# CONSTANTS
+# Constants
 WINDOW_TITLE = "Pose Calculator"
 WINDOW_SIZE = (1000, 600)
 CALCULATION_MODES = (
@@ -49,7 +49,7 @@ class PoseWindow:
         piv: Piv,
         geometry: Beverli,
         calculation_status: tk.BooleanVar,
-    ):
+    ) -> None:
         """Construct the window.
 
         :param master: Parent window handle.
@@ -91,7 +91,7 @@ class PoseWindow:
         )
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-    def create_widgets(self):
+    def create_widgets(self) -> None:
         """Create all widget entities."""
         self.scrollable_canvas = ScrollableCanvas(self.root, True, False)
         self.main_frame = self.scrollable_canvas.frame
@@ -250,7 +250,7 @@ class PoseWindow:
             command=self.calculate_global,
         )
 
-    def layout_widgets(self, calculation_mode: str):
+    def layout_widgets(self, calculation_mode: str) -> None:
         """Layout all widgets on the window for each specific calcualtion mode.
 
         :param calculation_mode: Identifier for the specific calculation mode.
@@ -262,7 +262,7 @@ class PoseWindow:
         elif calculation_mode == "all":
             self.layout_widgets_global()
 
-    def reset_layout(self):
+    def reset_layout(self) -> None:
         """Restore default layout when working in a particular mode."""
         self.calplate_loader.reset()
         self.calplate_loader.grid_forget()
@@ -278,7 +278,7 @@ class PoseWindow:
         self.global_plot.grid_forget()
         self.global_section.grid_forget()
 
-    def layout_widgets_default(self):
+    def layout_widgets_default(self) -> None:
         """Generate layout for the default mode window."""
         self.reset_layout()
         self.main_frame.grid_columnconfigure(0, weight=1)
@@ -307,7 +307,7 @@ class PoseWindow:
         self.submit_button.grid(row=1, column=0, padx=PAD_S, pady=PAD_S)
         self.scrollable_canvas.configure_frame()
 
-    def layout_widgets_local(self):
+    def layout_widgets_local(self) -> None:
         """Generate the layout for the local mode window."""
         self.layout_widgets_default()
         self.checkbox_diagonal.grid_forget()
@@ -357,7 +357,7 @@ class PoseWindow:
         self.submit_button.grid(row=2, column=0, padx=PAD_S, pady=PAD_S)
         self.scrollable_canvas.configure_frame()
 
-    def on_mode_selection(self, *args):
+    def on_mode_selection(self, *args) -> None:
         """Activate the mode-specific window layout when a mode is selected."""
         selected_option = self.mode_selector_var.get()
         if selected_option == CALCULATION_MODES[0][1]:

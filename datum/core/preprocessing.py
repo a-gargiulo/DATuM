@@ -1,12 +1,11 @@
-"""Define preprocessing core functions."""
+"""BeVERLI Hill stereo PIV data preprocessing core functionalities."""
 
 from typing import TYPE_CHECKING, Dict, cast
 
 import numpy as np
 
-from ..utility import apputils, mathutils, tputils
-from . import analysis, io, transform
-from .my_types import (
+from datum.core import analysis, io, transform
+from datum.core.my_types import (
     MeanVelocityGradient,
     NestedDict,
     NormalizedRotationTensor,
@@ -15,42 +14,38 @@ from .my_types import (
     StrainTensor,
     TurbulenceScales,
 )
+from datum.utility import apputils, mathutils, tputils
 
 if TYPE_CHECKING:
     from .piv import Piv
 
 
-def preprocess_data(piv: "Piv", ui: PPInputs) -> bool:
-    """Core preprocessing function.
+def preprocess_all(piv: "Piv", ui: PPInputs) -> None:
+    """Preprocess all data.
 
     :param piv: PIV plane.
-    :param ui: User inputs.
-
-    :return: False in case of an error. True otherwise.
-    :rtype: bool
+    :param ui: User inputs from the preprocessing GUI.
+    :raises RuntimeError: If loading/writing PIV data or gradient computation
+        are unsuccessful.
+    :raises ValueError: If a wrong user input occured.
     """
-    try:
-        io.load.load_raw_data(piv, ui)
-        if ui["interpolate_data"]:
-            if piv.pose.angle2 != 0.0:
-                raise ValueError("No interpolation for diagonal planes.")
-            transform_data(piv, ui["num_interpolation_pts"])
-            if ui["compute_gradients"]:
-                calculate_velocity_gradient(piv, ui)
-                calculate_strain_and_rotation_tensor(piv)
-                calculate_eddy_viscosity(piv)
-        else:
-            transform_data_no_interp(piv)
-            if piv.pose.angle2 != 0.0:
-                piv.data["coordinates"]["Z"] = piv.data["coordinates"]["X"]
+    io.load_raw_data(piv, ui)
+    if ui["interpolate_data"]:
+        if piv.pose.angle2 != 0.0:
+            raise ValueError("No interpolation for diagonal planes.")
+        transform_data(piv, ui["num_interpolation_pts"])
+        if ui["compute_gradients"]:
+            calculate_velocity_gradient(piv, ui)
+            calculate_strain_and_rotation_tensor(piv)
+            calculate_eddy_viscosity(piv)
+    else:
+        transform_data_no_interp(piv)
+        if piv.pose.angle2 != 0.0:
+            piv.data["coordinates"]["Z"] = piv.data["coordinates"]["X"]
 
-        apputils.write_pickle(
-            "./outputs/preprocessed.pkl", cast(NestedDict, piv.data)
-        )
-        return True
-    except Exception as e:
-        print(f"[ERROR]: PIV data was not loaded correctly. {e}.")
-        return False
+    apputils.write_pickle(
+        "./outputs/preprocessed.pkl", cast(NestedDict, piv.data)
+    )
 
 
 def transform_data(piv: "Piv", num_interp_pts: int):
@@ -75,16 +70,20 @@ def transform_data_no_interp(piv: "Piv"):
     transform.scaling.scale_all(piv, scale_factor=1e-3)
 
 
-def calculate_velocity_gradient(piv: "Piv", ui: PPInputs):
+def calculate_velocity_gradient(piv: "Piv", ui: PPInputs) -> None:
     """Compute the mean velocity gradient tensor from the PIV data.
 
-    Note, this function is used with interpolated data.
+    Note, this function can only be used with interpolated data.
 
     :param piv: PIV plane data.
-    :param ui: User inputs from the GUI.
+    :param ui: User inputs from the preprocessing GUI.
+    :raises RuntimeError: If gradient computation fails.
     """
-    assert piv.data is not None
-
+    COMPONENTS = (
+        "dUdX", "dUdY", "dUdZ",
+        "dVdX", "dVdY", "dVdZ",
+        "dWdX", "dWdY", "dWdZ"
+    )
     mean_vel_grad = {}
 
     # Computable components
@@ -108,14 +107,16 @@ def calculate_velocity_gradient(piv: "Piv", ui: PPInputs):
                 cfd_coords, cfd_data[key], (x1_q, x2_q)
             )
 
+    for key, _ in mean_vel_grad.items():
+        if key not in COMPONENTS:
+            raise RuntimeError("Missing mean velocity gradient component.")
+
     piv.data["mean_velocity_gradient"] = cast(
         MeanVelocityGradient, mean_vel_grad
     )
 
 
 def _calculate_computable_components(piv: "Piv") -> Dict[str, np.ndarray]:
-    assert piv.data is not None
-
     coords = piv.data["coordinates"]
     mean_vel = piv.data["mean_velocity"]
     computable_gradients = [

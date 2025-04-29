@@ -7,7 +7,7 @@ from typing import Optional, Dict, Union
 import scipy.io as scio
 import numpy as np
 
-# from . import parser
+from datum.utility.logging import logger
 from ..core.my_types import (
     NestedDict,
     RotationParameters,
@@ -251,15 +251,29 @@ def write_pickle(file_path: str, dictionary: NestedDict) -> None:
 
     :param file_path: System path to the Pickle file.
     :param dictionary: Dictionary to write to the Pickle file.
+    :raises RuntimeError: If writing to file fails.
     """
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, "wb") as file:
-        pickle.dump(dictionary, file)
-    print(f"--> File '{os.path.basename(file_path)}' created.\n")
+    try:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "wb") as file:
+            pickle.dump(dictionary, file)
+    except Exception as e:
+        raise RuntimeError(
+            f"Writing '{os.path.basename(file_path)}' failed: {e}"
+        ) from e
+
+    logger.info(f"File '{os.path.basename(file_path)}' created.")
 
 
 def safe_loadmat(path: str) -> Dict[str, np.ndarray]:
-    """Safely load a .mat file, raising a descriptive error if it fails."""
+    """Safely load a .mat file, raising a descriptive error if it fails.
+
+    :param path: Path to the .mat file.
+
+    :raises RuntimeError: If an exception occurs while loading the .mat file.
+    :return: Content of the .mat file.
+    :rtype: Dict[str, numpy.ndarray]
+    """
     try:
         return scio.loadmat(path)
     except Exception as e:

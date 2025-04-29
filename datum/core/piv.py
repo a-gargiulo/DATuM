@@ -1,48 +1,41 @@
 """This module defines the main PIV data container."""
 
-from typing import Optional, cast
+from typing import Optional
 
-from ..utility import apputils
-from .my_types import PivData, NestedDict
-from .pose import Pose
+from datum.core.my_types import PivData
+from datum.core.pose import Pose
 
 
 class Piv:
+    """BeVERLI Hill stereo PIV plane data container.
+
+    Includes both the actual flow data and the geometrical pose.
     """
-    This class defines the main PIV data container.
 
-    It contains the PIV data and its pose.
-    """
+    def __init__(
+        self, dd: Optional[PivData] = None, pp: Optional[Pose] = None
+    ) -> None:
+        """Initialize a BeVERLI Hill stereo PIV plane.
 
-    def __init__(self, d: Optional[PivData] = None, p: Optional[Pose] = None):
-        """Initialize a PIV object.
-
-        :param data: PIV data.
-        :param pose: Pose data for the PIV plane.
+        :param data: Flow data.
+        :param pose: Geometrical pose data.
         """
-        self._data = d
-        self.pose = p if p is not None else Pose()
+        self._data = dd
+        self.pose = pp if pp is not None else Pose()
 
     @property
     def data(self) -> PivData:
-        """PIV data property."""
+        """Retrieve flow data.
+
+        :raises ValueError: If flow data is not initialized.
+        :return: The flow data.
+        :rtype:
+        """
         if self._data is None:
             raise ValueError("PIV data is not initialized.")
         return self._data
 
     @data.setter
-    def data(self, d: PivData):
-        self._data = d
-
-    def search(self, quantity: str) -> bool:
-        """Search for a specific flow quantity.
-
-        :param quantity: Quantity to be searched within the PIV data.
-        """
-        try:
-            return apputils.search_nested_dict(
-                cast(NestedDict, self.data), quantity
-            )
-        except ValueError as e:
-            print(f"[ERROR]: {e}")
-            return False
+    def data(self, dd: PivData):
+        """Set the flow data."""
+        self._data = dd
