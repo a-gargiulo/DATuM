@@ -60,6 +60,7 @@ class PreprocessorWindow:
             "*Font", (STYLES["font"], STYLES["font_size"]["regular"])
         )
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
         self.vfcmd = self.root.register(self.validate_float)
 
     def create_widgets(self):
@@ -101,7 +102,9 @@ class PreprocessorWindow:
             self.hill.rotate(-self.hill_orientation)
             self.hill_orientation = 0.0
             self.hill.orientation = self.hill_orientation
-            self.orientation_is_confirmed = False
+            self.hill_orientation_confirmed = False
+            self.geometry_section.hill_orientation_status.set("Nothing Loaded")
+            self.geometry_section.hill_orientation_status_lbl.config(fg="red")
             self.plot_hill()
             return True
         try:
@@ -109,7 +112,9 @@ class PreprocessorWindow:
             self.hill.rotate(float(input_value) - self.hill_orientation)
             self.hill_orientation = float(input_value)
             self.hill.orientation = self.hill_orientation
-            self.orientation_is_confirmed = False
+            self.hill_orientation_confirmed = False
+            self.geometry_section.hill_orientation_status.set("Nothing Loaded")
+            self.geometry_section.hill_orientation_status_lbl.config(fg="red")
             self.plot_hill()
             return True
         except ValueError:
@@ -117,7 +122,9 @@ class PreprocessorWindow:
             self.hill.rotate(-self.hill_orientation)
             self.hill_orientation = 0.0
             self.hill.orientation = self.hill_orientation
-            self.orientation_is_confirmed = False
+            self.hill_orientation_confirmed = False
+            self.geometry_section.hill_orientation_status.set("Nothing Loaded")
+            self.geometry_section.hill_orientation_status_lbl.config(fg="red")
             return False
 
     def on_invalid_input(self):
@@ -126,6 +133,10 @@ class PreprocessorWindow:
 
     def on_closing(self):
         """Free the resources after closing the window."""
+        if hasattr(self.geometry_section, "pose_window"):
+            if self.geometry_section.pose_window.root.winfo_exists():
+                self.geometry_section.pose_window.on_closing()
+
         if hasattr(self, "hill_fig"):
             plt.close(self.hill_fig)
 

@@ -1,4 +1,4 @@
-"""Main application window."""
+"""Main DATuM window."""
 
 import tkinter as tk
 from typing import Tuple
@@ -11,17 +11,17 @@ from datum.gui.widgets import Button
 from datum.utility.configure import STYLES
 
 # Constants
-WINDOW_TITLE = "DaTUM"
+WINDOW_TITLE = "DATuM"
 WINDOW_SIZE = (600, 600)
 PAD_M = STYLES["pad"]["medium"]
 BANNER_IMG_PATH = "./datum/resources/images/banner.png"
 
 
 class DatumWindow:
-    """The main application window."""
+    """DATuM Window."""
 
     def __init__(self, root: tk.Tk) -> None:
-        """Construct the main application window.
+        """Construct the window.
 
         :param root: Main application handle.
         """
@@ -31,14 +31,15 @@ class DatumWindow:
         self.layout_widgets()
 
     def configure_root(self) -> None:
-        """Configure the main window."""
+        """Configure the window."""
         self.root.title(WINDOW_TITLE)
         self.root.geometry(f"{WINDOW_SIZE[0]}x{WINDOW_SIZE[1]}")
         self.root.resizable(False, False)
         self.root.configure(bg=STYLES["color"]["base"])
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def create_widgets(self) -> None:
-        """Generate widget entities for the main window."""
+        """Create all widget entities."""
         self.banner_frame = tk.Frame(self.root, bg=STYLES["color"]["base"])
         self.banner_label, self.banner_image = self.create_banner(
             self.banner_frame, BANNER_IMG_PATH
@@ -51,7 +52,7 @@ class DatumWindow:
         )
 
     def layout_widgets(self) -> None:
-        """Layout widgets on the main window."""
+        """Layout widgets on the window."""
         self.root.grid_columnconfigure(0, weight=1)
         self.banner_frame.grid(
             row=0, column=0, padx=PAD_M, pady=PAD_M, sticky="ew"
@@ -61,15 +62,21 @@ class DatumWindow:
         self.preprocessor_button.grid(row=1, column=0, padx=0, pady=PAD_M)
         self.profiler_button.grid(row=2, column=0, padx=0, pady=PAD_M)
 
+    def on_closing(self) -> None:
+        """Free resources after closing the window."""
+        if self.pp_window.root.winfo_exists():
+            self.pp_window.on_closing()
+        self.root.destroy()
+
     def create_banner(
         self, parent: tk.Frame, img_path: str
     ) -> Tuple[tk.Label, ImageTk.PhotoImage]:
-        """Generate programm banner.
+        """Generate title banner.
 
         :param parent: Handle to the host window.
         :param img_path: Path to the banner image.
 
-        :return: A tuple containing the banner label and banner image.
+        :return: Banner label and banner image.
         :rtype: Tuple[tkinter.Label, ImageTk.PhotoImage]
         """
         banner_image = self._load_resized_image(
@@ -94,7 +101,7 @@ class DatumWindow:
 
     def open_preprocessor(self) -> None:
         """Open the preprocessor window."""
-        PreprocessorWindow(self.root)
+        self.pp_window = PreprocessorWindow(self.root)
 
     def open_profiler(self) -> None:
         """Open the profiler window."""

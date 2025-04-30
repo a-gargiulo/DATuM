@@ -47,6 +47,15 @@ class GeometrySection:
         self.hill_orientation_entry.bind(
             "<Return>", self.on_hill_orientation_return
         )
+        self.hill_orientation_status = tk.StringVar()
+        self.hill_orientation_status.set("Not confirmed")
+        self.hill_orientation_status_lbl = Label(
+            self.general,
+            "",
+            2,
+            textvariable=self.hill_orientation_status
+        )
+        self.hill_orientation_status_lbl.config(fg="red")
         self.transformation_section = Section(
             self.content, "Pose & Transformation (Local PIV -> Global SWT)", 2
         )
@@ -82,10 +91,7 @@ class GeometrySection:
 
     def on_hill_orientation_return(self, event):
         """Binding function for hill orientation entry."""
-        self.hill_orientation_entry.bind(
-            "<Return>", self.hill_plot.focus_set()
-        )
-        self.confirm_hill_orientation()
+        self.hill_plot.focus_set()
 
     def layout(self):
         """Layout all widgets entities."""
@@ -122,6 +128,9 @@ class GeometrySection:
             row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
         self.hill_orientation_button.grid(
+            row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        )
+        self.hill_orientation_status_lbl.grid(
             row=0, column=2, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
         self.transformation_section.grid(
@@ -153,6 +162,8 @@ class GeometrySection:
     def confirm_hill_orientation(self):
         """Confirm the hill orientation input by the user."""
         self.controller.hill_orientation_confirmed = True
+        self.hill_orientation_status.set("Confirmed")
+        self.hill_orientation_status_lbl.config(fg="green")
         messagebox.showinfo(
             "SUCCESS!",
             "Hill orientation confirmed.",
@@ -198,7 +209,7 @@ class GeometrySection:
     def open_pose_window(self):
         """Open the pose calculator window."""
         if self.controller.hill_orientation_confirmed:
-            PoseWindow(
+            self.pose_window = PoseWindow(
                 self.controller.root,
                 self.controller.piv,
                 self.controller.hill,

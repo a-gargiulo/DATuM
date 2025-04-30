@@ -13,12 +13,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.widgets import Cursor
 
 from datum.core import transform
-from ..core.beverli import Beverli
-from ..core.my_types import TransformationParameters
-from ..core.piv import Piv
-from ..utility import apputils, tputils
-from ..utility.configure import STYLES
-from .widgets import (
+from datum.core.beverli import Beverli
+from datum.core.my_types import TransformationParameters
+from datum.core.piv import Piv
+from datum.gui.widgets import (
     Button,
     Checkbutton,
     Entry,
@@ -28,6 +26,8 @@ from .widgets import (
     ScrollableCanvas,
     Section,
 )
+from datum.utility import apputils, tputils
+from datum.utility.configure import STYLES
 
 # Constants
 WINDOW_TITLE = "Pose Calculator"
@@ -70,7 +70,7 @@ class PoseWindow:
         self.create_widgets()
         self.layout_widgets(calculation_mode="none")
 
-    def on_closing(self):
+    def on_closing(self) -> None:
         """Free resources after closing the pose calculator."""
         if hasattr(self, "cal_fig"):
             plt.close(self.cal_fig)
@@ -81,9 +81,8 @@ class PoseWindow:
         if hasattr(self, "glob_canvas"):
             self.glob_canvas.get_tk_widget().destroy()
         self.root.destroy()
-        self.master.lift()
 
-    def configure_root(self):
+    def configure_root(self) -> None:
         """Configure the window."""
         self.root.title(WINDOW_TITLE)
         self.root.geometry(f"{WINDOW_SIZE[0]}x{WINDOW_SIZE[1]}")
@@ -335,7 +334,7 @@ class PoseWindow:
         self.submit_button.grid(row=2, column=0, padx=PAD_S, pady=PAD_S)
         self.scrollable_canvas.configure_frame()
 
-    def layout_widgets_global(self):
+    def layout_widgets_global(self) -> None:
         """Generate the layout for the global mode window."""
         self.layout_widgets_default()
         self.checkbox_diagonal.grid_forget()
