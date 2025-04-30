@@ -102,9 +102,12 @@ class PreprocessorWindow:
             self.hill.rotate(-self.hill_orientation)
             self.hill_orientation = 0.0
             self.hill.orientation = self.hill_orientation
-            self.hill_orientation_confirmed = False
-            self.geometry_section.hill_orientation_status.set("Nothing Loaded")
-            self.geometry_section.hill_orientation_status_lbl.config(fg="red")
+            if self.hill_orientation_confirmed is False:
+                self.geometry_section.hill_orientation_status.set("Not confirmed")
+                self.geometry_section.hill_orientation_status_lbl.config(fg="red")
+            else:
+                self.geometry_section.hill_orientation_status.set("Confirmed")
+                self.geometry_section.hill_orientation_status_lbl.config(fg="green")
             self.plot_hill()
             return True
         try:
@@ -112,9 +115,12 @@ class PreprocessorWindow:
             self.hill.rotate(float(input_value) - self.hill_orientation)
             self.hill_orientation = float(input_value)
             self.hill.orientation = self.hill_orientation
-            self.hill_orientation_confirmed = False
-            self.geometry_section.hill_orientation_status.set("Nothing Loaded")
-            self.geometry_section.hill_orientation_status_lbl.config(fg="red")
+            if self.hill_orientation_confirmed is False:
+                self.geometry_section.hill_orientation_status.set("Not confirmed")
+                self.geometry_section.hill_orientation_status_lbl.config(fg="red")
+            else:
+                self.geometry_section.hill_orientation_status.set("Confirmed")
+                self.geometry_section.hill_orientation_status_lbl.config(fg="green")
             self.plot_hill()
             return True
         except ValueError:
@@ -123,7 +129,7 @@ class PreprocessorWindow:
             self.hill_orientation = 0.0
             self.hill.orientation = self.hill_orientation
             self.hill_orientation_confirmed = False
-            self.geometry_section.hill_orientation_status.set("Nothing Loaded")
+            self.geometry_section.hill_orientation_status.set("Not confirmed")
             self.geometry_section.hill_orientation_status_lbl.config(fg="red")
             return False
 

@@ -153,7 +153,7 @@ def load_pose_measurement(path: str) -> Optional[PoseMeasurement]:
 
 def load_transformation_parameters(
     path: str
-) -> Optional[TransformationParameters]:
+) -> TransformationParameters:
     """Load transformation parameters from .json file.
 
     :param path: File path.
@@ -197,8 +197,7 @@ def load_transformation_parameters(
     except (
         json.JSONDecodeError, OSError, ValueError, KeyError, TypeError
     ) as e:
-        print(f"[ERROR] Failed to load transformation parameters: {e}")
-        return None
+        raise RuntimeError(f"Failed to load transformation parameters: {e}") from e
 
 
 def read_json(file_path: str) -> Optional[NestedDict]:

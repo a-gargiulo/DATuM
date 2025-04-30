@@ -69,6 +69,7 @@ class PoseWindow:
         self.configure_root()
         self.create_widgets()
         self.layout_widgets(calculation_mode="none")
+        self.scrollable_canvas.configure_frame()
 
     def on_closing(self) -> None:
         """Free resources after closing the pose calculator."""
@@ -389,41 +390,32 @@ class PoseWindow:
 
         cal_img_path = self.calplate_loader.get_listbox_content()
 
-        # try:
-        cal_img = np.loadtxt(cal_img_path, skiprows=CALIBRATION_IMG_SKIPROWS)
-        dims = tputils.get_ijk(cal_img_path)
-        # except Exception as e:
-        #     messagebox.showerror(
-        #         "ERROR!",
-        #         "Invalid calibration plate image. Reload a valid image and "
-        #         "try again."
-        #     )
-        #     return
+        try:
+            cal_img = np.loadtxt(cal_img_path, skiprows=CALIBRATION_IMG_SKIPROWS)
+            dims = tputils.get_ijk(cal_img_path)
 
-        img_coords_mm = np.array(
-            [np.reshape(cal_img[:, i], (dims[1], dims[0])) for i in range(2)]
-        )
-        img_vals = np.reshape(cal_img[:, 2], (dims[1], dims[0]))
+            img_coords_mm = np.array(
+                [np.reshape(cal_img[:, i], (dims[1], dims[0])) for i in range(2)]
+            )
+            img_vals = np.reshape(cal_img[:, 2], (dims[1], dims[0]))
 
-        rotation_angle_deg = 0.0
-        if case == CALCULATION_MODES[1][1]:
-            tp_path = self.global_loader.get_listbox_content()
-            tp = apputils.load_transformation_parameters(tp_path)
-            if tp is None:
-                self.layout_widgets("local")
-                return
-            rotation_angle_deg = tp["rotation"]["angle_1_deg"]
-        elif case == CALCULATION_MODES[2][1]:
-            if self.global_pose is None:
-                self.layout_widgets("all")
-                return
-            rotation_angle_deg = self.global_pose[6]
-        rotation_matrix = transform.rotation.get_rotation_matrix(
-            rotation_angle_deg, "z"
-        )
-        img_coords_mm = transform.rotation.rotate_vector_planar(
-            img_coords_mm, rotation_matrix
-        )
+            rotation_angle_deg = 0.0
+            if case == CALCULATION_MODES[1][1]:
+                tp_path = self.global_loader.get_listbox_content()
+                tp = apputils.load_transformation_parameters(tp_path)
+                rotation_angle_deg = tp["rotation"]["angle_1_deg"]
+            elif case == CALCULATION_MODES[2][1]:
+                if self.global_pose is None:
+                    raise ValueError("The global pose is None.")
+                rotation_angle_deg = self.global_pose[6]
+            rotation_matrix = transform.rotation.get_rotation_matrix(
+                rotation_angle_deg, "z"
+            )
+            img_coords_mm = transform.rotation.rotate_vector_planar(
+                img_coords_mm, rotation_matrix
+            )
+        except Exception as e:
+            raise RuntimeError
 
         cmap = plt.get_cmap("gray")
         self.cal_ax.pcolormesh(
@@ -465,46 +457,69 @@ class PoseWindow:
             float(self.ypick_var.get()),
         ]
 
-    def create_local_pose_selector(self, case: str, *args):
+    def create_local_pose_selector(self, case: str, *args) -> None:
         """
         Create selector to identify the local pose from the calibration image.
 
         :param case: Calculation mode identifier.
         :param *args: Additional arguments.
+        :raises RuntimeError: If calibration image is not properly loaded.
         """
-        if not args:
-            row = args[0]
-        else:
-            row = 3
+        try:
+            if not args:
+                row = args[0]
+            else:
+                row = 3
 
-        self.local_section.grid(
-            row=row, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
-        )
-        self.calplate_plot.grid(
-            row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
-        )
-        self.local_section.content.grid_columnconfigure(1, weight=1)
-        self.local_section.content.grid_rowconfigure(0, weight=1)
-        self.submit_button.grid(row=row + 1)
-        self.plot_calplate(case)
-        self.picker_frame.grid(row=0, column=1, padx=PAD_S, pady=PAD_S)
-        self.picker_frame.grid_columnconfigure(0, weight=1)
-        self.picker_button.grid(row=0, column=0, padx=PAD_S, pady=PAD_S)
-        self.picker_monitors.grid(row=1, column=0, padx=PAD_S, pady=PAD_S)
-        self.picker_monitors.grid_columnconfigure(0, weight=1)
-        self.picker_monitors.grid_columnconfigure(1, weight=1)
-        self.xpick_entry_label.grid(
-            row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
-        )
-        self.ypick_entry_label.grid(
-            row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
-        )
-        self.xpick_entry.grid(
-            row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
-        )
-        self.ypick_entry.grid(
-            row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
-        )
+            self.local_section.grid(
+                row=row, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            )
+            self.calplate_plot.grid(
+                row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            )
+            self.local_section.content.grid_columnconfigure(1, weight=1)
+            self.local_section.content.grid_rowconfigure(0, weight=1)
+            self.submit_button.grid(row=row + 1)
+            self.plot_calplate(case)
+            self.picker_frame.grid(row=0, column=1, padx=PAD_S, pady=PAD_S)
+            self.picker_frame.grid_columnconfigure(0, weight=1)
+            self.picker_button.grid(row=0, column=0, padx=PAD_S, pady=PAD_S)
+            self.picker_monitors.grid(row=1, column=0, padx=PAD_S, pady=PAD_S)
+            self.picker_monitors.grid_columnconfigure(0, weight=1)
+            self.picker_monitors.grid_columnconfigure(1, weight=1)
+            self.xpick_entry_label.grid(
+                row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            )
+            self.ypick_entry_label.grid(
+                row=0, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            )
+            self.xpick_entry.grid(
+                row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            )
+            self.ypick_entry.grid(
+                row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            )
+        except RuntimeError:
+            messagebox.showerror(
+                "ERROR!",
+                "Invalid calibration plate image. Reload a valid image and "
+                "try again."
+            )
+            if case == CALCULATION_MODES[1][1]:
+                self.layout_widgets("local")
+                raise RuntimeError(
+                    f"Calibration image could not be loaded: {e}"
+                )
+            elif case == CALCULATION_MODES[2][1]:
+                self.layout_widgets("all")
+                raise RuntimeError(
+                    f"Calibration image could not be loaded: {e}"
+                )
+            else:
+                raise RuntimeError(
+                    f"Calibration image could not be loaded: {e}"
+                )
+            return
 
     def create_global_pose_calculator(self, case: str, *args):
         """
