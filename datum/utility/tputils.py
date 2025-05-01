@@ -1,37 +1,52 @@
 """Utility functions for working with Tecplot files."""
+import os
 import re
+from typing import Dict, Tuple
+
 import numpy as np
-from typing import Tuple, Dict
 import tecplot as tp
-from . import apputils
+from datum.utility import logging
 
 
 def get_ijk(file_path: str) -> Tuple[int, ...]:
-    """Obtain the dimensions of an ijk-ordered Tecplot data set.
+    """Obtain the dimensions from an ijk-ordered Tecplot dataset.
 
-    :param file_path: The path to the Tecplot file.
+    :param file_path: Path to the Tecplot file.
     :raises FileNotFoundError: If the file does not exist.
     :raises ValueError: If the file contains non-numeric data or has
         inconsistent row lengths.
     :raises OSError: For other I/O related errors (e.g., permission issues).
-    :return: The dimensions of the data.
+    :return: ijk dimensions of the dataset.
     :rtype: Tuple[int, ...]
     """
-    dimensions = []
-    with open(file_path, "r", encoding="utf-8") as file:
-        for line in file:
-            if line.strip().startswith("ZONE"):
-                args = line.split(',')
-                dimensions.extend(
-                    int(re.sub(r"\D", "", arg)) for arg in args if arg.strip().startswith(("I=", "J=", "K="))
-                )
-                break
-    return tuple(dimensions)
+    try:
+        dimensions = []
+        with open(file_path, "r", encoding="utf-8") as file:
+            for line in file:
+                if line.strip().startswith("ZONE"):
+                    args = line.split(",")
+                    dimensions.extend(
+                        int(re.sub(r"\D", "", arg))
+                        for arg in args
+                        if arg.strip().startswith(("I=", "J=", "K="))
+                    )
+                    break
+        return tuple(dimensions)
+    except Exception as e:
+        error_msg = (
+            f"An error occurred while attempting to extract the ijk "
+            f"dimensions from the provided Tecplot .dat file "
+            f"{os.path.basename(file_path)}."
+        )
+        logging.logger.error(error_msg, exc=e)
+        raise RuntimeError(error_msg) from e
 
 
-def get_tecplot_derivatives(slice_path: str, zone_name: str, use_all: bool) -> Dict[str, np.ndarray]:
-    """Extract the non-computable components of the mean velocity gradient tensor from
-    CFD data using Tecplot.
+def get_tecplot_derivatives(
+    slice_path: str, zone_name: str, use_all: bool
+) -> Dict[str, np.ndarray]:
+    """Extract the non-computable components of the mean velocity gradient
+    tensor from CFD data using Tecplot.
 
     :return: A dictionary containing the extracted mean velocity gradient tensor
         components as NumPy ndarrays of shape (m, n), where m and n represent
@@ -47,7 +62,12 @@ def get_tecplot_derivatives(slice_path: str, zone_name: str, use_all: bool) -> D
         cfd_data["X"] = zone.values("X").as_numpy_array()
         cfd_data["Y"] = zone.values("Y").as_numpy_array()
 
-        gradients = [("dUdZ", True), ("dVdZ", True), ("dWdX", use_all), ("dWdY", use_all)]
+        gradients = [
+            ("dUdZ", True),
+            ("dVdZ", True),
+            ("dWdX", use_all),
+            ("dWdY", use_all),
+        ]
         for gradient, use in gradients:
             data = zone.values(gradient).as_numpy_array()
             if use:

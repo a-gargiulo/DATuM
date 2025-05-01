@@ -8,15 +8,16 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from datum.utility.logging import logger
-from ..core import preprocessing
-from ..core.beverli import Beverli
-from ..core.my_types import PPInputs
-from ..core.piv import Piv
-from ..utility.configure import STYLES, system
-from .cfd_section import CfdSection
-from .data_section import DataSection
-from .geometry_section import GeometrySection
-from .widgets import Button, ScrollableCanvas
+from datum.core import preprocessing
+from datum.core.beverli import Beverli
+from datum.core.my_types import PPInputs
+from datum.core.piv import Piv
+from datum.utility.configure import STYLES, system
+from datum.utility import logging
+from datum.gui.cfd_section import CfdSection
+from datum.gui.data_section import DataSection
+from datum.gui.geometry_section import GeometrySection
+from datum.gui.widgets import Button, ScrollableCanvas
 
 # CONSTANTS
 WINDOW_TITLE = "Preprocessor"
@@ -49,6 +50,7 @@ class PreprocessorWindow:
         self.layout_widgets()
         self.plot_hill()
         self.scrollable_canvas.configure_frame()
+        logging.logger.info("Preprocessor window opened successfully.")
 
     def configure_root(self):
         """Configure the window."""
@@ -101,28 +103,10 @@ class PreprocessorWindow:
         if input_value == "":
             self.hill.rotate(-self.hill_orientation)
             self.hill_orientation = 0.0
-            self.hill.orientation = self.hill_orientation
-            if self.hill_orientation_confirmed is False:
-                self.geometry_section.hill_orientation_status.set("Not confirmed")
-                self.geometry_section.hill_orientation_status_lbl.config(fg="red")
-            else:
-                self.geometry_section.hill_orientation_status.set("Confirmed")
-                self.geometry_section.hill_orientation_status_lbl.config(fg="green")
-            self.plot_hill()
-            return True
         try:
             float(input_value)
             self.hill.rotate(float(input_value) - self.hill_orientation)
             self.hill_orientation = float(input_value)
-            self.hill.orientation = self.hill_orientation
-            if self.hill_orientation_confirmed is False:
-                self.geometry_section.hill_orientation_status.set("Not confirmed")
-                self.geometry_section.hill_orientation_status_lbl.config(fg="red")
-            else:
-                self.geometry_section.hill_orientation_status.set("Confirmed")
-                self.geometry_section.hill_orientation_status_lbl.config(fg="green")
-            self.plot_hill()
-            return True
         except ValueError:
             self.on_invalid_input()
             self.hill.rotate(-self.hill_orientation)
@@ -132,6 +116,17 @@ class PreprocessorWindow:
             self.geometry_section.hill_orientation_status.set("Not confirmed")
             self.geometry_section.hill_orientation_status_lbl.config(fg="red")
             return False
+
+        self.hill.orientation = self.hill_orientation
+        if self.hill_orientation_confirmed is False:
+            self.geometry_section.hill_orientation_status.set("Not confirmed")
+            self.geometry_section.hill_orientation_status_lbl.config(fg="red")
+        else:
+            self.hill_orientation_confirmed = False
+            self.geometry_section.hill_orientation_status.set("Not confirmed")
+            self.geometry_section.hill_orientation_status_lbl.config(fg="red")
+        self.plot_hill()
+        return True
 
     def on_invalid_input(self):
         """Inform the user when the hill orientation input is wrong."""
@@ -151,6 +146,7 @@ class PreprocessorWindow:
             self.hill_canvas.get_tk_widget().destroy()
 
         self.root.destroy()
+        logging.logger.info("Preprocessor window closed successfully.")
 
     def plot_hill(self):
         """Plot the hill contour."""

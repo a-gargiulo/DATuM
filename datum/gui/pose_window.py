@@ -26,7 +26,7 @@ from datum.gui.widgets import (
     ScrollableCanvas,
     Section,
 )
-from datum.utility import apputils, tputils
+from datum.utility import apputils, logging, tputils
 from datum.utility.configure import STYLES
 
 # Constants
@@ -70,6 +70,7 @@ class PoseWindow:
         self.create_widgets()
         self.layout_widgets(calculation_mode="none")
         self.scrollable_canvas.configure_frame()
+        logging.logger.info("Pose window opened successfully.")
 
     def on_closing(self) -> None:
         """Free resources after closing the pose calculator."""
@@ -82,6 +83,7 @@ class PoseWindow:
         if hasattr(self, "glob_canvas"):
             self.glob_canvas.get_tk_widget().destroy()
         self.root.destroy()
+        logging.logger.info("Pose window closed successfully.")
 
     def configure_root(self) -> None:
         """Configure the window."""
@@ -100,12 +102,10 @@ class PoseWindow:
         self.main_frame = self.scrollable_canvas.frame
         self.options_section = Section(self.main_frame, "Settings", 1)
         self.checkbox_diagonal = Checkbutton(
-            self.options_section.content, category=1, text="Plane is Diagonal"
+            self.options_section.content, 1, text="Plane is Diagonal"
         )
         self.mode_selector_label = Label(
-            self.options_section.content,
-            text="Select Calculation Mode:",
-            category=1,
+            self.options_section.content, "Select Calculation Mode:", 1
         )
         self.mode_selector_var = tk.StringVar()
         self.mode_selector_var.set(CALCULATION_MODES[0][1])
@@ -116,9 +116,7 @@ class PoseWindow:
             *[x for _, x in CALCULATION_MODES],
         )
         self.submit_button = Button(
-            self.main_frame,
-            text="Submit Transformation File",
-            command=self.submit_file,
+            self.main_frame, "Submit Transformation File", self.submit_file
         )
         self.parameters_loader = FileLoader(
             self.options_section.content,
@@ -139,13 +137,20 @@ class PoseWindow:
         )
         self.calplate_loader.status_label_var.trace(
             "w",
-            lambda *args: (
-                self.create_local_pose_selector(
-                    self.mode_selector_var.get(), *args
-                )
-                if self.calplate_loader.status_label_var.get() == "File Loaded"
-                and self.global_loader.status_label_var.get() == "File Loaded"
-                else None
+            lambda *args: self.root.after(
+                10,
+                (
+                    lambda: (
+                        self.create_local_pose_selector(
+                            self.mode_selector_var.get(), *args
+                        )
+                        if self.calplate_loader.status_label_var.get()
+                        == "File Loaded"
+                        and self.global_loader.status_label_var.get()
+                        == "File Loaded"
+                        else None
+                    )
+                ),
             ),
         )
         self.global_loader = FileLoader(
@@ -160,13 +165,20 @@ class PoseWindow:
         )
         self.global_loader.status_label_var.trace(
             "w",
-            lambda *args: (
-                self.create_local_pose_selector(
-                    self.mode_selector_var.get(), *args
-                )
-                if self.calplate_loader.status_label_var.get() == "File Loaded"
-                and self.global_loader.status_label_var.get() == "File Loaded"
-                else None
+            lambda *args: self.root.after(
+                10,
+                (
+                    lambda: (
+                        self.create_local_pose_selector(
+                            self.mode_selector_var.get(), *args
+                        )
+                        if self.calplate_loader.status_label_var.get()
+                        == "File Loaded"
+                        and self.global_loader.status_label_var.get()
+                        == "File Loaded"
+                        else None
+                    )
+                ),
             ),
         )
         self.measurement_loader = FileLoader(
@@ -178,83 +190,85 @@ class PoseWindow:
         )
         self.measurement_loader.status_label_var.trace(
             "w",
-            lambda *args: (
-                self.create_global_pose_calculator(
-                    self.mode_selector_var.get(), *args
-                )
-                if self.calplate_loader.status_label_var.get() == "File Loaded"
-                and self.measurement_loader.status_label_var.get()
-                == "File Loaded"
-                else None
+            lambda *args: self.root.after(
+                10,
+                (
+                    lambda: (
+                        self.create_global_pose_calculator(
+                            self.mode_selector_var.get(), *args
+                        )
+                        if self.calplate_loader.status_label_var.get()
+                        == "File Loaded"
+                        and self.measurement_loader.status_label_var.get()
+                        == "File Loaded"
+                        else None
+                    )
+                ),
             ),
         )
         self.calplate_loader.status_label_var.trace(
             "w",
-            lambda *args: (
-                self.create_global_pose_calculator(
-                    self.mode_selector_var.get(), *args
-                )
-                if self.calplate_loader.status_label_var.get() == "File Loaded"
-                and self.measurement_loader.status_label_var.get()
-                == "File Loaded"
-                else None
+            lambda *args: self.root.after(
+                10,
+                (
+                    lambda: (
+                        self.create_global_pose_calculator(
+                            self.mode_selector_var.get(), *args
+                        )
+                        if self.calplate_loader.status_label_var.get()
+                        == "File Loaded"
+                        and self.measurement_loader.status_label_var.get()
+                        == "File Loaded"
+                        else None
+                    )
+                ),
             ),
         )
-        self.local_section = Section(
-            self.main_frame, title="Local Pose", category=2
-        )
+        self.local_section = Section(self.main_frame, "Local Pose", 2)
         self.calplate_plot = Frame(
-            self.local_section.content, category=2, bd=2, relief="solid"
+            self.local_section.content, 2, bd=2, relief="solid"
         )
-        self.picker_frame = Frame(self.local_section.content, category=2)
+        self.picker_frame = Frame(self.local_section.content, 2)
         self.picker_button = Button(
-            self.picker_frame, text="Pick Location", command=self.pick_location
+            self.picker_frame, "Pick Location", self.pick_location
         )
-        self.picker_monitors = Frame(self.picker_frame, category=2)
+        self.picker_monitors = Frame(self.picker_frame, 2)
         self.xpick_var = tk.StringVar()
-        self.xpick_entry_label = Label(
-            self.picker_monitors, text="x1 [mm]:", category=2
-        )
+        self.xpick_entry_label = Label(self.picker_monitors, "x1 [mm]:", 2)
         self.xpick_entry = Entry(
             self.picker_monitors,
-            category=2,
+            2,
             textvariable=self.xpick_var,
             state="readonly",
         )
-        self.ypick_entry_label = Label(
-            self.picker_monitors, text="x2 [mm]:", category=2
-        )
+        self.ypick_entry_label = Label(self.picker_monitors, "x2 [mm]:", 2)
         self.ypick_var = tk.StringVar()
         self.ypick_entry = Entry(
             self.picker_monitors,
-            category=2,
+            2,
             textvariable=self.ypick_var,
             state="readonly",
         )
-        self.global_section = Section(
-            self.main_frame, title="Global Pose", category=2
-        )
+        self.global_section = Section(self.main_frame, "Global Pose", 2)
         self.global_plot = Frame(
-            self.global_section.content, category=2, bd=2, relief="solid"
+            self.global_section.content, 2, bd=2, relief="solid"
         )
         self.is_convex_option = Checkbutton(
             self.global_section.content,
-            category=2,
+            2,
             text="Use Convex Hill Curvature Correction",
         )
         self.use_measured_angle_option = Checkbutton(
-            self.global_section.content,
-            category=2,
-            text="Use measured angle",
+            self.global_section.content, 2, text="Use measured angle"
         )
         self.calculate_global_button = Button(
             self.global_section.content,
-            text="Calculate Global",
-            command=self.calculate_global,
+            "Calculate Global",
+            self.calculate_global,
         )
 
     def layout_widgets(self, calculation_mode: str) -> None:
-        """Layout all widgets on the window for each specific calcualtion mode.
+        """Layout all widgets on the window for a specific calcualtion mode.
 
         :param calculation_mode: Identifier for the specific calculation mode.
         """
@@ -266,7 +280,7 @@ class PoseWindow:
             self.layout_widgets_global()
 
     def reset_layout(self) -> None:
-        """Restore default layout when working in a particular mode."""
+        """Restore the default layout."""
         self.calplate_loader.reset()
         self.calplate_loader.grid_forget()
         self.global_loader.reset()
@@ -282,7 +296,7 @@ class PoseWindow:
         self.global_section.grid_forget()
 
     def layout_widgets_default(self) -> None:
-        """Generate layout for the default mode window."""
+        """Generate the default layout."""
         self.reset_layout()
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.options_section.grid(
@@ -361,7 +375,7 @@ class PoseWindow:
         self.scrollable_canvas.configure_frame()
 
     def on_mode_selection(self, *args) -> None:
-        """Activate the mode-specific window layout when a mode is selected."""
+        """Activate the mode-specific layout based on the user's selection."""
         selected_option = self.mode_selector_var.get()
         if selected_option == CALCULATION_MODES[0][1]:
             lvl = CALCULATION_MODES[0][0]
@@ -375,6 +389,7 @@ class PoseWindow:
         """Plot the calibration plate image.
 
         :param case: Calculation mode identifier.
+        :raises RuntimeError: If an error occurs at any step.
         """
         if hasattr(self, "cal_fig") and hasattr(self, "cal_canvas"):
             self.cal_ax.clear()
@@ -391,11 +406,16 @@ class PoseWindow:
         cal_img_path = self.calplate_loader.get_listbox_content()
 
         try:
-            cal_img = np.loadtxt(cal_img_path, skiprows=CALIBRATION_IMG_SKIPROWS)
+            cal_img = np.loadtxt(
+                cal_img_path, skiprows=CALIBRATION_IMG_SKIPROWS
+            )
             dims = tputils.get_ijk(cal_img_path)
 
             img_coords_mm = np.array(
-                [np.reshape(cal_img[:, i], (dims[1], dims[0])) for i in range(2)]
+                [
+                    np.reshape(cal_img[:, i], (dims[1], dims[0]))
+                    for i in range(2)
+                ]
             )
             img_vals = np.reshape(cal_img[:, 2], (dims[1], dims[0]))
 
@@ -414,22 +434,25 @@ class PoseWindow:
             img_coords_mm = transform.rotation.rotate_vector_planar(
                 img_coords_mm, rotation_matrix
             )
-        except Exception as e:
-            raise RuntimeError
 
-        cmap = plt.get_cmap("gray")
-        self.cal_ax.pcolormesh(
-            img_coords_mm[0],
-            img_coords_mm[1],
-            img_vals,
-            cmap=cmap,
-            vmin=0,
-            vmax=4000,
-        )
-        self.cal_ax.set_xlabel(r"$x_1$ (mm)", labelpad=10)
-        self.cal_ax.set_ylabel(r"$x_2$ (mm)", labelpad=10)
-        self.cal_canvas.draw()
-        self.scrollable_canvas.configure_frame()
+            cmap = plt.get_cmap("gray")
+            self.cal_ax.pcolormesh(
+                img_coords_mm[0],
+                img_coords_mm[1],
+                img_vals,
+                cmap=cmap,
+                vmin=0,
+                vmax=4000,
+            )
+            self.cal_ax.set_xlabel(r"$x_1$ (mm)", labelpad=10)
+            self.cal_ax.set_ylabel(r"$x_2$ (mm)", labelpad=10)
+            self.cal_canvas.draw()
+            self.scrollable_canvas.configure_frame()
+        except ValueError as e:
+            logging.logger.error("An error occurred while reading the calibration image.", exc=e)
+            raise RuntimeError(f"An error occurred while reading the calibration image: {e}")
+        except RuntimeError:
+            raise
 
     def pick_location(self):
         """Pick a location on the calibration plate image."""
@@ -500,26 +523,15 @@ class PoseWindow:
                 row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
             )
         except RuntimeError:
+            if case == CALCULATION_MODES[1][1]:
+                self.layout_widgets("local")
+            elif case == CALCULATION_MODES[2][1]:
+                self.layout_widgets("all")
             messagebox.showerror(
                 "ERROR!",
                 "Invalid calibration plate image. Reload a valid image and "
-                "try again."
+                "try again.",
             )
-            if case == CALCULATION_MODES[1][1]:
-                self.layout_widgets("local")
-                raise RuntimeError(
-                    f"Calibration image could not be loaded: {e}"
-                )
-            elif case == CALCULATION_MODES[2][1]:
-                self.layout_widgets("all")
-                raise RuntimeError(
-                    f"Calibration image could not be loaded: {e}"
-                )
-            else:
-                raise RuntimeError(
-                    f"Calibration image could not be loaded: {e}"
-                )
-            return
 
     def create_global_pose_calculator(self, case: str, *args):
         """

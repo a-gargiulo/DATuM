@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 from typing import TYPE_CHECKING
 
+from datum.utility import logging
 from ..utility.configure import STYLES, system
 from .pose_window import PoseWindow
 from .widgets import Button, Checkbutton, Entry, Frame, Label, Section
@@ -38,7 +39,7 @@ class GeometrySection:
         self.hill_orientation_entry.config(
             validate="focusout", validatecommand=(self.controller.vfcmd, "%P")
         )
-        self.hill_orientation_entry.insert(0, "0")
+        self.hill_orientation_entry.insert(0, "0.0")
         self.hill_orientation_button = Button(
             self.general,
             "Confirm",
@@ -165,10 +166,12 @@ class GeometrySection:
         self.hill_orientation_status.set("Confirmed")
         self.hill_orientation_status_lbl.config(fg="green")
         messagebox.showinfo(
-            "SUCCESS!",
-            "Hill orientation confirmed.",
+            "Info",
+            f"Hill orientation of {self.controller.hill_orientation} deg confirmed.",
             parent=self.controller.root
         )
+        logging.logger.info(f"Hill orientation of {self.controller.hill_orientation} deg confirmed.")
+
 
     def toggle_pose_status(self, *args):
         """Indicate the completion status of the PIV plane pose calculation."""
@@ -216,4 +219,13 @@ class GeometrySection:
                 self.pose_status_var,
             )
         else:
-            messagebox.showwarning("Warning", "Confirm hill orientation.")
+            logging.logger.warning(
+                "You must confirm the hill orientation "
+                "before opening the pose calculator."
+            )
+            messagebox.showwarning(
+                "Warning",
+                "You must confirm the hill orientation "
+                "before opening the pose calculator.",
+                parent=self.controller.root
+            )

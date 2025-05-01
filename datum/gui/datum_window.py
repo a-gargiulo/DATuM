@@ -8,6 +8,7 @@ from PIL import Image, ImageTk
 from datum.gui.preprocessor_window import PreprocessorWindow
 # from datum.gui.profiler_window import ProfilerWindow
 from datum.gui.widgets import Button
+from datum.utility import logging
 from datum.utility.configure import STYLES
 
 # Constants
@@ -29,6 +30,8 @@ class DatumWindow:
         self.configure_root()
         self.create_widgets()
         self.layout_widgets()
+        logging.logger.info("DATuM started up successfully.")
+
 
     def configure_root(self) -> None:
         """Configure the window."""
@@ -64,9 +67,11 @@ class DatumWindow:
 
     def on_closing(self) -> None:
         """Free resources after closing the window."""
-        if self.pp_window.root.winfo_exists():
-            self.pp_window.on_closing()
+        if hasattr(self, 'pp_window'):
+            if self.pp_window.root.winfo_exists():
+                self.pp_window.on_closing()
         self.root.destroy()
+        logging.logger.info("DATuM closed successfully.")
 
     def create_banner(
         self, parent: tk.Frame, img_path: str
