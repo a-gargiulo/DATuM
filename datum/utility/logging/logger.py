@@ -3,6 +3,9 @@ import sys
 import datetime
 import traceback
 from typing import Optional
+from colorama import init, Fore, Style
+
+init()
 
 
 class Logger:
@@ -36,7 +39,20 @@ class Logger:
         return datetime.datetime.now().isoformat(sep=" ", timespec="seconds")
 
     def _format_message(self, level: str, message: str) -> str:
-        return f"[{self._current_time()}] [{level}] {message}"
+        time = (
+            Fore.MAGENTA +
+            Style.BRIGHT +
+            self._current_time() +
+            Style.RESET_ALL
+        )
+        if level == "INFO":
+            level_str = Fore.BLUE + Style.BRIGHT + level + Style.RESET_ALL
+        elif level == "ERROR":
+            level_str = Fore.RED + Style.BRIGHT + level + Style.RESET_ALL
+        else:
+            level_str = level
+
+        return f"[{time}] [{level_str}] {message}"
 
     def _write(self, formatted_message: str) -> None:
         if self.verbose:

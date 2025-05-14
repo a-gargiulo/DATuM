@@ -21,6 +21,7 @@ def get_ijk(file_path: str) -> Tuple[int, ...]:
     """
     try:
         dimensions = []
+
         with open(file_path, "r", encoding="utf-8") as file:
             for line in file:
                 if line.strip().startswith("ZONE"):
@@ -31,15 +32,15 @@ def get_ijk(file_path: str) -> Tuple[int, ...]:
                         if arg.strip().startswith(("I=", "J=", "K="))
                     )
                     break
+
+        if len(dimensions) != 2:
+            raise ValueError(
+                "The calibration image is not 2d or the format is wrong."
+            )
         return tuple(dimensions)
     except Exception as e:
-        error_msg = (
-            f"An error occurred while attempting to extract the ijk "
-            f"dimensions from the provided Tecplot .dat file "
-            f"{os.path.basename(file_path)}."
-        )
-        logging.logger.error(error_msg, exc=e)
-        raise RuntimeError(error_msg) from e
+        logging.logger.error(str(e))
+        raise RuntimeError
 
 
 def get_tecplot_derivatives(

@@ -8,6 +8,7 @@ from scipy import integrate, interpolate
 from ..utility import apputils, mathutils
 from .beverli import Beverli
 from .my_types import PoseMeasurement, SecParams
+from enum import Enum
 
 
 class Pose:

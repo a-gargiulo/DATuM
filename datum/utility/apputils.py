@@ -158,6 +158,7 @@ def load_transformation_parameters(
 
     :param path: File path.
 
+    :raises ValueError: If the json file contains invalid data.
     :return: PIV transformation parameters.
     :rtype: TransformationParameters
     """
@@ -194,10 +195,9 @@ def load_transformation_parameters(
             "translation": translation,
         }
 
-    except (
-        json.JSONDecodeError, OSError, ValueError, KeyError, TypeError
-    ) as e:
-        raise RuntimeError(f"Failed to load transformation parameters: {e}") from e
+    except Exception as e:
+        logger.error(f"Failed to load transformation parameters: {e}")
+        raise RuntimeError
 
 
 def read_json(file_path: str) -> Optional[NestedDict]:

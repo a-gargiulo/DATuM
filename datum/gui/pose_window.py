@@ -26,7 +26,8 @@ from datum.gui.widgets import (
     ScrollableCanvas,
     Section,
 )
-from datum.utility import apputils, logging, tputils
+from datum.utility import apputils, tputils
+from datum.utility.logging import logger
 from datum.utility.configure import STYLES
 
 # Constants
@@ -70,7 +71,7 @@ class PoseWindow:
         self.create_widgets()
         self.layout_widgets(calculation_mode="none")
         self.scrollable_canvas.configure_frame()
-        logging.logger.info("Pose window opened successfully.")
+        logger.info("Pose window opened successfully.")
 
     def on_closing(self) -> None:
         """Free resources after closing the pose calculator."""
@@ -83,7 +84,7 @@ class PoseWindow:
         if hasattr(self, "glob_canvas"):
             self.glob_canvas.get_tk_widget().destroy()
         self.root.destroy()
-        logging.logger.info("Pose window closed successfully.")
+        logger.info("Pose window closed successfully.")
 
     def configure_root(self) -> None:
         """Configure the window."""
@@ -426,7 +427,9 @@ class PoseWindow:
                 rotation_angle_deg = tp["rotation"]["angle_1_deg"]
             elif case == CALCULATION_MODES[2][1]:
                 if self.global_pose is None:
-                    raise ValueError("The global pose is None.")
+                    logger.error("The global pose is None.")
+                    raise RuntimeError
+                print("YOOOOOOO")
                 rotation_angle_deg = self.global_pose[6]
             rotation_matrix = transform.rotation.get_rotation_matrix(
                 rotation_angle_deg, "z"
@@ -448,11 +451,11 @@ class PoseWindow:
             self.cal_ax.set_ylabel(r"$x_2$ (mm)", labelpad=10)
             self.cal_canvas.draw()
             self.scrollable_canvas.configure_frame()
-        except ValueError as e:
-            logging.logger.error("An error occurred while reading the calibration image.", exc=e)
-            raise RuntimeError(f"An error occurred while reading the calibration image: {e}")
-        except RuntimeError:
-            raise
+        except ValueError:
+            logger.error("Invalid calibration image format.")
+            raise RuntimeError
+        except Exception:
+            raise RuntimeError
 
     def pick_location(self):
         """Pick a location on the calibration plate image."""
@@ -522,16 +525,23 @@ class PoseWindow:
             self.ypick_entry.grid(
                 row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
             )
-        except RuntimeError:
+        except Exception:
             if case == CALCULATION_MODES[1][1]:
                 self.layout_widgets("local")
+                messagebox.showerror(
+                    "ERROR!",
+                    "Calibration plate image or transformation parameters "
+                    "could not be loaded. Check the log, fix the issue, and "
+                    "try again.",
+                )
             elif case == CALCULATION_MODES[2][1]:
                 self.layout_widgets("all")
-            messagebox.showerror(
-                "ERROR!",
-                "Invalid calibration plate image. Reload a valid image and "
-                "try again.",
-            )
+                messagebox.showerror(
+                    "ERROR!",
+                    "Calibration plate image or pose parameters "
+                    "could not be loaded. Check the log, fix the issue, and "
+                    "try again.",
+                )
 
     def create_global_pose_calculator(self, case: str, *args):
         """
