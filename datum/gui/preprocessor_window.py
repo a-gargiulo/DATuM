@@ -287,7 +287,7 @@ class PreprocessorWindow:
         try:
             preprocessing.preprocess_all(self.piv, ui)
         except (ValueError, RuntimeError) as e:
-            logger.error(f"Preprocessing failed: {e}", exc=e)
+            logger.error(f"Preprocessing failed: {e}")
             messagebox.showwarning(
                 "Warning",
                 "Preprocessing failed! Check log file for details, "

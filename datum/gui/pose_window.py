@@ -450,11 +450,10 @@ class PoseWindow:
             self.cal_ax.set_ylabel(r"$x_2$ (mm)", labelpad=10)
             self.cal_canvas.draw()
             self.scrollable_canvas.configure_frame()
-        except ValueError:
-            logger.error("Invalid calibration image format.")
-            raise RuntimeError
-        except Exception:
-            raise RuntimeError
+        except Exception as e:
+            raise RuntimeError(
+                f"An error occured while plotting the calibration image: {e}"
+            )
 
     def pick_location(self):
         """Pick a location on the calibration plate image."""
@@ -524,23 +523,27 @@ class PoseWindow:
             self.ypick_entry.grid(
                 row=1, column=1, padx=PAD_S, pady=PAD_S, sticky="nsew"
             )
-        except Exception:
+        except Exception as e:
             if case == CALCULATION_MODES[1][1]:
                 self.layout_widgets("local")
+                logger.error(str(e))
                 messagebox.showerror(
                     "ERROR!",
                     "Calibration plate image or transformation parameters "
                     "could not be loaded. Check the log, fix the issue, and "
                     "try again.",
                 )
+                return
             elif case == CALCULATION_MODES[2][1]:
                 self.layout_widgets("all")
+                logger.error(str(e))
                 messagebox.showerror(
                     "ERROR!",
                     "Calibration plate image "
                     "could not be loaded. Check the log, fix the issue, and "
                     "try again.",
                 )
+                return
 
     def create_global_pose_calculator(self, case: str, *args):
         """
@@ -664,7 +667,10 @@ class PoseWindow:
             self.plot_global(self.global_pose)
             self.create_local_pose_selector(self.mode_selector_var.get(), 3)
         except RuntimeError as e:
-            logger.error(str(e))
+            logger.error(
+                f"An error occured while calculating the transformation "
+                f"parameters: {e}"
+            )
             messagebox.showerror(
                 "ERROR!",
                 "Calibration plate image or pose parameters "
@@ -681,7 +687,8 @@ class PoseWindow:
             tp_path = self.parameters_loader.get_listbox_content()
             try:
                 tp = apputils.load_transformation_parameters(tp_path)
-            except RuntimeError:
+            except RuntimeError as e:
+                logger.error(str(e))
                 messagebox.showerror(
                     "ERROR!",
                     "Transformation parameters could not be loaded."
@@ -719,6 +726,7 @@ class PoseWindow:
             try:
                 tp = apputils.load_transformation_parameters(tp_path)
             except RuntimeError:
+                logger.error(str(e))
                 messagebox.showerror(
                     "ERROR!",
                     "Transformation parameters could not be loaded."

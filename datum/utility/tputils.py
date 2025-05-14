@@ -5,7 +5,6 @@ from typing import Dict, Tuple
 
 import numpy as np
 import tecplot as tp
-from datum.utility import logging
 
 
 def get_ijk(file_path: str) -> Tuple[int, ...]:
@@ -39,8 +38,9 @@ def get_ijk(file_path: str) -> Tuple[int, ...]:
             )
         return tuple(dimensions)
     except Exception as e:
-        logging.logger.error(str(e))
-        raise RuntimeError
+        raise RuntimeError(
+            f"An error occured while reading the calibration image: {e}"
+        )
 
 
 def get_tecplot_derivatives(

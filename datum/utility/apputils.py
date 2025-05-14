@@ -196,8 +196,7 @@ def load_transformation_parameters(
         }
 
     except Exception as e:
-        logger.error(f"Failed to load transformation parameters: {e}")
-        raise RuntimeError
+        raise RuntimeError(f"Failed to load transformation parameters: {e}")
 
 
 def read_json(file_path: str) -> Optional[NestedDict]:

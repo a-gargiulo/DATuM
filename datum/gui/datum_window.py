@@ -6,7 +6,7 @@ from typing import Tuple
 from PIL import Image, ImageTk
 
 from datum.gui.preprocessor_window import PreprocessorWindow
-# from datum.gui.profiler_window import ProfilerWindow
+from datum.gui.profiler_window import ProfilerWindow
 from datum.gui.widgets import Button
 from datum.utility import logging
 from datum.utility.configure import STYLES
@@ -70,6 +70,9 @@ class DatumWindow:
         if hasattr(self, 'pp_window'):
             if self.pp_window.root.winfo_exists():
                 self.pp_window.on_closing()
+        if hasattr(self, 'pr_window'):
+            if self.pr_window.root.winfo_exists():
+                self.pr_window.on_closing()
         self.root.destroy()
         logging.logger.info("DATuM closed successfully.")
 
@@ -110,5 +113,4 @@ class DatumWindow:
 
     def open_profiler(self) -> None:
         """Open the profiler window."""
-        pass
-        # ProfilerWindow(self.root)
+        self.pr_window = ProfilerWindow(self.root)

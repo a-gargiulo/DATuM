@@ -83,7 +83,9 @@ class Pose:
                 secant_tangent_parameters[7],
             )
         except Exception as e:
-            raise RuntimeError(str(e))
+            raise RuntimeError(
+                f"An error occured inside calculate_global_pose(): {e}"
+            )
 
     @staticmethod
     def _obtain_secant_tangent_parameters(
