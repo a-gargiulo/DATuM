@@ -197,7 +197,9 @@ def prepare_tensor_planar(
     """
     if len(components) == 6:
         n_diag = 3
-        tensor = np.zeros((n_diag, n_diag))
+        m = piv.data[quantity][components[0]].shape[0]
+        n = piv.data[quantity][components[0]].shape[1]
+        tensor = np.zeros((n_diag, n_diag, m, n))
 
         for i in range(n_diag):
             tensor[i, i] = piv.data[quantity][components[i]]

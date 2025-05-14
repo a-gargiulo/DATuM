@@ -88,11 +88,11 @@ class PPInputs(TypedDict):
     load_set: Dict[str, bool]
     flip_u3: bool
     interpolate_data: bool
-    num_interpolation_pts: int
+    num_interpolation_pts: Optional[int]
     compute_gradients: bool
-    use_cfd_dwdx_and_dwdy: bool
-    slice_path: str
-    slice_name: str
+    use_cfd_dwdx_and_dwdy: Optional[bool]
+    slice_path: Optional[str]
+    slice_name: Optional[str]
 
 
 class Coordinates(TypedDict):

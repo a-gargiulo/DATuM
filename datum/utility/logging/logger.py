@@ -47,6 +47,8 @@ class Logger:
         )
         if level == "INFO":
             level_str = Fore.BLUE + Style.BRIGHT + level + Style.RESET_ALL
+        elif level == "WARNING":
+            level_str = Fore.YELLOW + Style.BRIGHT + level + Style.RESET_ALL
         elif level == "ERROR":
             level_str = Fore.RED + Style.BRIGHT + level + Style.RESET_ALL
         else:

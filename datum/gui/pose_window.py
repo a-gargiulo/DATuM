@@ -14,7 +14,7 @@ from matplotlib.widgets import Cursor
 
 from datum.core import transform
 from datum.core.beverli import Beverli
-from datum.core.my_types import TransformationParameters
+from datum.core.my_types import TransformationParameters, SecParams
 from datum.core.piv import Piv
 from datum.gui.widgets import (
     Button,
@@ -426,11 +426,10 @@ class PoseWindow:
                 tp = apputils.load_transformation_parameters(tp_path)
                 rotation_angle_deg = tp["rotation"]["angle_1_deg"]
             elif case == CALCULATION_MODES[2][1]:
-                if self.global_pose is None:
-                    logger.error("The global pose is None.")
-                    raise RuntimeError
-                print("YOOOOOOO")
-                rotation_angle_deg = self.global_pose[6]
+                # NOTE: this path is triggered when the global calculator
+                # button is pressed, at which point we should already know
+                # if global_pose is None.
+                rotation_angle_deg = cast(SecParams, self.global_pose)[6]
             rotation_matrix = transform.rotation.get_rotation_matrix(
                 rotation_angle_deg, "z"
             )
@@ -538,7 +537,7 @@ class PoseWindow:
                 self.layout_widgets("all")
                 messagebox.showerror(
                     "ERROR!",
-                    "Calibration plate image or pose parameters "
+                    "Calibration plate image "
                     "could not be loaded. Check the log, fix the issue, and "
                     "try again.",
                 )
@@ -642,37 +641,53 @@ class PoseWindow:
 
     def calculate_global(self):
         """Calculate the global pose parameters."""
-        self.global_plot.grid(
-            row=1,
-            column=0,
-            columnspan=3,
-            padx=PAD_S,
-            pady=PAD_S,
-            sticky="nsew",
-        )
-        opts = {
-            "apply_convex_curvature_correction": bool(
-                self.is_convex_option.var.get()
-            ),
-            "use_measured_rotation_angle": bool(
-                self.use_measured_angle_option.var.get()
-            ),
-        }
-        self.global_pose = self.piv.pose.calculate_global_pose(
-            self.geometry, self.measurement_loader.get_listbox_content(), opts
-        )
-        if self.global_pose is None:
-            sys.exit(-1)
-        self.plot_global(self.global_pose)
-        self.create_local_pose_selector(self.mode_selector_var.get(), 3)
+        try:
+            self.global_plot.grid(
+                row=1,
+                column=0,
+                columnspan=3,
+                padx=PAD_S,
+                pady=PAD_S,
+                sticky="nsew",
+            )
+            opts = {
+                "apply_convex_curvature_correction": bool(
+                    self.is_convex_option.var.get()
+                ),
+                "use_measured_rotation_angle": bool(
+                    self.use_measured_angle_option.var.get()
+                ),
+            }
+            self.global_pose = self.piv.pose.calculate_global_pose(
+                self.geometry, self.measurement_loader.get_listbox_content(), opts
+            )
+            self.plot_global(self.global_pose)
+            self.create_local_pose_selector(self.mode_selector_var.get(), 3)
+        except RuntimeError as e:
+            logger.error(str(e))
+            messagebox.showerror(
+                "ERROR!",
+                "Calibration plate image or pose parameters "
+                "could not be loaded. Check the log, fix the issue, and "
+                "try again.",
+            )
+            self.layout_widgets("all")
+            return
 
     def submit_file(self):
         """Generate the pose parameters file."""
         case = self.mode_selector_var.get()
         if case == CALCULATION_MODES[0][1]:
             tp_path = self.parameters_loader.get_listbox_content()
-            tp = apputils.load_transformation_parameters(tp_path)
-            if tp is None:
+            try:
+                tp = apputils.load_transformation_parameters(tp_path)
+            except RuntimeError:
+                messagebox.showerror(
+                    "ERROR!",
+                    "Transformation parameters could not be loaded."
+                    "Check the log, fix the issue, and "
+                    "try again.",
+                )
                 self.layout_widgets("none")
                 return
             if self.checkbox_diagonal and bool(
@@ -693,11 +708,23 @@ class PoseWindow:
                 tp["translation"]["x_3_glob_ref_m"],
             )
             self.status.set(True)
+            messagebox.showinfo(
+                "INFO",
+                "Transformation parameters successfully submitted.",
+            )
+            logger.info("Transformation parameters successfully submitted.")
             self.on_closing()
         elif case == CALCULATION_MODES[1][1]:
             tp_path = self.global_loader.get_listbox_content()
-            tp = apputils.load_transformation_parameters(tp_path)
-            if tp is None:
+            try:
+                tp = apputils.load_transformation_parameters(tp_path)
+            except RuntimeError:
+                messagebox.showerror(
+                    "ERROR!",
+                    "Transformation parameters could not be loaded."
+                    "Check the log, fix the issue, and "
+                    "try again.",
+                )
                 self.layout_widgets("local")
                 return
             self.piv.pose.angle1 = tp["rotation"]["angle_1_deg"]
@@ -729,11 +756,13 @@ class PoseWindow:
                 cast(dict, parameters),
             )
             self.status.set(True)
+            messagebox.showinfo(
+                "INFO",
+                "Transformation parameters successfully submitted.",
+            )
+            logger.info("Transformation parameters successfully submitted.")
             self.on_closing()
         else:
-            if self.global_pose is None:
-                self.layout_widgets("all")
-                return
             self.piv.pose.angle1 = self.global_pose[6]
             self.piv.pose.angle2 = 0.0
             self.piv.pose.glob = (
@@ -763,4 +792,9 @@ class PoseWindow:
                 cast(dict, parameters),
             )
             self.status.set(True)
+            messagebox.showinfo(
+                "INFO",
+                "Transformation parameters successfully submitted.",
+            )
+            logger.info("Transformation parameters successfully submitted.")
             self.on_closing()

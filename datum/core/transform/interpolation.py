@@ -28,7 +28,7 @@ def interpolate_all(piv: "Piv", n_grid: int):
     coords = get_flattened_coordinates(piv)
     for data_type, keys in DAT2INTERP:
         for key in keys:
-            if piv.data[data_type][key]:
+            if piv.data[data_type][key] is not None:
                 data = get_flattened_data(piv, data_type, key)
                 interp_data = mathutils.interpolate(coords, data, (x1_q, x2_q))
                 set_interpolated_data(piv, data_type, key, interp_data)

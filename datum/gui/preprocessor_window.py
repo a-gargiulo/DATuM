@@ -178,6 +178,9 @@ class PreprocessorWindow:
         :return: Boolean indicating whether all inputs are valid or not.
         """
         if not self.geometry_section.pose_status_var.get():
+            logger.warning(
+                "Pose data has not been loaded! Please load the pose data."
+            )
             messagebox.showwarning(
                 "Warning",
                 "Pose data has not been loaded! Please load the pose data.",
@@ -249,18 +252,28 @@ class PreprocessorWindow:
             "interpolate_data": bool(
                 self.geometry_section.checkbox_interpolation_var.get()
             ),
-            "num_interpolation_pts": int(
-                self.geometry_section.interpolation_pts_entry.get()
-            ),
+            "num_interpolation_pts": None,
             "compute_gradients": bool(
                 self.cfd_section.checkbox_gradient_var.get()
             ),
-            "use_cfd_dwdx_and_dwdy": bool(
-                self.cfd_section.checkbox_gradient_opt_var.get()
-            ),
-            "slice_path": self.cfd_section.slice_loader.get_listbox_content(),
-            "slice_name": self.cfd_section.slice_zone_name.get(),
+            "use_cfd_dwdx_and_dwdy": None,
+            "slice_path": None,
+            "slice_name": None
         }
+
+        if ui["interpolate_data"]:
+            ui["num_interpolation_pts"] = int(
+                self.geometry_section.interpolation_pts_entry.get()
+            )
+
+        if ui["compute_gradients"]:
+            ui["use_cfd_dwdx_and_dwdy"] = bool(
+                self.cfd_section.checkbox_gradient_opt_var.get()
+            )
+            ui["slice_path"] = (
+                self.cfd_section.slice_loader.get_listbox_content()
+            )
+            ui["slice_name"] = self.cfd_section.slice_zone_name.get()
 
         return ui
 
@@ -274,7 +287,7 @@ class PreprocessorWindow:
         try:
             preprocessing.preprocess_all(self.piv, ui)
         except (ValueError, RuntimeError) as e:
-            logger.error(f"Preprocessing failed: {e}")
+            logger.error(f"Preprocessing failed: {e}", exc=e)
             messagebox.showwarning(
                 "Warning",
                 "Preprocessing failed! Check log file for details, "
@@ -282,5 +295,6 @@ class PreprocessorWindow:
             )
             return
 
+        logger.info("Preprocessing completed successfully.")
         messagebox.showinfo("Info", MSG_SUCCESS)
         return

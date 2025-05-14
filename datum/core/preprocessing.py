@@ -33,7 +33,7 @@ def preprocess_all(piv: "Piv", ui: PPInputs) -> None:
     if ui["interpolate_data"]:
         if piv.pose.angle2 != 0.0:
             raise ValueError("No interpolation for diagonal planes.")
-        transform_data(piv, ui["num_interpolation_pts"])
+        transform_data(piv, cast(int, ui["num_interpolation_pts"]))
         if ui["compute_gradients"]:
             calculate_velocity_gradient(piv, ui)
             calculate_strain_and_rotation_tensor(piv)
@@ -96,13 +96,15 @@ def calculate_velocity_gradient(piv: "Piv", ui: PPInputs) -> None:
     # Gradient components from CFD data
     x1_q, x2_q = (piv.data["coordinates"]["X"], piv.data["coordinates"]["Y"])
     cfd_data = tputils.get_tecplot_derivatives(
-        ui["slice_path"], ui["slice_name"], ui["use_cfd_dwdx_and_dwdy"]
+        cast(str, ui["slice_path"]),
+        cast(str, ui["slice_name"]),
+        cast(bool, ui["use_cfd_dwdx_and_dwdy"])
     )
     cfd_coords = np.column_stack(
         (cfd_data["X"].flatten(), cfd_data["Y"].flatten())
     )
     for key, _ in cfd_data.items():
-        if key not in {"x_1", "x_2"}:
+        if key not in {"X", "Y"}:
             mean_vel_grad[key] = mathutils.interpolate(
                 cfd_coords, cfd_data[key], (x1_q, x2_q)
             )

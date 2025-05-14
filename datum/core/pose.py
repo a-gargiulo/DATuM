@@ -39,49 +39,51 @@ class Pose:
 
     def calculate_global_pose(
         self, geometry: Beverli, meas_path: str, opts: Dict[str, bool]
-    ) -> Optional[SecParams]:
+    ) -> SecParams:
         """Calculate the global pose.
 
         :param geometry: BeVERLI Hill geometry.
         :param meas_path: System path to the pose measurement file.
         :param opts: User input options.
+        :raises RuntimeError: If the pose measurement was not loaded correctly.
         """
-        measurement = apputils.load_pose_measurement(meas_path)
-        if measurement is None:
-            return None
+        try:
+            measurement = apputils.load_pose_measurement(meas_path)
 
-        x3_profile = measurement["calibration_plate_location"]["x_3_m"]
+            x3_profile = measurement["calibration_plate_location"]["x_3_m"]
 
-        x1_profile, x2_profile = geometry.calculate_x1_x2(x3_profile)
+            x1_profile, x2_profile = geometry.calculate_x1_x2(x3_profile)
 
-        x2_prime_profile = mathutils.calculate_derivative_1d(
-            x1_profile, x2_profile
-        )
+            x2_prime_profile = mathutils.calculate_derivative_1d(
+                x1_profile, x2_profile
+            )
 
-        secant_tangent_parameters = Pose._obtain_secant_tangent_parameters(
-            x1_profile, x2_profile, x2_prime_profile, measurement
-        )
+            secant_tangent_parameters = Pose._obtain_secant_tangent_parameters(
+                x1_profile, x2_profile, x2_prime_profile, measurement
+            )
 
-        secant_tangent_parameters = Pose._correct_secant_tangent_parameters(
-            secant_tangent_parameters,
-            x1_profile,
-            x2_profile,
-            measurement,
-            opts,
-        )
+            secant_tangent_parameters = Pose._correct_secant_tangent_parameters(
+                secant_tangent_parameters,
+                x1_profile,
+                x2_profile,
+                measurement,
+                opts,
+            )
 
-        secant_tangent_parameters.append(x3_profile)
+            secant_tangent_parameters.append(x3_profile)
 
-        return (
-            secant_tangent_parameters[0],
-            secant_tangent_parameters[1],
-            secant_tangent_parameters[2],
-            secant_tangent_parameters[3],
-            secant_tangent_parameters[4],
-            secant_tangent_parameters[5],
-            secant_tangent_parameters[6],
-            secant_tangent_parameters[7],
-        )
+            return (
+                secant_tangent_parameters[0],
+                secant_tangent_parameters[1],
+                secant_tangent_parameters[2],
+                secant_tangent_parameters[3],
+                secant_tangent_parameters[4],
+                secant_tangent_parameters[5],
+                secant_tangent_parameters[6],
+                secant_tangent_parameters[7],
+            )
+        except Exception as e:
+            raise RuntimeError(str(e))
 
     @staticmethod
     def _obtain_secant_tangent_parameters(

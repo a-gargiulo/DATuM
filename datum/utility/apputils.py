@@ -95,8 +95,11 @@ def find_file(root_folder: str, target_filename: str) -> Optional[str]:
         sys.exit(1)
 
 
-def load_pose_measurement(path: str) -> Optional[PoseMeasurement]:
-    """Load pose measurement from .json file."""
+def load_pose_measurement(path: str) -> PoseMeasurement:
+    """Load pose measurement from .json file.
+
+    :raises RuntimeError: If the pose measurement could not be loaded.
+    """
     try:
         with open(path, "r") as f:
             raw = json.load(f)
@@ -144,11 +147,8 @@ def load_pose_measurement(path: str) -> Optional[PoseMeasurement]:
             "calibration_plate_location": calibration_plate_location,
         }
 
-    except (
-        json.JSONDecodeError, OSError, ValueError, KeyError, TypeError
-    ) as e:
-        print(f"[ERROR] Failed to load pose measurement: {e}")
-        return None
+    except Exception as e:
+        raise RuntimeError(f"Failed to load pose measurement: {e}")
 
 
 def load_transformation_parameters(
@@ -231,7 +231,7 @@ def write_json(file_path: str, dictionary: dict) -> None:
     with open(file_path, "w", encoding="utf-8") as file:
         file.write(json.dumps(dictionary, indent=4))
 
-    print(f"--> File '{os.path.basename(file_path)}' created.\n")
+    logger.info(f"File '{os.path.basename(file_path)}' created.")
 
 
 def load_pickle(file_path: str) -> NestedDict:
