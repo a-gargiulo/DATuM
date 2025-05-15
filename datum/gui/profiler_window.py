@@ -7,13 +7,14 @@ from typing import Optional, cast
 
 from datum.core import profiles  # Deactivate to run without errors
 from datum.core.beverli import Beverli
-from datum.core.my_types import PivData
+from datum.core.my_types import PivData, PRInputs
 from datum.core.piv import Piv
 from datum.core.pose import Pose
 from datum.gui.widgets import (
     Button,
     Checkbutton,
     Entry,
+    Frame,
     FileLoader,
     Label,
     ScrollableCanvas,
@@ -61,46 +62,53 @@ class ProfilerWindow:
         self.main_frame = self.scrollable_canvas.frame
 
         self.general_section = Section(self.main_frame, "General", category=1)
+
+        self.orientation_frame = Frame(self.general_section.content, 1)
         self.hill_orientation_label = Label(
-            self.general_section.content, "Hill Orientation:", 1
+            self.orientation_frame, "Hill orientation [deg]:", 1
         )
-        self.hill_orientation = Entry(self.general_section.content, 1)
+        self.hill_orientation = Entry(self.orientation_frame, 1)
+        self.reynolds_frame = Frame(self.general_section.content, 1)
+        self.reynolds_label = Label(
+            self.reynolds_frame, "Reynolds number:", 1
+        )
+        self.reynolds = Entry(self.reynolds_frame, 1)
+        self.tunnel_entry_frame = Frame(self.general_section.content, 1)
+        self.tunnel_entry_label = Label(
+            self.tunnel_entry_frame, "Wind tunnel entry:", 1
+        )
+        self.tunnel_entry = Entry(self.tunnel_entry_frame, 1)
         self.data_loader = FileLoader(
             self.general_section.content,
-            title="Piv Data (no interp)",
+            title="Piv data (no interp.)",
             filetypes=[("Pickle File", "*.pkl"), ("All Files", "*.*")],
             category=1,
             isCheckable=False,
         )
         self.data_loader_interp = FileLoader(
             self.general_section.content,
-            title="Piv Data (interp)",
+            title="Piv data (interp.)",
             filetypes=[("Pickle File", "*.pkl"), ("All Files", "*.*")],
             category=1,
             isCheckable=False,
         )
         self.pose_loader = FileLoader(
             self.general_section.content,
-            title="Transformation Parameters",
+            title="Transformation parameters",
             filetypes=[("Pose File", "*.json"), ("All Files", "*.*")],
             category=1,
             isCheckable=False,
         )
-        # self.checkbox_diagonal = Checkbutton(
-        #     self.general_section.content,
-        #     category=1,
-        #     text="Plane is Diagonal",
-        # )
         self.properties_loader = FileLoader(
             self.general_section.content,
-            title="Fluid and Flow Properties",
+            title="Fluid and flow properties",
             filetypes=[("Properties File", "*.json"), ("All Files", "*.*")],
             category=1,
             isCheckable=False,
         )
         self.ref_conditions_loader = FileLoader(
             self.general_section.content,
-            title="Reference Conditions",
+            title="Reference conditions (.stat)",
             filetypes=[
                 ("Reference Conditions File", "*.stat"),
                 ("All Files", "*.*"),
@@ -109,21 +117,9 @@ class ProfilerWindow:
             isCheckable=False,
         )
 
-        self.profiler_section = Section(self.main_frame, "Profiles", 1)
-        self.num_profile_label = Label(
-            self.profiler_section.content, "Number of Profiles:", 1
-        )
-        self.num_profile = Entry(self.profiler_section.content, 1)
-        self.num_profile_pts_label = Label(
-            self.profiler_section.content, "Number of Profile Points:", 1
-        )
-        self.num_profile_pts = Entry(self.profiler_section.content, 1)
-        self.profile_height_label = Label(
-            self.profiler_section.content, "Profile Height:", 1
-        )
-        self.profile_height = Entry(self.profiler_section.content, 1)
+        self.profiler_section = Section(self.main_frame, "Profiles", 2)
         self.coordinates_selector_label = Label(
-            self.profiler_section.content, "Coordinate System:", 1
+            self.profiler_section.content, "Coordinate system:", 2
         )
         self.coordinates_selector_var = tk.StringVar()
         self.coordinates_selector_var.set("Tunnel")
@@ -134,43 +130,64 @@ class ProfilerWindow:
             "Shear",
         )
         self.coordinates_selector_var.trace("w", self.on_coordinates_selection)
+        self.num_profile_label = Label(
+            self.profiler_section.content, "Number of profiles:", 2
+        )
+        self.num_profile = Entry(self.profiler_section.content, 2)
+        self.num_profile_pts_label = Label(
+            self.profiler_section.content, "Number of profile Points:", 2
+        )
+        self.num_profile_pts = Entry(self.profiler_section.content, 2)
+        self.profile_height_label = Label(
+            self.profiler_section.content, "Profile height [m]:", 2
+        )
+        self.profile_height = Entry(self.profiler_section.content, 2)
         self.reconstruction_checkbox = Checkbutton(
             self.profiler_section.content,
-            category=1,
-            text="Add Reconstruction Points",
+            category=2,
+            text="Add reconstruction points",
             command=self.toggle_reconstruction,
         )
+        self.reconstruction_checkbox.config(state="disabled")
         self.num_reconstruction_pts_label = Label(
             self.profiler_section.content,
-            text="Number of Reconstruction Points:",
-            category=1,
+            text="Number of reconstruction points:",
+            category=2,
         )
-        self.num_reconstruction_pts = Entry(self.profiler_section.content, 1)
+        self.num_reconstruction_pts_label.config(state="disabled")
+        self.num_reconstruction_pts = Entry(self.profiler_section.content, 2)
+        self.num_reconstruction_pts.config(state="disabled")
         self.checkbox_cfd = Checkbutton(
             self.profiler_section.content,
-            category=1,
-            text="Extract CFD Profiles (expensive)",
+            category=2,
+            text="Extract CFD profiles (expensive)",
             command=self.toggle_cfd,
         )
         self.fluent_case_loader = FileLoader(
             self.profiler_section.content,
-            title="Fluent Case",
+            title="Fluent case",
             filetypes=[("Fluent Case", "*.cas"), ("All Files", ".*.")],
-            category=1,
+            category=2,
             isCheckable=False,
         )
         self.fluent_data_loader = FileLoader(
             self.profiler_section.content,
-            title="Fluent Data",
+            title="Fluent data",
             filetypes=[("Fluent Data", "*.dat"), ("All Files", ".*.")],
-            category=1,
+            category=2,
             isCheckable=False,
         )
+        self.fluent_case_loader.load_button.config(state="disabled")
+        self.fluent_case_loader.listbox.config(state="disabled")
+        self.fluent_case_loader.status_label.config(state="disabled")
+        self.fluent_data_loader.load_button.config(state="disabled")
+        self.fluent_data_loader.listbox.config(state="disabled")
+        self.fluent_data_loader.status_label.config(state="disabled")
         self.calculate_button = Button(
             self.main_frame, text="Submit", command=self.calculate
         )
 
-        self.pressure_section = Section(self.profiler_section.content, "Pressure Data", 2)
+        self.pressure_section = Section(self.profiler_section.content, "Boundary layer parameters caluclation", 1)
         self.port_loader = FileLoader(
             self.pressure_section.content,
             title="Port Wall Pressure",
@@ -178,7 +195,7 @@ class ProfilerWindow:
                 ("Port Wall Pressure File", "*.stat"),
                 ("All Files", "*.*"),
             ],
-            category=2,
+            category=1,
             isCheckable=False,
         )
         self.hill_loader = FileLoader(
@@ -188,7 +205,7 @@ class ProfilerWindow:
                 ("Hill Surface Pressure File", "*.stat"),
                 ("All Files", "*.*"),
             ],
-            category=2,
+            category=1,
             isCheckable=False,
         )
         self.info_loader = FileLoader(
@@ -198,7 +215,7 @@ class ProfilerWindow:
                 ("Pressure Data Info File", "*.stat"),
                 ("All Files", "*.*"),
             ],
-            category=2,
+            category=1,
             isCheckable=False,
         )
 
@@ -212,14 +229,59 @@ class ProfilerWindow:
         self.general_section.content.grid_columnconfigure(0, weight=1)
         self.general_section.content.grid_columnconfigure(1, weight=1)
         self.general_section.content.grid_columnconfigure(2, weight=1)
+        self.orientation_frame.grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew"
+        )
+        self.reynolds_frame.grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew"
+        )
+        self.tunnel_entry_frame.grid(
+            row=2,
+            column=0,
+            columnspan=3,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew"
+        )
+        self.orientation_frame.grid_columnconfigure(0, weight=1)
+        self.orientation_frame.grid_columnconfigure(1, weight=1)
+        self.orientation_frame.grid_columnconfigure(2, weight=1)
+        self.reynolds_frame.grid_columnconfigure(0, weight=1)
+        self.reynolds_frame.grid_columnconfigure(1, weight=1)
+        self.reynolds_frame.grid_columnconfigure(2, weight=1)
+        self.tunnel_entry_frame.grid_columnconfigure(0, weight=1)
+        self.tunnel_entry_frame.grid_columnconfigure(1, weight=1)
+        self.tunnel_entry_frame.grid_columnconfigure(2, weight=1)
         self.hill_orientation_label.grid(
-            row=0, column=0, padx=(2 * PAD_S, 0), pady=PAD_S, sticky="nsw"
+            row=0, column=0, padx=(PAD_S, 0), pady=0, sticky="nsw"
         )
         self.hill_orientation.grid(
-            row=0, column=1, columnspan=2, padx=0, pady=PAD_S, sticky="nsew"
+            row=0, column=1, columnspan=2, padx=0, pady=0, sticky="nsew"
+        )
+        self.reynolds_label.grid(
+            row=0, column=0, padx=(PAD_S, 3.5*PAD_S), pady=0, sticky="nsw"
+        )
+        self.reynolds.grid(
+            row=0, column=1, columnspan=2, padx=0, pady=0, sticky="nsew"
+        )
+        self.tunnel_entry_label.grid(
+            row=0, column=0, padx=(PAD_S, 3.5*PAD_S), pady=0, sticky="nsw"
+        )
+        self.tunnel_entry.grid(
+            row=0, column=1, columnspan=2, padx=0, pady=0, sticky="nsew"
         )
         self.data_loader.grid(
-            row=1,
+            row=3,
             column=0,
             columnspan=3,
             padx=PAD_S,
@@ -227,7 +289,7 @@ class ProfilerWindow:
             sticky="nsew",
         )
         self.data_loader_interp.grid(
-            row=2,
+            row=4,
             column=0,
             columnspan=3,
             padx=PAD_S,
@@ -235,7 +297,7 @@ class ProfilerWindow:
             sticky="nsew",
         )
         self.pose_loader.grid(
-            row=3,
+            row=5,
             column=0,
             columnspan=3,
             padx=PAD_S,
@@ -246,7 +308,7 @@ class ProfilerWindow:
         #     row=4, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
         # )
         self.properties_loader.grid(
-            row=4,
+            row=6,
             column=0,
             columnspan=3,
             padx=PAD_S,
@@ -254,44 +316,14 @@ class ProfilerWindow:
             sticky="nsew",
         )
         self.ref_conditions_loader.grid(
-            row=5,
+            row=7,
             column=0,
             columnspan=3,
             padx=PAD_S,
             pady=PAD_S,
             sticky="nsew",
         )
-        self.pressure_section.grid(
-            row=9, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew", columnspan=3
-        )
-        self.pressure_section.content.grid(columnspan=3)
-        self.pressure_section.content.grid_columnconfigure(0, weight=1)
-        self.pressure_section.content.grid_columnconfigure(1, weight=1)
-        self.pressure_section.content.grid_columnconfigure(2, weight=1)
-        self.port_loader.grid(
-            row=0,
-            column=0,
-            columnspan=3,
-            padx=PAD_S,
-            pady=PAD_S,
-            sticky="nsew",
-        )
-        self.hill_loader.grid(
-            row=1,
-            column=0,
-            columnspan=3,
-            padx=PAD_S,
-            pady=PAD_S,
-            sticky="nsew",
-        )
-        self.info_loader.grid(
-            row=2,
-            column=0,
-            columnspan=3,
-            padx=PAD_S,
-            pady=PAD_S,
-            sticky="nsew",
-        )
+
         self.profiler_section.grid(
             row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
         )
@@ -299,10 +331,10 @@ class ProfilerWindow:
         self.profiler_section.content.grid_columnconfigure(0, weight=1)
         self.profiler_section.content.grid_columnconfigure(1, weight=1)
         self.profiler_section.content.grid_columnconfigure(2, weight=1)
-        self.num_profile_label.grid(
+        self.coordinates_selector_label.grid(
             row=0, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw"
         )
-        self.num_profile.grid(
+        self.coordinates_selector.grid(
             row=0,
             column=1,
             columnspan=2,
@@ -310,10 +342,10 @@ class ProfilerWindow:
             pady=PAD_S,
             sticky="nsew",
         )
-        self.num_profile_pts_label.grid(
+        self.num_profile_label.grid(
             row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw"
         )
-        self.num_profile_pts.grid(
+        self.num_profile.grid(
             row=1,
             column=1,
             columnspan=2,
@@ -321,10 +353,10 @@ class ProfilerWindow:
             pady=PAD_S,
             sticky="nsew",
         )
-        self.profile_height_label.grid(
+        self.num_profile_pts_label.grid(
             row=2, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw"
         )
-        self.profile_height.grid(
+        self.num_profile_pts.grid(
             row=2,
             column=1,
             columnspan=2,
@@ -332,10 +364,10 @@ class ProfilerWindow:
             pady=PAD_S,
             sticky="nsew",
         )
-        self.coordinates_selector_label.grid(
+        self.profile_height_label.grid(
             row=3, column=0, padx=PAD_S, pady=PAD_S, sticky="nsw"
         )
-        self.coordinates_selector.grid(
+        self.profile_height.grid(
             row=3,
             column=1,
             columnspan=2,
@@ -387,51 +419,75 @@ class ProfilerWindow:
 
     def toggle_reconstruction(self):
         """Activate/deactivate the profile reconstruction option."""
-        pass
+        if bool(self.reconstruction_checkbox.var.get()):
+            ss = "normal"
+        else:
+            ss = "disabled"
+        self.num_reconstruction_pts_label.config(state=ss)
+        self.num_reconstruction_pts.config(state=ss)
 
     def on_coordinates_selection(self, *args):
         """Perform an action when the coordinate system is selected."""
-        pass
+        if self.coordinates_selector_var.get() == "Shear":
+            self.reconstruction_checkbox.config(state="normal")
+            self.num_reconstruction_pts_label.config(state="disabled")
+            self.num_reconstruction_pts.config(state="disabled")
+
+
+            self.pressure_section.grid(
+                row=9, column=0, padx=2*PAD_S, pady=PAD_S, sticky="nsew", columnspan=3
+            )
+            self.pressure_section.content.grid(columnspan=3)
+            self.pressure_section.content.grid_columnconfigure(0, weight=1)
+            self.pressure_section.content.grid_columnconfigure(1, weight=1)
+            self.pressure_section.content.grid_columnconfigure(2, weight=1)
+            self.port_loader.grid(
+                row=0,
+                column=0,
+                columnspan=3,
+                padx=PAD_S,
+                pady=PAD_S,
+                sticky="nsew",
+            )
+            self.hill_loader.grid(
+                row=1,
+                column=0,
+                columnspan=3,
+                padx=PAD_S,
+                pady=PAD_S,
+                sticky="nsew",
+            )
+            self.info_loader.grid(
+                row=2,
+                column=0,
+                columnspan=3,
+                padx=PAD_S,
+                pady=PAD_S,
+                sticky="nsew",
+            )
+            self.scrollable_canvas.configure_frame()
+        else:
+            self.reconstruction_checkbox.var.set(0)
+            self.reconstruction_checkbox.config(state="disabled")
+            self.num_reconstruction_pts_label.config(state="disabled")
+            self.num_reconstruction_pts.config(state="disabled")
+            self.port_loader.reset()
+            self.hill_loader.reset()
+            self.info_loader.reset()
+            self.pressure_section.grid_forget()
 
     def toggle_cfd(self):
         """Activate/deactivate the option to extract equivalent profiles from CFD data."""
-        pass
-
-    def load_pose(self, pose_path: str, is_diagonal: bool) -> Optional[Pose]:
-        """
-        Load the pose of the PIV plane from the specified file.
-
-        :param pose_path: Filepath.
-        :param is_diagonal: Boolean indicating whether the PIV plane is diagonal.
-
-        :return: A pose object.
-        :rtype: Pose
-        """
-        pose_data = apputils.read_json(pose_path)
-        if pose_data is None:
-            return None
-        pose = Pose(
-            angle1=(
-                float(cast(dict, pose_data["rotation"])["angle_1_deg"])
-                if is_diagonal
-                else float(cast(dict, pose_data["rotation"])["angle_deg"])
-            ),
-            angle2=(
-                float(cast(dict, pose_data["rotation"])["angle_2_deg"])
-                if is_diagonal
-                else 0.0
-            ),
-            loc=[
-                float(cast(dict, pose_data["translation"])["x_1_loc_ref_mm"]),
-                float(cast(dict, pose_data["translation"])["x_2_loc_ref_mm"]),
-            ],
-            glob=[
-                float(cast(dict, pose_data["translation"])["x_1_glob_ref_m"]),
-                float(cast(dict, pose_data["translation"])["x_2_glob_ref_m"]),
-                float(cast(dict, pose_data["translation"])["x_3_glob_ref_m"]),
-            ],
-        )
-        return pose
+        if bool(self.checkbox_cfd.var.get()):
+            ss = "normal"
+        else:
+            ss = "disabled"
+        self.fluent_case_loader.load_button.config(state=ss)
+        self.fluent_case_loader.listbox.config(state=ss)
+        self.fluent_case_loader.status_label.config(state=ss)
+        self.fluent_data_loader.load_button.config(state=ss)
+        self.fluent_data_loader.listbox.config(state=ss)
+        self.fluent_data_loader.status_label.config(state=ss)
 
     def calculate(self):
         """Extract 1D profile data from the 2D plane data."""
@@ -451,6 +507,30 @@ class ProfilerWindow:
             self.geometry = Beverli(hill_orientation, use_cad=True)
             self.piv_intrp = Piv(data_interp, pose)
             self.piv_no_intrp = Piv(data_no_interp, pose)
+
+
+            ui: PRInputs = {
+                "reference_stat_file": (
+                    self.ref_conditions_loader.get_listbox_content()
+                ),
+                "reynolds_number": float(self.reynolds.get()),
+                "tunnel_entry": int(self.tunnel_entry.get()),
+                "add_cfd": bool(self.checkbox_cfd.var.get()),
+                "fluent_case": None,
+                "fluent_data": None,
+                "number_of_profiles": int(self.num_profile.get()),
+                "coordinate_system": str(self.coordinates_selector_var),
+                "profile_height": float(self.profile_height.get()),
+                "port_wall_pressure": None,
+                "hill_pressure": None,
+                "pressure_readme": None,
+                "add_reconstruction_points": None,
+                "number_of_reconstruction_points": None,
+            }
+
+
+
+
 
             # profiles.extract_data(self.piv_no_intrp, self.piv_intrp, self.geometry, opts)
         except Exception as e:
