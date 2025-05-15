@@ -72,7 +72,7 @@ class ProfilerWindow:
             category=1,
             isCheckable=False,
         )
-        self.data_loader_interpolation = FileLoader(
+        self.data_loader_interp = FileLoader(
             self.general_section.content,
             title="Piv Data (interp)",
             filetypes=[("Pickle File", "*.pkl"), ("All Files", "*.*")],
@@ -81,16 +81,16 @@ class ProfilerWindow:
         )
         self.pose_loader = FileLoader(
             self.general_section.content,
-            title="Pose File",
+            title="Transformation Parameters",
             filetypes=[("Pose File", "*.json"), ("All Files", "*.*")],
             category=1,
             isCheckable=False,
         )
-        self.checkbox_diagonal = Checkbutton(
-            self.general_section.content,
-            category=1,
-            text="Plane is Diagonal",
-        )
+        # self.checkbox_diagonal = Checkbutton(
+        #     self.general_section.content,
+        #     category=1,
+        #     text="Plane is Diagonal",
+        # )
         self.properties_loader = FileLoader(
             self.general_section.content,
             title="Fluid and Flow Properties",
@@ -106,38 +106,6 @@ class ProfilerWindow:
                 ("All Files", "*.*"),
             ],
             category=1,
-            isCheckable=False,
-        )
-
-        self.pressure_section = Section(self.main_frame, "Pressure Data", 2)
-        self.port_loader = FileLoader(
-            self.pressure_section.content,
-            title="Port Wall Pressure",
-            filetypes=[
-                ("Port Wall Pressure File", "*.stat"),
-                ("All Files", "*.*"),
-            ],
-            category=2,
-            isCheckable=False,
-        )
-        self.hill_loader = FileLoader(
-            self.pressure_section.content,
-            title="Hill Surface Pressure",
-            filetypes=[
-                ("Hill Surface Pressure File", "*.stat"),
-                ("All Files", "*.*"),
-            ],
-            category=2,
-            isCheckable=False,
-        )
-        self.info_loader = FileLoader(
-            self.pressure_section.content,
-            title="Pressure Data Info File",
-            filetypes=[
-                ("Pressure Data Info File", "*.stat"),
-                ("All Files", "*.*"),
-            ],
-            category=2,
             isCheckable=False,
         )
 
@@ -202,6 +170,38 @@ class ProfilerWindow:
             self.main_frame, text="Submit", command=self.calculate
         )
 
+        self.pressure_section = Section(self.profiler_section.content, "Pressure Data", 2)
+        self.port_loader = FileLoader(
+            self.pressure_section.content,
+            title="Port Wall Pressure",
+            filetypes=[
+                ("Port Wall Pressure File", "*.stat"),
+                ("All Files", "*.*"),
+            ],
+            category=2,
+            isCheckable=False,
+        )
+        self.hill_loader = FileLoader(
+            self.pressure_section.content,
+            title="Hill Surface Pressure",
+            filetypes=[
+                ("Hill Surface Pressure File", "*.stat"),
+                ("All Files", "*.*"),
+            ],
+            category=2,
+            isCheckable=False,
+        )
+        self.info_loader = FileLoader(
+            self.pressure_section.content,
+            title="Pressure Data Info File",
+            filetypes=[
+                ("Pressure Data Info File", "*.stat"),
+                ("All Files", "*.*"),
+            ],
+            category=2,
+            isCheckable=False,
+        )
+
     def layout_widgets(self):
         """Layout all widgets on the window."""
         self.main_frame.grid_columnconfigure(0, weight=1)
@@ -226,7 +226,7 @@ class ProfilerWindow:
             pady=PAD_S,
             sticky="nsew",
         )
-        self.data_loader_interpolation.grid(
+        self.data_loader_interp.grid(
             row=2,
             column=0,
             columnspan=3,
@@ -242,11 +242,11 @@ class ProfilerWindow:
             pady=PAD_S,
             sticky="nsew",
         )
-        self.checkbox_diagonal.grid(
-            row=4, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
-        )
+        # self.checkbox_diagonal.grid(
+        #     row=4, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+        # )
         self.properties_loader.grid(
-            row=5,
+            row=4,
             column=0,
             columnspan=3,
             padx=PAD_S,
@@ -254,7 +254,7 @@ class ProfilerWindow:
             sticky="nsew",
         )
         self.ref_conditions_loader.grid(
-            row=6,
+            row=5,
             column=0,
             columnspan=3,
             padx=PAD_S,
@@ -262,7 +262,7 @@ class ProfilerWindow:
             sticky="nsew",
         )
         self.pressure_section.grid(
-            row=1, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew"
+            row=9, column=0, padx=PAD_S, pady=PAD_S, sticky="nsew", columnspan=3
         )
         self.pressure_section.content.grid(columnspan=3)
         self.pressure_section.content.grid_columnconfigure(0, weight=1)
@@ -436,27 +436,22 @@ class ProfilerWindow:
     def calculate(self):
         """Extract 1D profile data from the 2D plane data."""
         try:
-            self.geometry = Beverli(float(self.hill_orientation.get()), True)
+            hill_orientation = float(self.hill_orientation.get())
+            tp_path = self.pose_loader.get_listbox_content()
+            pth_interp = self.data_loader_interp.get_listbox_content()
+            pth_no_interp = self.data_loader.get_listbox_content()
 
             # TODO: add a check for the orientation and the shear mode
 
-            pose = self.load_pose(
-                self.pose_loader.get_listbox_content(),
-                bool(self.checkbox_diagonal.var),
-            )
-            if pose is None:
-                sys.exit(-1)
+            trans_params = apputils.load_transformation_parameters(tp_path)
+            pose = apputils.make_pose_from_trans_params(trans_params)
+            data_interp = cast(PivData, apputils.load_pickle(pth_interp))
+            data_no_interp = cast(PivData, apputils.load_pickle(pth_no_interp))
 
-            data_intrp = apputils.load_pickle(
-                self.data_loader_interpolation.get_listbox_content()
-            )
-            data_no_intrp = apputils.load_pickle(
-                self.data_loader.get_listbox_content()
-            )
-            # TODO: check if the data was properly loaded.
-            self.piv_intrp = Piv(data=data_intrp, pose=pose)
-            self.piv_no_intrp = Piv(data=data_no_intrp, pose=pose)
-            pass
+            self.geometry = Beverli(hill_orientation, use_cad=True)
+            self.piv_intrp = Piv(data_interp, pose)
+            self.piv_no_intrp = Piv(data_no_interp, pose)
+
             # profiles.extract_data(self.piv_no_intrp, self.piv_intrp, self.geometry, opts)
         except Exception as e:
             logger.error(

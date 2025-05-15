@@ -8,6 +8,7 @@ import scipy.io as scio
 import numpy as np
 
 from datum.utility.logging import logger
+from datum.core.pose import Pose
 from ..core.my_types import (
     NestedDict,
     RotationParameters,
@@ -199,6 +200,23 @@ def load_transformation_parameters(
         raise RuntimeError(f"Failed to load transformation parameters: {e}")
 
 
+def make_pose_from_trans_params(tp: TransformationParameters) -> Pose:
+    """Generate a Pose object from transformation parameters."""
+    return Pose(
+        angle1=tp["rotation"]["angle_1_deg"],
+        angle2=tp["rotation"]["angle_2_deg"],
+        loc=(
+            tp["translation"]["x_1_loc_ref_mm"],
+            tp["translation"]["x_2_loc_ref_mm"],
+        ),
+        glob=(
+            tp["translation"]["x_1_glob_ref_m"],
+            tp["translation"]["x_2_glob_ref_m"],
+            tp["translation"]["x_3_glob_ref_m"],
+        ),
+    )
+
+
 def read_json(file_path: str) -> Optional[NestedDict]:
     """Read json file.
 
@@ -239,9 +257,17 @@ def load_pickle(file_path: str) -> NestedDict:
     :param file_path: System path to the Pickle file.
     :return: A nested dictionary containing the file's content.
     """
-    with open(file_path, "rb") as file:
-        data = pickle.load(file)
-    return data
+    try:
+        with open(file_path, "rb") as file:
+            data = pickle.load(file)
+        return data
+    except Exception as e:
+        raise RuntimeError(
+                    f"Loading '{os.path.basename(file_path)}' failed: {e}"
+                )
+
+    logger.info(f"File '{os.path.basename(file_path)}' loaded.")
+
 
 
 def write_pickle(file_path: str, dictionary: NestedDict) -> None:

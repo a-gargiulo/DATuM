@@ -95,6 +95,25 @@ class PPInputs(TypedDict):
     slice_name: Optional[str]
 
 
+class PRInputs(TypedDict):
+    """Type definition for profiler user inputs."""
+
+    reference_stat_file: str
+    reynolds_number: float
+    tunnel_entry: int
+    add_cfd: bool
+    fluent_case: Optional[str]
+    fluent_data: Optional[str]
+    number_of_profiles: int
+    coordinate_system: str
+    profile_height: float
+    port_wall_pressure: Optional[str]
+    hill_pressure: Optional[str]
+    pressure_readme: Optional[str]
+    add_reconstruction_points: Optional[bool]
+    number_of_reconstruction_points: Optional[int]
+
+
 class Coordinates(TypedDict):
     """Type definition for PIV coordinates."""
 
