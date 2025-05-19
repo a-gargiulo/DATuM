@@ -6,8 +6,9 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from . import plotting
-from .my_types import ProfileData, Properties, PRInputs, CenterlinePressure, FloatOrArray, Interp1DCallable
+from .my_types import ProfileData, Properties, PRInputs, CenterlinePressure, FloatOrArray, Interp1DCallable, BLMethods, ProfileReynoldsStress
 from .spalding import spalding_profile
+from datum.utility.logging import logger
 
 
 def _get_centerline_pressure(
@@ -164,7 +165,7 @@ def _reconstruct_profile(profile: ProfileData, ui: PRInputs, exp_vel: Interp1DCa
     profile["coordinates"]["Y_SS_MODELED"] = x_2_ss_wall_model
 
 
-def calculate_boundary_layer_integral_parameters(profile: ProfileData, ui: PRInputs, props: Properties) -> bool:
+def calculate_boundary_layer_integral_parameters(profile: ProfileData, ui: PRInputs, props: Properties) -> None:
     """
     Calculate the boundary layer integral parameters for a single experimental hill-normal profile.
 
@@ -187,7 +188,8 @@ def calculate_boundary_layer_integral_parameters(profile: ProfileData, ui: PRInp
     nu = profile["properties"]["NU"]
     rho = profile["properties"]["RHO"]
     p_0 = pressure_data["properties"]["P_0"]
-    p3 = pressure_data["interpolants"]["P_THIRD_ORDER"]
+    p_ctrline = pressure_data["interpolants"]["P_THIRD_ORDER"]
+    uu_ss = cast(np.ndarray, cast(ProfileReynoldsStress, profile["reynolds_stress"])["UU_SS"])
 
     exp_velocity_interpolant = interp1d(
         y_ss[~np.isnan(u_ss)] - y_0_ss,
@@ -207,123 +209,108 @@ def calculate_boundary_layer_integral_parameters(profile: ProfileData, ui: PRInp
         data=np.array([(y_ss - y_0_ss) * u_tau / nu, u_ss / u_tau]),
     )
 
-    integral_parameters = {"griffin": {}, "vinuesa": {}}
+    integral_parameters: BLMethods = {
+        "GRIFFIN": {
+            "DELTA": 0.0,
+            "U_E": 0.0,
+            "DELTA_STAR": 0.0,
+            "THETA": 0.0,
+        },
+        "VINUESA": {
+            "DELTA": 0.0,
+            "U_E": 0.0,
+            "DELTA_STAR": 0.0,
+            "THETA": 0.0,
+        }
+    }
     # Local Reconstruction Method, Griffin et al. (2021)
     delta_threshold = 0.99
-    u_griffin = (2 / rho) * (p_0 - p3(profile["coordinates"]["X"][0])) - v_ss ** 2
+    # assuming dpdy = 0
+    u_griffin2 = (
+        (2 / rho) *
+        (p_0 - p_ctrline(profile["coordinates"]["X"][0])) - v_ss ** 2
+    )
 
     velocity_ratio_interpolant = interp1d(
-        cast(
-            np.ndarray,
-            profile["mean_velocity"]["U_SS"]
-        )[~np.isnan(cast(np.ndarray, profile["mean_velocity"]["U_SS"]))] ** 2 /
-        u_griffin[~np.isnan(cast(np.ndarray, profile["mean_velocity"]["U_SS"]))],
-        cast(
-            np.ndarray,
-            profile["coordinates"]["Y_SS"]
-        )[~np.isnan(profile["mean_velocity"]["U_SS"])] - profile["properties"]["Y_SS_CORRECTION"],
+        u_ss[~np.isnan(u_ss)] ** 2 / u_griffin2[~np.isnan(u_ss)],
+        y_ss[~np.isnan(u_ss)] - y_0_ss,
         kind="linear",
-        fill_value="extrapolate",
+        fill_value="extrapolate",  # type: ignore
     )
 
-    integral_parameters["griffin"]["DELTA"] = velocity_ratio_interpolant(
+    delta_griffin = velocity_ratio_interpolant(
         delta_threshold**2
     )
-    print(integral_parameters["griffin"]["DELTA"])
-    integral_parameters["griffin"]["U_E"] = exp_velocity_interpolant(
-        integral_parameters["griffin"]["DELTA"]
+    if np.isnan(delta_griffin) or np.isinf(delta_griffin):
+        logger.warning("Griffin calculation out of bounds.")
+    integral_parameters["GRIFFIN"]["DELTA"] = delta_griffin
+    integral_parameters["GRIFFIN"]["U_E"] = exp_velocity_interpolant(
+        integral_parameters["GRIFFIN"]["DELTA"]
     )
 
     # Diagnostic Plot Method from Vinuesa et al. (2016)
     # Estimate delta
     delta_new = 0.05
     delta_old = 0
-    u_e = None
+    u_e = 0.0
     while np.abs(delta_new - delta_old) > 1e-7:
         delta_old = delta_new
         u_e = exp_velocity_interpolant(delta_old)
         delta_star = np.trapz(
-            (
-                1
-                - cast(dict, profile["mean_velocity"])["U_SS_MODELED"][
-                    profile["coordinates"]["Y_SS_MODELED"] <= delta_old
-                ]
-                / u_e
-            ),
-            x=cast(dict, profile["coordinates"])["Y_SS_MODELED"][
-                profile["coordinates"]["Y_SS_MODELED"] <= delta_old
-            ],
+            1 - u_ss_mod[y_ss_mod <= delta_old] / u_e,
+            x=y_ss_mod[y_ss_mod <= delta_old],
         )
         theta = np.trapz(
-            (
-                cast(dict, profile["mean_velocity"])["U_SS_MODELED"][
-                    profile["coordinates"]["Y_SS_MODELED"] <= delta_old
-                ]
-                / u_e
-            )
-            * (
-                1
-                - cast(dict, profile["mean_velocity"])["U_SS_MODELED"][
-                    profile["coordinates"]["Y_SS_MODELED"] <= delta_old
-                ]
-                / u_e
-            ),
-            x=cast(dict, profile["coordinates"])["Y_SS_MODELED"][
-                profile["coordinates"]["Y_SS_MODELED"] <= delta_old
-            ],
+            (u_ss_mod[y_ss_mod <= delta_old] / u_e)
+            * (1 - u_ss_mod[y_ss_mod <= delta_old] / u_e),
+            x=y_ss_mod[y_ss_mod <= delta_old],
         )
         shape_parameter = delta_star / theta
         f_int = interp1d(
-            np.sqrt(cast(dict, profile["reynolds_stress"])["UU_SS"][~np.isnan(profile["reynolds_stress"]["UU_SS"])])
-            / (u_e * np.sqrt(shape_parameter)),
-            cast(dict, profile["coordinates"])["Y_SS"][
-                ~np.isnan(profile["reynolds_stress"]["UU_SS"])
-            ] - profile["properties"]["Y_SS_CORRECTION"],
+            np.sqrt(uu_ss[~np.isnan(uu_ss)]) / (u_e * np.sqrt(shape_parameter)),
+            y_ss[~np.isnan(uu_ss)] - y_0_ss,
             kind="linear",
-            fill_value="extrapolate",
+            fill_value="extrapolate",  # type: ignore
         )
         delta_new = f_int(0.02)
-    integral_parameters["vinuesa"]["DELTA"] = delta_new
-    print(integral_parameters["vinuesa"]["DELTA"])
-    integral_parameters["vinuesa"]["U_E"] = u_e
+    if np.isnan(u_e) or np.isinf(u_e):
+        logger.warning("Vinuesa calculation out of bounds.")
+    integral_parameters["VINUESA"]["DELTA"] = delta_new
+    integral_parameters["VINUESA"]["U_E"] = u_e
 
     # Parameters
-    for method in ["vinuesa", "griffin"]:
+    for method in ["VINUESA", "GRIFFIN"]:
+        # DELTA_STAR
         integral_parameters[method]["DELTA_STAR"] = np.trapz(
             (
-                1
-                - cast(dict, profile["mean_velocity"])["U_SS_MODELED"][
-                    profile["coordinates"]["Y_SS_MODELED"]
-                    <= integral_parameters[method]["DELTA"]
-                ]
+                1 - u_ss_mod[y_ss_mod <= integral_parameters[method]["DELTA"]]
                 / integral_parameters[method]["U_E"]
             ),
-            x=cast(dict, profile["coordinates"])["Y_SS_MODELED"][
-                profile["coordinates"]["Y_SS_MODELED"]
-                <= integral_parameters[method]["DELTA"]
-            ],
+            x=y_ss_mod[y_ss_mod <= integral_parameters[method]["DELTA"]],
         )
+
+        # THETA
         integral_parameters[method]["THETA"] = np.trapz(
             (
-                cast(dict, profile["mean_velocity"])["U_SS_MODELED"][
-                    profile["coordinates"]["Y_SS_MODELED"]
-                    <= integral_parameters[method]["DELTA"]
-                ]
+                u_ss_mod[y_ss_mod <= integral_parameters[method]["DELTA"]]
                 / integral_parameters[method]["U_E"]
             )
             * (
-                1
-                - cast(dict, profile["mean_velocity"])["U_SS_MODELED"][
-                    profile["coordinates"]["Y_SS_MODELED"]
-                    <= integral_parameters[method]["DELTA"]
-                ]
+                1 - u_ss_mod[y_ss_mod <= integral_parameters[method]["DELTA"]]
                 / integral_parameters[method]["U_E"]
             ),
-            x=cast(dict, profile["coordinates"])["Y_SS_MODELED"][
-                profile["coordinates"]["Y_SS_MODELED"]
-                <= integral_parameters[method]["DELTA"]
-            ],
+            x=y_ss_mod[y_ss_mod <= integral_parameters[method]["DELTA"]],
         )
 
-    cast(dict, profile["properties"])["integral_parameters"] = integral_parameters
-    return True
+    profile["properties"]["BL_PARAMS"] = integral_parameters
+
+    logger.info(f"Griffin U_E: {integral_parameters['GRIFFIN']['U_E']}")
+    logger.info(f"Griffin DELTA: {integral_parameters['GRIFFIN']['DELTA']}")
+    logger.info(f"Griffin DELTA_STAR: {integral_parameters['GRIFFIN']['DELTA_STAR']}")
+    logger.info(f"Griffin THETA: {integral_parameters['GRIFFIN']['THETA']}")
+
+
+    logger.info(f"Vinuesa U_E: {integral_parameters['VINUESA']['U_E']}")
+    logger.info(f"Vinuesa DELTA: {integral_parameters['VINUESA']['DELTA']}")
+    logger.info(f"Vinuesa DELTA_STAR: {integral_parameters['VINUESA']['DELTA_STAR']}")
+    logger.info(f"Vinuesa THETA: {integral_parameters['VINUESA']['THETA']}")

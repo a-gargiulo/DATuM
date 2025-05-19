@@ -1,5 +1,4 @@
 """Calculate fluid, flow, and reference properties for a given PIV plane."""
-
 import os
 import re
 from typing import List, Tuple, cast
@@ -132,7 +131,7 @@ def _obtain_run_conditions(ui: PRInputs) -> StatFileData:
 
             sd_run["p_ref"] = float(
                 np.mean(
-                    sd_run["data"][ref_idx, STAT["PORTNUM"]] * IN_H2O_TO_PA
+                    sd_run["data"][ref_idx, STAT["P_IN_H2O"]] * IN_H2O_TO_PA
                     + sd_run["p_atm"]
                 )
             )
@@ -150,6 +149,7 @@ def _obtain_run_conditions(ui: PRInputs) -> StatFileData:
                     - 1
                 )
             )
+
             sd_run["T_ref"] = sd_run["T_0"] * (
                 1 + (gamma - 1) / 2 * sd_run["M_ref"] ** 2
             ) ** (-1)

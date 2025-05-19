@@ -324,24 +324,24 @@ STAT = {
 class Uncertainty(TypedDict):
     """Definition of profile Reynolds stress."""
 
-    dU: np.ndarray
-    dV: np.ndarray
-    dW: np.ndarray
-    dU_SS: np.ndarray
-    dV_SS: np.ndarray
-    dW_SS: np.ndarray
-    dUU: np.ndarray
-    dVV: np.ndarray
-    dWW: np.ndarray
-    dUV: np.ndarray
-    dUW: np.ndarray
-    dVW: np.ndarray
-    dUU_SS: np.ndarray
-    dVV_SS: np.ndarray
-    dWW_SS: np.ndarray
-    dUV_SS: np.ndarray
-    dUW_SS: np.ndarray
-    dVW_SS: np.ndarray
+    dU: Optional[np.ndarray]
+    dV: Optional[np.ndarray]
+    dW: Optional[np.ndarray]
+    dU_SS: Optional[np.ndarray]
+    dV_SS: Optional[np.ndarray]
+    dW_SS: Optional[np.ndarray]
+    dUU: Optional[np.ndarray]
+    dVV: Optional[np.ndarray]
+    dWW: Optional[np.ndarray]
+    dUV: Optional[np.ndarray]
+    dUW: Optional[np.ndarray]
+    dVW: Optional[np.ndarray]
+    dUU_SS: Optional[np.ndarray]
+    dVV_SS: Optional[np.ndarray]
+    dWW_SS: Optional[np.ndarray]
+    dUV_SS: Optional[np.ndarray]
+    dUW_SS: Optional[np.ndarray]
+    dVW_SS: Optional[np.ndarray]
 
 
 class BLParams(TypedDict):

@@ -192,6 +192,7 @@ def _extract_profile(
         profile["exp"]["coordinates"]["Y_W"] = x2q - x_2_m
 
     # Coordinates (global)
+
     profile["exp"]["coordinates"]["X"] = x1q
     profile["exp"]["coordinates"]["Y"] = x2q
 
@@ -272,10 +273,31 @@ def _extract_profile(
         # Adds the following quantities to 'exp' data
         #
         #       - U_SS_MODELED, Y_SS_MODELED
+        #       - BL_PARAMS
         boundary_layer.calculate_boundary_layer_integral_parameters(profile["exp"], ui, props)
 
+    # ---------- UNCERTAINTY ----------
+    # Extract uncertainties due to random sampling and profile rotation
+    # The module currently selectively extracts uncertainties based on
+    # the coordinate system of choice, i.e., if 'Shear' is selected, only the
+    # uncertainties of the profile in SS coordinates will be considered, and
+    # vice versa for 'Tunnel'.
+    #
+    # The prefactors used in the module come from error propagation, whose
+    # derivation was performed in a separate code by the author. It considers
+    # the uncertainty across two INDEPENDENT rotations, the first placing the 
+    # local PIV data to a global frame, and the second rotating the profile to SS
+    # coordinates. The resulting factor, hence, for the SS case is sqrt(2). That
+    # also assumes that the std. in the uncertain rotation angles is the same.
+    #
+    # TODO: It would be nice to add some bias error too.
+    # TODO: Rotation uncertainty could be fancyfied.
+    if is_shear:
+        uq_obj = cast("Piv", piv_interp)
+    else:
+        uq_obj = piv
     uncertainty.calculate_random_and_rotation_uncertainty(
-        piv_obj_intrp, profile["exp"], n_eff=1000, coordinate_system_type=cast(str, inputs["coordinate_system_type"])
+        uq_obj, profile["exp"], n_eff=1000, coordinate_system_type=ui["coordinate_system"]
     )
 
     return profile
@@ -442,24 +464,24 @@ def profile_init(add_cfd: bool, add_gradients: bool) -> Profile:
 
     def uncertainty_init() -> Uncertainty:
         return {
-            "dU": empty(),
-            "dV": empty(),
-            "dW": empty(),
-            "dU_SS": empty(),
-            "dV_SS": empty(),
-            "dW_SS": empty(),
-            "dUU": empty(),
-            "dVV": empty(),
-            "dWW": empty(),
-            "dUV": empty(),
-            "dUW": empty(),
-            "dVW": empty(),
-            "dUU_SS": empty(),
-            "dVV_SS": empty(),
-            "dWW_SS": empty(),
-            "dUV_SS": empty(),
-            "dUW_SS": empty(),
-            "dVW_SS": empty(),
+            "dU": None,
+            "dV": None,
+            "dW": None,
+            "dU_SS": None,
+            "dV_SS": None,
+            "dW_SS": None,
+            "dUU": None,
+            "dVV": None,
+            "dWW": None,
+            "dUV": None,
+            "dUW": None,
+            "dVW": None,
+            "dUU_SS": None,
+            "dVV_SS": None,
+            "dWW_SS": None,
+            "dUV_SS": None,
+            "dUW_SS": None,
+            "dVW_SS": None,
         }
 
     def properties_init() -> ProfileProperties:

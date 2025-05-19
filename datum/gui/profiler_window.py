@@ -254,7 +254,7 @@ class ProfilerWindow:
             self.pressure_section.content,
             title="Port Wall Pressure",
             filetypes=[
-                ("Port Wall Pressure File", "*.stat"),
+                ("Port Wall Pressure File", "*.txt"),
                 ("All Files", "*.*"),
             ],
             category=1,
@@ -264,7 +264,7 @@ class ProfilerWindow:
             self.pressure_section.content,
             title="Hill Surface Pressure",
             filetypes=[
-                ("Hill Surface Pressure File", "*.stat"),
+                ("Hill Surface Pressure File", "*.txt"),
                 ("All Files", "*.*"),
             ],
             category=1,
@@ -274,7 +274,7 @@ class ProfilerWindow:
             self.pressure_section.content,
             title="Pressure Data Info File",
             filetypes=[
-                ("Pressure Data Info File", "*.stat"),
+                ("Pressure Data Info File", "*.txt"),
                 ("All Files", "*.*"),
             ],
             category=1,
@@ -575,7 +575,7 @@ class ProfilerWindow:
             "fluent_data": None,
             "number_of_profiles": int(self.num_profile.entry.get()),
             "number_of_profile_pts": int(self.num_profile_pts.entry.get()),
-            "coordinate_system": str(self.coordinates_selector_var),
+            "coordinate_system": str(self.coordinates_selector_var.get()),
             "profile_height": float(self.profile_height.entry.get()),
             "port_wall_pressure": None,
             "hill_pressure": None,
@@ -635,8 +635,8 @@ class ProfilerWindow:
             self.reynolds_number.entry,
             self.tunnel_entry.entry,
             self.num_profile.entry,
-            self.num_profile_pts,
-            self.profile_height
+            self.num_profile_pts.entry,
+            self.profile_height.entry
         ]
 
         if bool(self.bypass_properties.var.get()):
@@ -716,7 +716,8 @@ class ProfilerWindow:
             )
         except Exception as e:
             logger.error(
-                f"An error occured during the profile extraction: {e}"
+                f"An error occured during the profile extraction: {e}",
+                exc=e
             )
             messagebox.showerror(
                 "ERROR!",
