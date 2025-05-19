@@ -8,6 +8,9 @@ from datum.core.my_types import NestedDict
 
 from datum.core.beverli import Beverli
 from typing import Any, cast, Dict, Sequence, List, Tuple, Optional
+from datum.core.my_types import Coordinates
+from tkinter import messagebox
+from datum.utility.logging import logger
 
 
 def plot_contour(
@@ -100,12 +103,12 @@ def plot_contour(
 
 
 def points_selector(
-    number_of_points: int,
-    coordinates: Dict[str, np.ndarray],
+    num_pts: int,
+    coordinates: Coordinates,
     quantity: np.ndarray,
-    properties: NestedDict,
+    settings: NestedDict,
     geometry: Beverli,
-) -> Optional[List[Tuple[float, float]]]:
+) -> Tuple[Tuple[float, float], ...]:
     """
     Generate a contour plot and selector to select the spatial locations for the profile extraction.
 
@@ -118,23 +121,31 @@ def points_selector(
     :return: A list of tuples containing the selected locations, or 'None' in case of an error
     :rtype: Optional[List[Tuple[float, float]]]
     """
-    if not isinstance(properties["colormap"], str):
-        return None
-    cmap = plt.get_cmap(properties["colormap"])
+    # Use casts, since this function is only used internally
+    cmap = plt.get_cmap(cast(str, settings["colormap"]))
+    cstart = cast(int, settings["contour_range"]["start"])
+    cend = cast(int, settings["contour_range"]["end"])
+    cnum = cast(int, settings["contour_range"]["num_of_contours"])
+    zpos = cast(float, settings["zpos"])
+    xlim = cast(List[float], settings["xlim"])
+    ylim = cast(List[float], settings["ylim"])
+    xmajor_locator = cast(float, settings["xmajor_locator"])
+    ymajor_locator = None
+    if settings["ymajor_locator"]:
+        ymajor_locator = cast(float, settings["ymajor_locator"])
+    cbar_start = cast(int, settings["cbar_range"]["start"])
+    cbar_end = cast(int, settings["cbar_range"]["end"])
+    cbar_nticks = cast(int, settings["cbar_range"]["num_of_ticks"])
+    cbar_label = cast(str, settings["cbar_label"])
 
-    cstart = properties["contour_range"]["start"]
-    cend = properties["contour_range"]["end"]
-    cnum = properties["contour_range"]["num_of_contours"]
-    if not isinstance(cstart, int) or not isinstance(cend, int) or not isinstance(cnum, int):
-        return None
     bounds = np.linspace(cstart, cend, cnum)
     norm = colors.BoundaryNorm(bounds, cmap.N)
 
     fig, axs = plt.subplots(1, 1, figsize=(8, 6))
-    axs.pcolormesh(coordinates["X"], coordinates["Y"], quantity, norm=norm, cmap=cmap)
-    if not isinstance(properties["zpos"], float):
-        return None
-    x1b, x2b = geometry.calculate_x1_x2(properties["zpos"])
+    axs.pcolormesh(
+        coordinates["X"], coordinates["Y"], quantity, norm=norm, cmap=cmap
+    )
+    x1b, x2b = geometry.calculate_x1_x2(zpos)
     axs.plot(x1b, x2b, linestyle="--", color="k")
 
     axs.tick_params(axis="x", pad=10)
@@ -145,47 +156,38 @@ def points_selector(
     axs.xaxis.set_tick_params(which="minor", size=5, width=1.5, direction="in")
     axs.yaxis.set_tick_params(which="major", size=8, width=2, direction="in")
     axs.yaxis.set_tick_params(which="minor", size=5, width=1.5, direction="in")
-    if not isinstance(properties["xlim"], list) or not isinstance(properties["ylim"], list):
-        return None
-    axs.set_xlim(properties["xlim"][0], properties["xlim"][1])
-    axs.set_ylim(properties["ylim"][0], properties["ylim"][1])
-    if not isinstance(properties["xmajor_locator"], float):
-        return None
-    axs.xaxis.set_major_locator(ticker.MultipleLocator(properties["xmajor_locator"]))
-    if properties["ymajor_locator"]:
-        if not isinstance(properties["ymajor_locator"], float):
-            return None
-        axs.yaxis.set_major_locator(ticker.MultipleLocator(properties["ymajor_locator"]))
+    axs.set_xlim(xlim[0], xlim[1])
+    axs.set_ylim(ylim[0], ylim[1])
+    axs.xaxis.set_major_locator(ticker.MultipleLocator(xmajor_locator))
+    if ymajor_locator:
+        axs.yaxis.set_major_locator(ticker.MultipleLocator(ymajor_locator))
 
     cbar = fig.colorbar(
         cm.ScalarMappable(norm=norm, cmap=cmap), orientation="vertical",
         cax=axs.inset_axes((1.15, 0, 0.075, 1)),
     )
-
-    cbar_start = properties["cbar_range"]["start"]
-    cbar_end = properties["cbar_range"]["end"]
-    cbar_nticks = properties["cbar_range"]["num_of_ticks"]
-    if not isinstance(cbar_start, int) or not isinstance(cbar_end, int) or not isinstance(cbar_nticks, int):
-        return None
     cbar.set_ticks(np.linspace(cbar_start, cbar_end, cbar_nticks).tolist())
-    if not isinstance(properties["cbar_label"], str):
-        return None
-    cbar.set_label(properties["cbar_label"], labelpad=10)
+    cbar.set_label(cbar_label, labelpad=10)
     cbar.ax.tick_params(width=2)
     cbar.ax.minorticks_off()
 
     _ = Cursor(axs, useblit=True, color="gray", linewidth=1)
     zoom_ok = False
-    print("\nZoom or pan to view, \npress spacebar when ready to click:\n")
+    messagebox.showinfo(
+        "INFO",
+        "Zoom or pan to view, press spacebar when ready to click."
+    )
     while not zoom_ok:
         zoom_ok = plt.waitforbuttonpress()
-    print("Click once to select location matching global reference point...\n\n")
-    pts = plt.ginput(n=number_of_points, timeout=0, show_clicks=True)
+    messagebox.showinfo(
+        "INFO",
+        "Click once to select the profile locations.")
+    pts = plt.ginput(n=num_pts, timeout=0, show_clicks=True)
     if pts is None:
-        return None
+        raise RuntimeError("Failed to select profile points.")
 
     plt.close()
-    return [(float(a), float(b)) for a, b in pts]
+    return tuple([(float(a), float(b)) for a, b in pts])
 
 
 def profile_reconstructor(
@@ -193,7 +195,7 @@ def profile_reconstructor(
     data: List[np.ndarray],
     add_points: bool,
     number_of_added_points: Optional[int] = None
-) -> Optional[Tuple[Optional[List[Tuple[float, float]]], float, float]]:
+) -> Tuple[List[Tuple[float, float]], int, int]:
     """Compare an experimental hill-normal profile to the law of the wall.
 
     Select a lower and upper threshold capturing the range of usable data.Add optional near-wall reconstruction points.
@@ -214,33 +216,40 @@ def profile_reconstructor(
 
     _ = Cursor(axs, useblit=True, color="gray", linewidth=1)
     zoom_ok = False
-    print("\nZoom or pan to view, \npress spacebar when ready to click:\n")
+    messagebox.showinfo(
+        "INFO",
+        "Zoom or pan to view, press spacebar when ready to click."
+    )
     while not zoom_ok:
         zoom_ok = plt.waitforbuttonpress()
 
     # Threshold selection
-    print("Click twice to select the lower and upper threshold.\n\n")
+    messagebox.showinfo(
+        "INFO",
+        "Click twice to select the lower and upper threshold."
+    )
     pts1 = plt.ginput(n=2, timeout=0, show_clicks=True)
 
     # Reconstruction
     pts2 = None
     if add_points:
         if number_of_added_points is None:
-            print("[ERROR]: If 'add_points' is True, you must provide 'number_of_added_points'.")
-            return None
-        print(f"Click {number_of_added_points} times to select additional profile points.")
+            raise RuntimeError("If 'add_points' is True, you must provide 'number_of_added_points'.")
+        messagebox.showinfo(
+            "INFO",
+            f"Click {number_of_added_points} times to select additional profile points."
+        )
         pts2 = plt.ginput(n=number_of_added_points, timeout=0, show_clicks=True)
         if pts2 is None:
-            print("[ERROR]: No reconstruction points selected.")
-            return None
+            raise RuntimeError("No reconstruction points selected.")
         pts2 = [(float(a), float(b)) for a, b in pts2]
 
     plt.close()
 
-    lower_cutoff_index = float(np.where(data[0] >= pts1[0][0])[0][0])
-    upper_cutoff_index = float(np.where(data[0] >= pts1[1][0])[0][0])
+    lower_cutoff_index = int(np.where(data[0] >= pts1[0][0])[0][0])
+    upper_cutoff_index = int(np.where(data[0] >= pts1[1][0])[0][0])
 
-    return pts2, lower_cutoff_index, upper_cutoff_index
+    return cast(List[Tuple[float, float]], pts2), lower_cutoff_index, upper_cutoff_index
 
 
 def check_wall_model(wall_model: np.ndarray, data: np.ndarray):

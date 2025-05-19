@@ -245,8 +245,13 @@ def write_json(file_path: str, dictionary: dict) -> None:
     :param dictionary: Dictionary to write to a json file.
     """
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, "w", encoding="utf-8") as file:
-        file.write(json.dumps(dictionary, indent=4))
+    try:
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(json.dumps(dictionary, indent=4))
+    except Exception as e:
+        raise RuntimeError(
+            f"Writing '{os.path.basename(file_path)}' failed: {e}"
+        )
 
     logger.info(f"File '{os.path.basename(file_path)}' created.")
 

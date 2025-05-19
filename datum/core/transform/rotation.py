@@ -1,6 +1,14 @@
 """Transformation sub-module for rotation operations."""
-from typing import TYPE_CHECKING, Literal, List
+from typing import TYPE_CHECKING, Literal, List, Tuple, Optional, cast
 import numpy as np
+
+from datum.core.my_types import (
+    ProfileData,
+    ProfileReynoldsStress,
+    StrainTensor,
+    RotationTensor,
+    NormalizedRotationTensor,
+)
 
 if TYPE_CHECKING:
     from ..piv import Piv
@@ -270,178 +278,153 @@ def set_rotated_tensor_planar(
             continue
 
 
-##########
-# BACKUP #
-##########
-# def rotate_profile(
-#     profile: Dict[str, Dict[str, Union[np.ndarray, float, int]]],
-#     rotation_matrix: np.ndarray,
-# ) -> Tuple[
-#     np.ndarray,
-#     np.ndarray,
-#     Optional[np.ndarray],
-#     Optional[np.ndarray],
-#     Optional[np.ndarray],
-# ]:
-#     """
-#     Rotate profile data.
+def rotate_profile(
+    profile: ProfileData,
+    rotmat: np.ndarray,
+    add_gradients: bool,
+) -> Tuple[
+    np.ndarray,
+    np.ndarray,
+    Optional[np.ndarray],
+    Optional[np.ndarray],
+    Optional[np.ndarray],
+]:
+    """
+    Rotate profile data.
 
-#     :param profile: The profile data.
-#     :param rotation_matrix: The rotation matrix.
+    :param profile: Profile data.
+    :param rotmat: Rotation matrix.
 
-#     :return: A tuple containing the rotated quantities.
-#     :rtype: Tuple[
-#         np.ndarray,
-#         np.ndarray,
-#         Optional[np.ndarray],
-#         Optional[np.ndarray],
-#         Optional[np.ndarray]
-#     ]
-#     """
-#     velocity_vector = np.array(
-#         [profile["mean_velocity"][f"{i}"] for i in "UVW"]
-#     )
+    :return: Rotated quantities.
+    :rtype: Tuple[
+        np.ndarray,
+        np.ndarray,
+        Optional[np.ndarray],
+        Optional[np.ndarray],
+        Optional[np.ndarray]
+    ]
+    """
+    vel = np.array([profile["mean_velocity"][i] for i in "UVW"])
 
-#     components = ["UU", "UV", "UW", "UV", "VV", "VW", "UW", "VW", "WW"]
-#     re_stress_tensor = np.array(
-#         [
-#             [
-#                 profile["reynolds_stress"][component]
-#                 for component in components[i : i + 3]
-#             ]
-#             for i in range(0, 9, 3)
-#         ]
-#     )
+    rs = cast(ProfileReynoldsStress, profile["reynolds_stress"])
+    restress = np.array([
+        [rs["UU"], rs["UV"], rs["UW"]],
+        [rs["UV"], rs["VV"], rs["VW"]],
+        [rs["UW"], rs["VW"], rs["WW"]],
+    ])
 
-#     velocity_vector_rotated = rotation_matrix @ velocity_vector
-#     re_stress_tensor_rotated = rotate_tensor_profile(
-#         re_stress_tensor, rotation_matrix
-#     )
+    vel_rot = rotmat @ vel
+    restress_rot = rotate_tensor_profile(restress, rotmat)
 
-#     if "strain_tensor" in profile:
-#         strain_tensor = np.array(
-#             [
-#                 [profile["strain_tensor"][f"S_{i+1}{j+1}"] for j in range(3)]
-#                 for i in range(3)
-#             ]
-#         )
-#         rotation_tensor = np.array(
-#             [
-#                 [profile["rotation_tensor"][f"W_{i+1}{j+1}"] for j in range(3)]
-#                 for i in range(3)
-#             ]
-#         )
-#         normalized_rotation_tensor = np.array(
-#             [
-#                 [
-#                     profile["normalized_rotation_tensor"][f"O_{i+1}{j+1}"]
-#                     for j in range(3)
-#                 ]
-#                 for i in range(3)
-#             ]
-#         )
+    if add_gradients:
+        st = cast(StrainTensor, profile["strain_tensor"])
+        rt = cast(RotationTensor, profile["rotation_tensor"])
+        nrt = cast(NormalizedRotationTensor, profile["normalized_rotation_tensor"])
 
-#         strain_tensor_rotated = rotate_tensor_profile(
-#             strain_tensor, rotation_matrix
-#         )
-#         rotation_tensor_rotated = rotate_tensor_profile(
-#             rotation_tensor, rotation_matrix
-#         )
-#         normalized_rotation_tensor_rotated = rotate_tensor_profile(
-#             normalized_rotation_tensor, rotation_matrix
-#         )
+        strain_tensor = np.array([
+            [st["S11"], st["S12"], st["S13"]],
+            [st["S21"], st["S22"], st["S23"]],
+            [st["S31"], st["S32"], st["S33"]],
+        ])
 
-#         return (
-#             velocity_vector_rotated,
-#             re_stress_tensor_rotated,
-#             strain_tensor_rotated,
-#             rotation_tensor_rotated,
-#             normalized_rotation_tensor_rotated,
-#         )
+        rot_tensor = np.array([
+            [rt["W11"], rt["W12"], rt["W13"]],
+            [rt["W21"], rt["W22"], rt["W23"]],
+            [rt["W31"], rt["W32"], rt["W33"]],
+        ])
 
-#     return velocity_vector_rotated, re_stress_tensor_rotated, None, None, None
+        norm_rot_tensor = np.array([
+            [nrt["O11"], nrt["O12"], nrt["O13"]],
+            [nrt["O21"], nrt["O22"], nrt["O23"]],
+            [nrt["O31"], nrt["O32"], nrt["O33"]],
+        ])
+
+        strain_tensor_rot = rotate_tensor_profile(strain_tensor, rotmat)
+        rot_tensor_rot = rotate_tensor_profile(rot_tensor, rotmat)
+        norm_rot_tensor_rot = rotate_tensor_profile(norm_rot_tensor, rotmat)
+
+        return (
+            vel_rot,
+            restress_rot,
+            strain_tensor_rot,
+            rot_tensor_rot,
+            norm_rot_tensor_rot,
+        )
+
+    return vel_rot, restress_rot, None, None, None
 
 
-# def rotate_tensor_profile(
-#     tensor: np.ndarray, rotation_matrix: np.ndarray
-# ) -> np.ndarray:
-#     """
-#     Rotate the profile of a tensor quantity.
+def rotate_tensor_profile(
+    tensor: np.ndarray, rotmat: np.ndarray
+) -> np.ndarray:
+    """
+    Rotate the profile of a tensor quantity.
 
-#     :param tensor: The tensor quantity as a (3, 3, N) array.
-#     :param rotation_matrix: The rotation matrix.
+    :param tensor: The tensor quantity as a (3, 3, N) array.
+    :param rotmat: The rotation matrix.
 
-#     :return: The rotated tensor profile.
-#     :rtype: np.ndarray
-#     """
-#     return (
-#         rotation_matrix[None, :, :]
-#         @ tensor.transpose(2, 0, 1)
-#         @ rotation_matrix.T[None, :, :]
-#     ).transpose(1, 2, 0)
+    :return: The rotated tensor profile.
+    :rtype: np.ndarray
+    """
+    return (
+        rotmat[None, :, :]
+        @ tensor.transpose(2, 0, 1)
+        @ rotmat.T[None, :, :]
+    ).transpose(1, 2, 0)
 
 
-# def set_rotated_profiles(
-#     profile: Dict[str, Dict[str, Union[np.ndarray, float, int]]],
-#     velocity_vector_rotated: np.ndarray,
-#     re_stress_tensor_rotated: np.ndarray,
-#     strain_tensor_rotated: Optional[np.ndarray] = None,
-#     rotation_tensor_rotated: Optional[np.ndarray] = None,
-#     normalized_rotation_tensor_rotated: Optional[np.ndarray] = None,
-# ):
-#     """
-#     Set the rotated profile.
+def set_rotated_profile_shear(
+    profile: ProfileData,
+    rotated_data: Tuple[
+        np.ndarray,
+        np.ndarray,
+        Optional[np.ndarray],
+        Optional[np.ndarray],
+        Optional[np.ndarray],
+    ]
+):
+    """
+    Set rotated profile.
 
-#     :param profile: The profile data.
-#     :param velocity_vector_rotated: The rotated velocity data.
-#     :param re_stress_tensor_rotated: The rotated reynolds stress data.
-#     :param strain_tensor_rotated: The rotated strain tensor data.
-#     :param rotation_tensor_rotated: The rotated rotation tensor data.
-#     :param normalized_rotation_tensor_rotated: The rotated normalized rotation tensor data.
-#     """
-#     for index, component in enumerate(["U_SS", "V_SS", "W_SS"]):
-#         profile["mean_velocity"][component] = velocity_vector_rotated[index, :]
+    :param profile: The profile data.
+    :param rotated_data: Rotated profile
+    """
+    v_ss, rs_ss, st_ss, rt_ss, nrt_ss = rotated_data
 
-#     for index, component in enumerate(["UU_SS", "VV_SS", "WW_SS"]):
-#         profile["reynolds_stress"][component] = re_stress_tensor_rotated[
-#             index, index, :
-#         ]
+    for index, component in enumerate(["U_SS", "V_SS", "W_SS"]):
+        profile["mean_velocity"][component] = v_ss[index, :]
 
-#     for indices, component in zip(
-#         [(0, 1), (0, 2), (1, 2)], ["UV_SS", "UW_SS", "VW_SS"]
-#     ):
-#         profile["reynolds_stress"][component] = re_stress_tensor_rotated[
-#             *indices, :
-#         ]
+    rs = cast(ProfileReynoldsStress, profile["reynolds_stress"])
+    for index, component in enumerate(["UU_SS", "VV_SS", "WW_SS"]):
+        rs[component] = rs_ss[index, index, :]
 
-#     if (
-#         (strain_tensor_rotated is not None)
-#         and (rotation_tensor_rotated is not None)
-#         and (normalized_rotation_tensor_rotated is not None)
-#     ):
-#         indices_list = [(i, j) for i in range(3) for j in range(3)]
-#         strain_tensor_components = [
-#             f"S_{i+1}{j+1}_SS" for i in range(3) for j in range(3)
-#         ]
-#         rotation_tensor_components = [
-#             f"W_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
-#         ]
-#         normalized_rotation_tensor_components = [
-#             f"O_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
-#         ]
+    for indices, component in zip(
+        [(0, 1), (0, 2), (1, 2)], ["UV_SS", "UW_SS", "VW_SS"]
+    ):
+        rs[component] = rs_ss[*indices, :]
 
-#         for indices, s_component, w_component, o_component in zip(
-#             indices_list,
-#             strain_tensor_components,
-#             rotation_tensor_components,
-#             normalized_rotation_tensor_components,
-#         ):
-#             profile["strain_tensor"][s_component] = strain_tensor_rotated[
-#                 *indices, :
-#             ]
-#             profile["rotation_tensor"][w_component] = rotation_tensor_rotated[
-#                 *indices, :
-#             ]
-#             profile["normalized_rotation_tensor"][o_component] = (
-#                 rotation_tensor_rotated[*indices, :]
-#             )
+    if ((st_ss is not None) and (rt_ss is not None) and (nrt_ss is not None)):
+        st = cast(StrainTensor, profile["strain_tensor"])
+        rt = cast(RotationTensor, profile["rotation_tensor"])
+        nrt = cast(NormalizedRotationTensor, profile["normalized_rotation_tensor"])
+
+        indices_list = [(i, j) for i in range(3) for j in range(3)]
+        strain_tensor_components = [
+            f"S_{i+1}{j+1}_SS" for i in range(3) for j in range(3)
+        ]
+        rotation_tensor_components = [
+            f"W_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
+        ]
+        normalized_rotation_tensor_components = [
+            f"O_{i + 1}{j + 1}_SS" for i in range(3) for j in range(3)
+        ]
+
+        for indices, s_component, w_component, o_component in zip(
+            indices_list,
+            strain_tensor_components,
+            rotation_tensor_components,
+            normalized_rotation_tensor_components,
+        ):
+            st[s_component] = st_ss[*indices, :]
+            rt[w_component] = rt_ss[*indices, :]
+            nrt[o_component] = nrt_ss[*indices, :]

@@ -1,14 +1,14 @@
 """This module provides a small GUI routine to Spalding fit velocity profiles."""
 from typing import cast
 
-from .my_types import FloatOrArray, SingleProfileDict
+from .my_types import FloatOrArray, Profile, ProfileData
 from ..utility.configure import system
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Button, Slider
 
 
-def spalding_profile(u_plus: FloatOrArray) -> FloatOrArray:
+def spalding_profile(u_plus: np.ndarray) -> np.ndarray:
     """
     Calculate the Spalding profile.
 
@@ -28,7 +28,7 @@ def spalding_profile(u_plus: FloatOrArray) -> FloatOrArray:
     )
 
 
-def spalding_fit_profile(profile: SingleProfileDict, add_cfd: bool):
+def spalding_fit_profile(profile: Profile, add_cfd: bool):
     """
     Fit the experimental profile to the Spalding profile in a dedicated GUI.
 
@@ -46,9 +46,9 @@ def spalding_fit_profile(profile: SingleProfileDict, add_cfd: bool):
     u_plus_spalding = np.linspace(0, 25, number_of_spalding_profile_points)
 
     # GUI Initialization
-    x_2_ss_m = profile["exp"]["coordinates"]["Y_SS"]
-    x_1_m = cast(np.ndarray, profile["exp"]["coordinates"]["X"])[0]
-    u_1_ss = profile["exp"]["mean_velocity"]["U_SS"]
+    x_2_ss_m = cast(np.ndarray, profile["exp"]["coordinates"]["Y_SS"])
+    x_1_m = profile["exp"]["coordinates"]["X"][0]
+    u_1_ss = cast(np.ndarray, profile["exp"]["mean_velocity"]["U_SS"])
     kinematic_viscosity = profile["exp"]["properties"]["NU"]
 
     u_tau_init = 1.5
@@ -78,11 +78,12 @@ def spalding_fit_profile(profile: SingleProfileDict, add_cfd: bool):
             label=f"{x_1_m} m",
         )
         if add_cfd:
-            x_2_ss_cfd = profile["cfd"]["coordinates"]["Y_SS"]
-            x_1_m_cfd = cast(np.ndarray, profile["cfd"]["coordinates"]["X"])[0]
-            u_1_ss_cfd = profile["cfd"]["mean_velocity"]["U_SS"]
-            u_tau_cfd = profile["cfd"]["properties"]["U_TAU"]
-            nu_cfd = profile["cfd"]["properties"]["NU"]
+            cfd_profile = cast(ProfileData, profile["cfd"])
+            x_2_ss_cfd = cast(np.ndarray, cfd_profile["coordinates"]["Y_SS"])
+            x_1_m_cfd = cfd_profile["coordinates"]["X"][0]
+            u_1_ss_cfd = cast(np.ndarray, cfd_profile["mean_velocity"]["U_SS"])
+            u_tau_cfd = cfd_profile["properties"]["U_TAU"]
+            nu_cfd = cfd_profile["properties"]["NU"]
             x_2_ss_plus_cfd = x_2_ss_cfd * u_tau_cfd / nu_cfd
             u_1_ss_plus_cfd = u_1_ss_cfd / u_tau_cfd
             # x_2_ss_plus_cfd = profile["cfd"]["coordinates"]["Y_SS_PLUS"]
@@ -192,19 +193,20 @@ def spalding_fit_profile(profile: SingleProfileDict, add_cfd: bool):
     profile["exp"]["properties"]["Y_SS_CORRECTION"] = x_2_ss_0_slider.val
 
     # Correction in tunnel coordinates
+    phi_ss = cast(float, profile["exp"]["properties"]["ANGLE_SS_DEG"])
     if x_1_m < hill_top_width_in * in_to_m / 2:
         profile["exp"]["properties"]["X_CORRECTION"] = x_2_ss_0_slider.val * np.cos(
-            np.pi / 2 - np.deg2rad(profile["exp"]["properties"]["ANGLE_SS_DEG"])
+            np.pi / 2 - np.deg2rad(phi_ss)
         )
         profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val * np.sin(
-            np.pi / 2 - np.deg2rad(profile["exp"]["properties"]["ANGLE_SS_DEG"])
+            np.pi / 2 - np.deg2rad(phi_ss)
         )
     elif x_1_m > hill_top_width_in * in_to_m / 2:
         profile["exp"]["properties"]["X_CORRECTION"] = x_2_ss_0_slider.val * np.cos(
-            np.pi / 2 + np.deg2rad(profile["exp"]["properties"]["ANGLE_SS_DEG"])
+            np.pi / 2 + np.deg2rad(phi_ss)
         )
         profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val * np.sin(
-            np.pi / 2 + np.deg2rad(profile["exp"]["properties"]["ANGLE_SS_DEG"])
+            np.pi / 2 + np.deg2rad(phi_ss)
         )
     else:
         profile["exp"]["properties"]["X_CORRECTION"] = 0

@@ -430,3 +430,44 @@ class Section(tk.Frame):
         )
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
+
+
+class Field(tk.Frame):
+    """Construct a wrapper for an entry field."""
+
+    def __init__(
+        self,
+        parent: Parent,
+        category: int,
+        lbl: str,
+        **kwargs,
+    ):
+        """Construct a user-defined frame.
+
+        :param parent: Parent window or widget.
+        :param category: Style category to be applied to the frame.
+        """
+        super().__init__(
+            parent, bg=STYLES["color"][f"s{category}_content"], **kwargs
+        )
+
+        self.label = Label(self, lbl, category)
+        self.entry = Entry(self, category)
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, weight=1)
+
+        self.grid(
+            columnspan=3,
+            padx=PAD_S,
+            pady=PAD_S,
+            sticky="nsew",
+        )
+
+        self.label.grid(
+            row=0, column=0, sticky="nsw", pady=0
+        )
+        self.entry.grid(
+            row=0, column=1, columnspan=2, pady=0, sticky="nsew"
+        )

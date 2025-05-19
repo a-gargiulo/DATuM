@@ -6,26 +6,41 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from . import plotting
-from .my_types import SingleProfile, Properties, UserInputs, Interp1DCallable
+from .my_types import ProfileData, Properties, PRInputs, CenterlinePressure, FloatOrArray, Interp1DCallable
 from .spalding import spalding_profile
 
 
 def _get_centerline_pressure(
-    inputs: UserInputs,
-    properties: Properties
-) -> Dict[str, Dict[str, Union[float, Interp1DCallable]]]:
+    ui: PRInputs, props: Properties
+) -> CenterlinePressure:
     # Load pressure data
-    port_wall_pressure_file = str(inputs["port_wall_pressure_file"])
-    hill_pressure_file = str(inputs["hill_pressure_file"])
-    readme_file = str(inputs["readme_pressure_file"])
+    port_wall_pressure_file = cast(str, ui["port_wall_pressure"])
+    hill_pressure_file = cast(str, ui["hill_pressure"])
+    readme_file = cast(str, ui["pressure_readme"])
 
     pressure_data_port_wall = np.loadtxt(port_wall_pressure_file, skiprows=1)
     pressure_data_hill = np.loadtxt(hill_pressure_file, skiprows=1)
 
-    rho = float(properties["fluid"]["density"])
+    rho = props["fluid"]["density"]
 
     # Obtain centerline pressure and properties
-    centerline_pressure = {"interpolants": {}, "properties": {}}
+    def empty_interp(x: FloatOrArray) -> FloatOrArray:
+        return x
+
+    centerline_pressure: CenterlinePressure = {
+        "interpolants": {
+            "P_THIRD_ORDER": empty_interp,
+            "CP_THIRD_ORDER": empty_interp,
+            "CP_FIRST_ORDER": empty_interp,
+
+        },
+        "properties": {
+            "P_INF": 0.0,
+            "U_INF": 0.0,
+            "P_0": 0.0,
+        }
+    }
+
     with open(readme_file, "r", encoding="utf-8") as file:
         content = file.read()
 
@@ -72,70 +87,46 @@ def _get_centerline_pressure(
     return centerline_pressure
 
 
-def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs) -> bool:
-    exp_velocity_interpolant = interp1d(
-        (
-            cast(dict, profile["coordinates"])["Y_SS"][~np.isnan(cast(dict, profile["mean_velocity"])["U_SS"])] -
-            cast(dict, profile["properties"])["Y_SS_CORRECTION"]
-        ),
-        cast(dict, profile["mean_velocity"])["U_SS"][~np.isnan(cast(dict, profile["mean_velocity"])["U_SS"])],
-        kind="linear",
-        fill_value="extrapolate",
-    )
+def _reconstruct_profile(profile: ProfileData, ui: PRInputs, exp_vel: Interp1DCallable) -> None:
+    add_reconstruction = cast(bool, ui["add_reconstruction_points"])
+    num_recr_pts = cast(int, ui["number_of_reconstruction_points"]) if add_reconstruction else None
+    u_tau = cast(float, profile["properties"]["U_TAU"])
+    nu = profile["properties"]["NU"]
+    y_ss = cast(np.ndarray, profile["coordinates"]["Y_SS"])
+    y_0_ss = cast(np.ndarray, profile["properties"]["Y_SS_CORRECTION"])
+    u_ss = cast(np.ndarray, profile["mean_velocity"]["U_SS"])
 
     u_1_plus_spalding = np.linspace(0, 30, 10000)
-    x_2_plus_spalding = cast(np.ndarray, spalding_profile(u_1_plus_spalding))
+    x_2_plus_spalding = spalding_profile(u_1_plus_spalding)
 
-    x_2_ss_wall_model = (
-        x_2_plus_spalding * cast(float, profile["properties"]["NU"]) / cast(float, profile["properties"]["U_TAU"])
-    )
-    u_1_ss_wall_model = u_1_plus_spalding * cast(float, profile["properties"]["U_TAU"])
+    x_2_ss_wall_model = (x_2_plus_spalding * nu / u_tau)
+    u_1_ss_wall_model = u_1_plus_spalding * u_tau
 
     result = plotting.profile_reconstructor(
         wall_model=[x_2_plus_spalding, u_1_plus_spalding],
-        data=[
-            cast(
-                np.ndarray,
-                (profile["coordinates"]["Y_SS"] - profile["properties"]["Y_SS_CORRECTION"])
-                * profile["properties"]["U_TAU"]
-                / profile["properties"]["NU"]
-            ),
-            cast(
-                np.ndarray,
-                profile["mean_velocity"]["U_SS"] / profile["properties"]["U_TAU"]
-            ),
-        ],
-        add_points=bool(inputs["add_reconstruction_points"]),
-        number_of_added_points=(
-            int(inputs["num_of_reconstruction_points"]) if inputs["num_of_reconstruction_points"] is not None else None
-        ),
+        data=[(y_ss - y_0_ss) * u_tau / nu, u_ss / u_tau],
+        add_points=add_reconstruction,
+        number_of_added_points=num_recr_pts,
     )
-    if result is None:
-        return False
     additional_pts, cutoff_index_lower, cutoff_index_upper = result
 
     # Append additional points
-    if additional_pts:
+    if add_reconstruction:
         additional_x_2_ss = (
-            np.array([i for i, j in additional_pts])
-            * profile["properties"]["NU"]
-            / profile["properties"]["U_TAU"]
+            np.array([i for i, j in additional_pts]) * nu / u_tau
         )
 
         sort_indices = np.argsort(additional_x_2_ss)
         additional_x_2_ss = additional_x_2_ss[sort_indices]
 
         additional_u_1_ss = (
-                np.array([j for i, j in additional_pts]) * profile["properties"]["U_TAU"]
+                np.array([j for i, j in additional_pts]) * u_tau
         )
 
         additional_u_1_ss = additional_u_1_ss[sort_indices]
 
         # Spalding near-wall section
-        lower_cutoff_condition = (
-                x_2_ss_wall_model
-                < additional_x_2_ss[0]
-        )
+        lower_cutoff_condition = (x_2_ss_wall_model < additional_x_2_ss[0])
         u_1_ss_wall_model = u_1_ss_wall_model[lower_cutoff_condition]
         x_2_ss_wall_model = x_2_ss_wall_model[lower_cutoff_condition]
 
@@ -144,9 +135,7 @@ def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs) -> bool:
     else:
         # Spalding near-wall section
         lower_cutoff_condition = (
-            x_2_ss_wall_model
-            < cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_lower]
-            - profile["properties"]["Y_SS_CORRECTION"]
+            x_2_ss_wall_model < y_ss[cutoff_index_lower] - y_0_ss
         )
         u_1_ss_wall_model = u_1_ss_wall_model[lower_cutoff_condition]
         x_2_ss_wall_model = x_2_ss_wall_model[lower_cutoff_condition]
@@ -155,21 +144,17 @@ def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs) -> bool:
     x_2_ss_wall_model = np.append(
         x_2_ss_wall_model,
         np.linspace(
-            cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_lower]
-            - profile["properties"]["Y_SS_CORRECTION"],
-            cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_upper]
-            - profile["properties"]["Y_SS_CORRECTION"],
-            1000,
+            y_ss[cutoff_index_lower] - y_0_ss,
+            y_ss[cutoff_index_upper] - y_0_ss,
+            1000
         ),
     )
     u_1_ss_wall_model = np.append(
         u_1_ss_wall_model,
-        exp_velocity_interpolant(
+        exp_vel(
             np.linspace(
-                cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_lower]
-                - profile["properties"]["Y_SS_CORRECTION"],
-                cast(dict, profile["coordinates"])["Y_SS"][cutoff_index_upper]
-                - profile["properties"]["Y_SS_CORRECTION"],
+                y_ss[cutoff_index_lower] - y_0_ss,
+                y_ss[cutoff_index_upper] - y_0_ss,
                 1000,
             )
         ),
@@ -178,10 +163,8 @@ def _reconstruct_profile(profile: SingleProfile, inputs: UserInputs) -> bool:
     profile["mean_velocity"]["U_SS_MODELED"] = u_1_ss_wall_model
     profile["coordinates"]["Y_SS_MODELED"] = x_2_ss_wall_model
 
-    return True
 
-
-def calculate_boundary_layer_integral_parameters(profile: SingleProfile, inputs: UserInputs, properties: Properties) -> bool:
+def calculate_boundary_layer_integral_parameters(profile: ProfileData, ui: PRInputs, props: Properties) -> bool:
     """
     Calculate the boundary layer integral parameters for a single experimental hill-normal profile.
 
@@ -194,56 +177,40 @@ def calculate_boundary_layer_integral_parameters(profile: SingleProfile, inputs:
     :param inputs: The user's inputs.
     :param properties: The fluid, flow, and reference properties.
     """
-    pressure_data = _get_centerline_pressure(inputs, properties)
+    pressure_data = _get_centerline_pressure(ui, props)
+
+    u_ss = cast(np.ndarray, profile["mean_velocity"]["U_SS"])
+    v_ss = cast(np.ndarray, profile["mean_velocity"]["V_SS"])
+    y_ss = cast(np.ndarray, profile["coordinates"]["Y_SS"])
+    y_0_ss = cast(np.ndarray, profile["properties"]["Y_SS_CORRECTION"])
+    u_tau = cast(float, profile["properties"]["U_TAU"])
+    nu = profile["properties"]["NU"]
+    rho = profile["properties"]["RHO"]
+    p_0 = pressure_data["properties"]["P_0"]
+    p3 = pressure_data["interpolants"]["P_THIRD_ORDER"]
+
     exp_velocity_interpolant = interp1d(
-        (
-            cast(dict, profile["coordinates"])["Y_SS"][~np.isnan(cast(dict, profile["mean_velocity"])["U_SS"])] -
-            cast(dict, profile["properties"])["Y_SS_CORRECTION"]
-        ),
-        cast(dict, profile["mean_velocity"])["U_SS"][~np.isnan(cast(dict, profile["mean_velocity"])["U_SS"])],
+        y_ss[~np.isnan(u_ss)] - y_0_ss,
+        u_ss[~np.isnan(u_ss)],
         kind="linear",
-        fill_value="extrapolate",
+        fill_value="extrapolate",  # type: ignore[arg-type]
     )
 
     # Reconstruct velocity profile
-    _reconstruct_profile(profile, inputs)
+    _reconstruct_profile(profile, ui, exp_velocity_interpolant)
 
     # Show model profile
+    y_ss_mod = cast(np.ndarray, profile["coordinates"]["Y_SS_MODELED"])
+    u_ss_mod = cast(np.ndarray, profile["mean_velocity"]["U_SS_MODELED"])
     plotting.check_wall_model(
-        wall_model=cast(
-            np.ndarray,
-            [
-                profile["coordinates"]["Y_SS_MODELED"]
-                * profile["properties"]["U_TAU"]
-                / profile["properties"]["NU"],
-                profile["mean_velocity"]["U_SS_MODELED"] / profile["properties"]["U_TAU"],
-            ]
-        ),
-        data=cast(
-            np.ndarray,
-            [
-                (profile["coordinates"]["Y_SS"] - profile["properties"]["Y_SS_CORRECTION"])
-                * profile["properties"]["U_TAU"]
-                / profile["properties"]["NU"],
-                profile["mean_velocity"]["U_SS"] / profile["properties"]["U_TAU"],
-            ]
-        ),
+        wall_model=np.array([y_ss_mod * u_tau / nu, u_ss_mod / u_tau]),
+        data=np.array([(y_ss - y_0_ss) * u_tau / nu, u_ss / u_tau]),
     )
 
     integral_parameters = {"griffin": {}, "vinuesa": {}}
     # Local Reconstruction Method, Griffin et al. (2021)
     delta_threshold = 0.99
-    u_griffin = cast(
-        np.ndarray,
-        (2 / cast(float, profile["properties"]["RHO"])) *
-        (
-            cast(float, pressure_data["properties"]["P_0"]) -
-            cast(Interp1DCallable, pressure_data["interpolants"]["P_THIRD_ORDER"])(
-                cast(list, profile["coordinates"]["X"])[0]
-            )
-        ) -
-        profile["mean_velocity"]["V_SS"] ** 2
-    )
+    u_griffin = (2 / rho) * (p_0 - p3(profile["coordinates"]["X"][0])) - v_ss ** 2
 
     velocity_ratio_interpolant = interp1d(
         cast(

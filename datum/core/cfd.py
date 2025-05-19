@@ -2,12 +2,14 @@
 import os
 import re
 from typing import cast, Dict, Tuple, Optional
-from .my_types import Properties
+from .my_types import Properties, CFDRefConditions, ProfileData, ProfileCoordinates, ProfileMeanVelocity, ProfileTurbulenceScales, ProfileProperties
 from ..utility import mathutils
+from datum.utility.logging import logger
 
 import numpy as np
 import tecplot as tp
 
+HILL_HEIGHT_M = 0.186944
 
 # def extract_dimensions_from_header_line(line: str) -> Tuple[int, ...]:
 #     """Extract the ijk-indices from the line of the Tecplot file containing the
@@ -40,23 +42,26 @@ def load_fluent_data(
     :param connected: Boolean value indicating whether to run the code in connected
         or batch mode. If the value is true, the code will run in connected mode.
     """
-    # Connect to Tecplot session
-    if connected:
-        tp.session.connect()
-    tp.new_layout()
+    try:
+        # Connect to Tecplot session
+        if connected:
+            tp.session.connect()
+        tp.new_layout()
 
-    # Load Fluent dataset
-    tp.data.load_fluent(
-        case_filenames=os.path.normpath(case_file),
-        data_filenames=os.path.normpath(data_file),
-    )
+        # Load Fluent dataset
+        tp.data.load_fluent(
+            case_filenames=os.path.normpath(case_file),
+            data_filenames=os.path.normpath(data_file),
+        )
+    except Exception as e:
+        raise RuntimeError(f"Loading of Fluent data failed: {e}")
 
 
-def calculate_reference_conditions(
+def calculate_ref(
     reynolds_number: float,
     heat_capacity_ratio: float,
     gas_constant: float
-) -> Optional[Dict[str, float]]:
+) -> CFDRefConditions:
     """
     Calculate the reference conditions for the simulations and normalize the corresponding data.
 
@@ -70,9 +75,6 @@ def calculate_reference_conditions(
     dataset = tp.active_frame().dataset
 
     # Inlet boundary conditions
-    stagnation_pressure = None
-    stagnation_temperature = None
-
     if reynolds_number in [250, 250000]:
         stagnation_pressure = 94220
         stagnation_temperature = 297
@@ -82,6 +84,8 @@ def calculate_reference_conditions(
     elif reynolds_number in [650, 650000]:
         stagnation_pressure = 94450
         stagnation_temperature = 297
+    else:
+        raise RuntimeError("Unsupported Reynolds number.")
 
     # Reference locations
     reference_locations = np.array(
@@ -106,9 +110,9 @@ def calculate_reference_conditions(
 
     # Compute the reference conditions
     static_pressure_ref = np.array(values[:, pressure_variable_index])
-    static_pressure_ref = np.mean(static_pressure_ref)
+    static_pressure_ref = float(np.mean(static_pressure_ref))
     if stagnation_pressure is None:
-        return None
+        raise RuntimeError("Reference pressure calculation failed.")
     mach_ref = np.sqrt(
         (2 / (heat_capacity_ratio - 1))
         * (
@@ -131,47 +135,43 @@ def calculate_reference_conditions(
         / (static_temperature_ref + 110.4)
     )
 
-    reference_conditions = {
-        "inlet_stagnation_pressure": stagnation_pressure,
-        "inlet_stagnation_temperature": stagnation_temperature,
-        "static_pressure_ref": static_pressure_ref,
-        "static_temperature_ref": static_temperature_ref,
+    reference_conditions: CFDRefConditions = {
+        "p_0": stagnation_pressure,
+        "T_0": stagnation_temperature,
+        "p_ref": static_pressure_ref,
+        "T_ref": static_temperature_ref,
         "density_ref": density_ref,
-        "velocity_ref": velocity_ref,
+        "U_ref": velocity_ref,
         "dynamic_viscosity_ref": dynamic_viscosity_ref,
     }
 
     return reference_conditions
 
 
-def calculate_qoi_and_normalize_by_reference(
-    reference_conditions: Dict[str, float],
+def calculate_qois_and_normalize(
+    reference_conditions: CFDRefConditions,
     include_reynolds_stress: bool = False,
 ) -> None:
     """
     Calculate the quantities of interest from the numerical data and normalize by the reference conditions.
 
+    :raises TecplotError: If tecplot commands fail.
     :param refernce_conditions: The reference conditions for the numerical data.
     :param include_reynolds_stress: A Boolean value that specifies whether the Reynolds stress should be computed.
     """
-    # TODO: The fixed bump height may be too specific. Change for a more generic code.
-    hill_height_m = 0.186944
-
     # Cp
     # ---------------------------------------------------------------------------------
-    print("Computing Cp... ", end="")
     tp.data.operate.execute_equation(
         f"{{C<sub>p</sub>}} = "
-        f"({{Pressure}}-{reference_conditions['static_pressure_ref']}) / "
+        f"({{Pressure}}-{reference_conditions['p_ref']}) / "
         f"(0.5 * {reference_conditions['density_ref']} * "
-        f"{reference_conditions['velocity_ref']}**2)"
+        f"{reference_conditions['U_ref']}**2)"
     )
-    print("--> Done.\n\n")
+    logger.info("Done computing Cp")
     # ---------------------------------------------------------------------------------
 
     # Cf
     # ---------------------------------------------------------------------------------
-    print("Computing Cf... ", end="")
     tp.data.operate.execute_equation(
         "{<greek>t</greek><sub>w</sub>} = "
         "sqrt({Wall shear-1}**2+{Wall shear-2}**2+{Wall shear-3}**2)"
@@ -180,25 +180,23 @@ def calculate_qoi_and_normalize_by_reference(
         f"{{C<sub>f</sub>}} = "
         f"{{<greek>t</greek><sub>w</sub>}} / "
         f"(0.5 * {reference_conditions['density_ref']} * "
-        f"{reference_conditions['velocity_ref']}**2)"
+        f"{reference_conditions['U_ref']}**2)"
     )
-    print("--> Done.\n\n")
+    logger.info("Done computing Cf")
     # ---------------------------------------------------------------------------------
 
     # x_i/H
     # ---------------------------------------------------------------------------------
-    print("Computing xi/H... ", end="")
     for name, component in zip(
         ["X<sub>1</sub>", "X<sub>2</sub>", "X<sub>3</sub>"], ["X", "Y", "Z"]
     ):
-        equation = f"{{{name}/H}}={{{component}}} / {hill_height_m}"
+        equation = f"{{{name}/H}}={{{component}}} / {HILL_HEIGHT_M}"
         tp.data.operate.execute_equation(equation)
-    print("--> Done.\n\n")
+    logger.info("Done computing xi/H")
     # ---------------------------------------------------------------------------------
 
     # U_i/U_ref
     # ---------------------------------------------------------------------------------
-    print("Computing Ui/Uref... ", end="")
     velocity_list = [
         ("U<sub>1</sub>", "X Velocity"),
         ("U<sub>2</sub>", "Y Velocity"),
@@ -207,15 +205,14 @@ def calculate_qoi_and_normalize_by_reference(
     for name, component in velocity_list:
         equation = (
             f"{{{name}/U<sub>ref</sub>}} = "
-            f"{{{component}}} / {reference_conditions['velocity_ref']}"
+            f"{{{component}}} / {reference_conditions['U_ref']}"
         )
         tp.data.operate.execute_equation(equation)
-    print("--> Done.\n\n")
+    logger.info("Done computing Ui/Uref")
     # ---------------------------------------------------------------------------------
 
     # Shear stress vector (cell-centered and nodal)
     # ---------------------------------------------------------------------------------
-    print("Computing shear stress... ", end="")
     shear_stress_list = [
         ("<greek>t</greek><sub>1,w</sub>", 1),
         ("<greek>t</greek><sub>2,w</sub>", 2),
@@ -228,21 +225,19 @@ def calculate_qoi_and_normalize_by_reference(
         tp.data.operate.execute_equation(
             equation_2, value_location=tp.constant.ValueLocation.Nodal
         )
-    print("--> Done.\n\n")
+    logger.info("Done computing shear stress")
     # ---------------------------------------------------------------------------------
 
     # u_tau
     # ---------------------------------------------------------------------------------
-    print("Computing utau... ", end="")
     tp.data.operate.execute_equation(
         f"{{u<sub><greek>t</greek></sub>}} = "
-        f"SQRT({{C<sub>f</sub>}}/2) * {reference_conditions['velocity_ref']}",
+        f"SQRT({{C<sub>f</sub>}}/2) * {reference_conditions['U_ref']}",
         value_location=tp.constant.ValueLocation.Nodal,
     )
-    print("--> Done.\n\n")
+    logger.info("Done computing utau")
 
     # Compute normal vectors
-    print("Computing normal vectors... ", end="")
     tp.macro.execute_extended_command(
         command_processor_id="CFDAnalyzer4",
         command=(
@@ -251,7 +246,7 @@ def calculate_qoi_and_normalize_by_reference(
             + " UseMorePointsForFEGradientCalculations='F'"
         ),
     )
-    print("--> Done.\n\n")
+    logger.info("Done computing normal vectors")
 
     # Compute reynolds stresses and TKE production
     # (use with appropriate turbulence model)
@@ -298,52 +293,51 @@ def calculate_qoi_and_normalize_by_reference(
             ")"
         )
 
+        logger.info("Done computing Reynolds stress, TKE, and production")
 
-def extract_bl_profile(
+
+def extract_normal_profile(
     profile_location: Tuple[float, float, float],
     number_of_profile_points: int,
     profile_height: float,
     use_sigmoid: bool,
     system_type: str,
-    reference_conditions: Dict[str, float],
+    reference_conditions: CFDRefConditions,
     reynolds_stress_available: bool = False,
-) -> Optional[Tuple[Dict[str, Dict[str, np.ndarray]], tp.data.Dataset]]:
+) -> Tuple[ProfileData, tp.data.dataset.Dataset]:
     """
-    Extract a hill surface normal profile.
+    Extract a hill surface or tunnel wall normal profile.
 
-    :param profile_location: A tuple containing the Cartesian coordinates of the
-        desired profile's location, measured in meters.
-    :param number_of_profile_points: An integer number of profile points to extract.
-    :param profile_height: The height of the profile, measured in meters.
-    :param use_sigmoid: A boolean value indicating whether to distribute the profile
-        points using a sigmoid function or linearly. If the value is true a sigmoid
-        function will be used to distribute the profiles.
-    :param system_type: Shear or tunnel
-    :param reference_conditions: A dictionary containing the reference conditions.
-    :param reynolds_stress_available: A boolean value indicating whether the Reynolds
-        stress tensor is available within the dataset. If the value is true, the
-        Reynolds stress tensor is considered available.
+    :param profile_location: Profile origin coordinates.
+    :param number_of_profile_points: Number of profile points to extract.
+    :param profile_height: Profile height.
+    :param use_sigmoid: A boolean value indicating whether to distribute the
+        profile points using a sigmoid function or linearly. If the value is
+        true a sigmoid function will be used to distribute the profile points.
+    :param system_type: 'Shear' or 'Tunnel'
+    :param reference_conditions: CFD reference conditions.
+    :param reynolds_stress_available: A boolean value indicating whether the
+        Reynolds stress tensor is available within the dataset. If the value
+        is true, the Reynolds stress tensor is considered available.
 
-    :return: A tuple containing a nested dictionary with the cfd profile data, and a
-        Tecplot dataset object.
+    :return: CFD profile data and Tecplot dataset object.
+    :rtype: ProfileData
     """
-    # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-locals
     def sigmoidspace(low, high, number_of_points, shape=1):
         raw = np.tanh(np.linspace(-shape, shape, number_of_points))
         return (raw - raw[0]) / (raw[-1] - raw[0]) * (high - low) + low
 
     # Fluid properties
     rho = reference_conditions["density_ref"]
-    dynamic_viscosity = reference_conditions["dynamic_viscosity_ref"]
-    kinematic_viscosity = dynamic_viscosity / rho
+    dyn_viscosity = reference_conditions["dynamic_viscosity_ref"]
+    kin_viscosity = dyn_viscosity / rho
 
     dataset = tp.active_frame().dataset
 
     # Hill surface
     floor_zone = dataset.zone("floor")
 
-    # Find hill surface mesh node `closest` to surface point of LDV profile
+    # Find hill surface mesh node `closest` to surface point of profile
     query_result = tp.data.query.probe_on_surface(
         profile_location,
         zones=floor_zone,
@@ -360,8 +354,10 @@ def extract_bl_profile(
         "Z Grid K Unit Normal",
     ]
 
-    surface_point = [floor_zone.values(i)[profile_node_nr] for i in coordinates]
-    if system_type == "shear":
+    surface_point = [
+        floor_zone.values(i)[profile_node_nr] for i in coordinates
+    ]
+    if system_type == "Shear":
         end_point = [
             i + floor_zone.values(j)[profile_node_nr] * profile_height
             for i, j in zip(surface_point, normal_vector_components)
@@ -369,7 +365,8 @@ def extract_bl_profile(
     else:
         normal_vector = [0, 1, 0]
         end_point = [
-            i + j * profile_height for i, j in zip(surface_point, normal_vector)
+            i + j * profile_height
+            for i, j in zip(surface_point, normal_vector)
         ]
 
     line_points = np.zeros((3, number_of_profile_points))
@@ -388,7 +385,7 @@ def extract_bl_profile(
 
     rotation_matrix = None
     u_tau = floor_zone.values("u<sub><greek>t</greek></sub>")[profile_node_nr]
-    if system_type == "shear":
+    if system_type == "Shear":
         # Compute profile in local shear-stress coordinates
         # ---------------------------------------------------------------------------------
         tp.data.operate.execute_equation(
@@ -476,21 +473,21 @@ def extract_bl_profile(
         tp.data.operate.execute_equation(
             equation=(
                 f"{{x<sub>2,ss</sub><sup>+</sup>}} = "
-                f"{{x<sub>2,ss</sub>}} * {u_tau} / {kinematic_viscosity}"
+                f"{{x<sub>2,ss</sub>}} * {u_tau} / {kin_viscosity}"
             ),
             zones=dataset.zone(f"Line x = {x_1_m_cfd}, z = {x_3_m_cfd}"),
         )
 
     # Sort data in profile dictionary
-    profile = {"coordinates": {}, "mean_velocity": {}, "turbulence_scales": {}, "properties": {}}
+    profile = cfd_profile_init()
 
     profile_zone = dataset.zone(f"Line x = {x_1_m_cfd}, z = {x_3_m_cfd}")
     profile_variables = [
         (
             "coordinates",
-            ["X", "Y", "Y_SS", "Y_SS_PLUS"] if system_type == "shear" else ["X", "Y"],
+            ["X", "Y", "Y_SS", "Y_SS_PLUS"] if system_type == "Shear" else ["X", "Y"],
             ["X", "Y", "x<sub>2,ss</sub>", "x<sub>2,ss</sub><sup>+</sup>"]
-            if system_type == "shear"
+            if system_type == "Shear"
             else ["X", "Y"],
         ),
         (
@@ -506,7 +503,7 @@ def extract_bl_profile(
                 "V_SS_PLUS",
                 "W_SS_PLUS",
             ]
-            if system_type == "shear"
+            if system_type == "Shear"
             else ["U", "V", "W"],
             [
                 "X Velocity",
@@ -519,7 +516,7 @@ def extract_bl_profile(
                 "U<sub>2,ss</sub><sup>+</sup>",
                 "U<sub>3,ss</sub><sup>+</sup>",
             ]
-            if system_type == "shear"
+            if system_type == "Shear"
             else ["X Velocity", "Y Velocity", "Z Velocity"],
         ),
         (
@@ -530,7 +527,7 @@ def extract_bl_profile(
     ]
 
     if reynolds_stress_available:
-        if system_type == "shear":
+        if system_type == "Shear":
             reynolds_stress_list = [
                 ("U<sub>1</sub>U<sub>1,ss</sub>", [0, 0]),
                 ("U<sub>2</sub>U<sub>2,ss</sub>", [1, 1]),
@@ -539,9 +536,6 @@ def extract_bl_profile(
                 ("U<sub>1</sub>U<sub>3,ss</sub>", [0, 2]),
                 ("U<sub>2</sub>U<sub>3,ss</sub>", [1, 2]),
             ]
-
-            if rotation_matrix is None:
-                return None
 
             for name, indices in reynolds_stress_list:
                 i, j = indices
@@ -579,7 +573,6 @@ def extract_bl_profile(
                     zones=dataset.zone(f"Line x = {x_1_m_cfd}, z = {x_3_m_cfd}"),
                 )
 
-        profile["reynolds_stress"] = {}
         profile_variables.append(
             (
                 "reynolds_stress",
@@ -603,7 +596,7 @@ def extract_bl_profile(
                     "UW_SS_PLUS",
                     "VW_SS_PLUS",
                 ]
-                if system_type == "shear"
+                if system_type == "Shear"
                 else ["UU", "VV", "WW", "UV", "UW", "VW"],
                 [
                     "U<sub>1</sub>U<sub>1</sub>",
@@ -625,7 +618,7 @@ def extract_bl_profile(
                     "U<sub>1</sub>U<sub>3,ss</sub><sup>+</sup>",
                     "U<sub>2</sub>U<sub>3,ss</sub><sup>+</sup>",
                 ]
-                if system_type == "shear"
+                if system_type == "Shear"
                 else [
                     "U<sub>1</sub>U<sub>1</sub>",
                     "U<sub>2</sub>U<sub>2</sub>",
@@ -641,9 +634,83 @@ def extract_bl_profile(
         for name, component in zip(names, components):
             profile[variable][name] = profile_zone.values(component).as_numpy_array()
 
-    profile["properties"]["NU"] = kinematic_viscosity
+    profile["properties"]["NU"] = kin_viscosity
     profile["properties"]["RHO"] = rho
-    profile["properties"]["U_REF"] = reference_conditions["velocity_ref"]
+    profile["properties"]["U_REF"] = reference_conditions["U_ref"]
     profile["properties"]["U_TAU"] = u_tau
     rds = tp.data.Dataset, tp.active_frame().dataset
     return (profile, cast(tp.data.Dataset, rds))
+
+
+def cfd_profile_init() -> ProfileData:
+    """Initialize cfd profile."""
+    def empty() -> np.ndarray:
+        return np.empty((0,))
+
+    def coordinates_init() -> ProfileCoordinates:
+        return {
+            "X": empty(),
+            "Y": empty(),
+            "Y_SS": None,
+            "Y_SS_PLUS": None,
+            "Y_SS_MODELED": None,
+            "Y_W": None,
+        }
+
+    def mean_velocity_init() -> ProfileMeanVelocity:
+        return {
+            "U": empty(),
+            "V": empty(),
+            "W": empty(),
+            "U_SS": None,
+            "V_SS": None,
+            "W_SS": None,
+            "U_SS_PLUS": None,
+            "V_SS_PLUS": None,
+            "W_SS_PLUS": None,
+            "U_SS_MODELED": None,
+        }
+
+    def turbulence_scales_init() -> ProfileTurbulenceScales:
+        return {
+            "NUT": empty(),
+        }
+
+    def properties_init() -> ProfileProperties:
+        add_cfd = True
+        return {
+            "NU": 0.0,
+            "RHO": 0.0,
+            "U_REF": 0.0,
+            "U_INF": None,
+            "U_TAU": None,
+            "X_CORRECTION": None,
+            "Y_CORRECTION": None,
+            "Y_SS_CORRECTION": None,
+            "ANGLE_SS_DEG": None,
+            "BL_PARAMS": {
+                "GRIFFIN": {
+                    "DELTA": 0.0,
+                    "U_E": 0.0,
+                    "DELTA_STAR": 0.0,
+                    "THETA": 0.0,
+                },
+                "VINUESA": {
+                    "DELTA": 0.0,
+                    "U_E": 0.0,
+                    "DELTA_STAR": 0.0,
+                    "THETA": 0.0,
+                },
+            } if not add_cfd else None
+        }
+    return {
+        "coordinates": coordinates_init(),
+        "mean_velocity": mean_velocity_init(),
+        "reynolds_stress": None,
+        "strain_tensor": None,
+        "rotation_tensor": None,
+        "normalized_rotation_tensor": None,
+        "turbulence_scales": turbulence_scales_init(),
+        "uncertainty": None,
+        "properties": properties_init(),
+    }

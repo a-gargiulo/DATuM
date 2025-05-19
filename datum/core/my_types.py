@@ -11,8 +11,8 @@ CadGeometry = trimesh.Trimesh
 AnalyticGeometry = Dict[str, np.ndarray]
 HillGeometry = Union[CadGeometry, AnalyticGeometry]
 FloatOrArray = Union[float, np.ndarray]
-Properties = Dict[str, Dict[str, float]]
-TunnelConditions = Dict[str, Dict[str, Union[float, np.ndarray]]]
+# Properties = Dict[str, Dict[str, float]]
+# TunnelConditions = Dict[str, Dict[str, Union[float, np.ndarray]]]
 
 ProfileDictAll = Dict[str, Dict[str, Dict[str, Dict[str, Union[float, np.ndarray, Dict[str, Dict[str, float]]]]]]]
 ProfileDictSingle = Dict[str, Dict[str, Union[float, np.ndarray, Dict[str, Dict[str, float]]]]]
@@ -98,13 +98,22 @@ class PPInputs(TypedDict):
 class PRInputs(TypedDict):
     """Type definition for profiler user inputs."""
 
+    hill_orientation: float
     reference_stat_file: str
+    add_gradients: bool
     reynolds_number: float
     tunnel_entry: int
+    bypass_properties: bool
+    gas_constant: Optional[float]
+    gamma: Optional[float]
+    density: Optional[float]
+    mu: Optional[float]
+    uinf: Optional[float]
     add_cfd: bool
     fluent_case: Optional[str]
     fluent_data: Optional[str]
     number_of_profiles: int
+    number_of_profile_pts: int
     coordinate_system: str
     profile_height: float
     port_wall_pressure: Optional[str]
@@ -225,6 +234,238 @@ class PivData(TypedDict):
     normalized_rotation_tensor: Optional[NormalizedRotationTensor]
 
 
+class ReferenceProperties(TypedDict):
+    """Type definition for reference properties."""
+
+    T_ref: float
+    p_ref: float
+    U_ref: float
+    M_ref: float
+    density_ref: float
+    dynamic_viscosity_ref: float
+
+
+class FlowProperties(TypedDict):
+    """Type definition for flow properties."""
+
+    U_inf: float
+    p_0: float
+    p_inf: float
+    p_atm: float
+    T_0: float
+
+
+class FluidProperties(TypedDict):
+    """Type definition for fluid properties."""
+
+    density: float
+    dynamic_viscosity: float
+    heat_capacity_ratio: float
+    gas_constant: float
+
+
+class Properties(TypedDict):
+    """Type definition for fluid, flow, and reference properties."""
+
+    fluid: FluidProperties
+    flow: FlowProperties
+    reference: ReferenceProperties
+
+
+class StatFileRunData(TypedDict):
+    """Type definition for .stat file data."""
+
+    data: np.ndarray
+    p_atm: float
+    p_0: float
+    T_0: float
+    p_inf: float
+    p_ref: float
+    T_ref: float
+    U_ref: float
+    M_ref: float
+    density_ref: float
+    dynamic_viscosity_ref: float
+
+
+class CFDRefConditions(TypedDict):
+    """Type definition for cfd reference conditions."""
+
+    p_0: float
+    T_0: float
+    p_ref: float
+    T_ref: float
+    density_ref: float
+    U_ref: float
+    dynamic_viscosity_ref: float
+
+
+StatFileData = Dict[str, StatFileRunData]
+
 SecParams = Tuple[float, float, float, float, float, float, float, float]
 
 Vec3 = Tuple[float, float, float]
+
+STAT = {
+    "PORTNUM": 0,
+    "X_L": 1,
+    "Y_L": 2,
+    "Z_L": 3,
+    "U_REF": 4,
+    "RE_L": 5,
+    "T_F": 6,
+    "C_P": 7,
+    "P_IN_H2O": 8,
+    "PRMS_IN_H2O": 9
+}
+
+
+# PROFILES
+class Uncertainty(TypedDict):
+    """Definition of profile Reynolds stress."""
+
+    dU: np.ndarray
+    dV: np.ndarray
+    dW: np.ndarray
+    dU_SS: np.ndarray
+    dV_SS: np.ndarray
+    dW_SS: np.ndarray
+    dUU: np.ndarray
+    dVV: np.ndarray
+    dWW: np.ndarray
+    dUV: np.ndarray
+    dUW: np.ndarray
+    dVW: np.ndarray
+    dUU_SS: np.ndarray
+    dVV_SS: np.ndarray
+    dWW_SS: np.ndarray
+    dUV_SS: np.ndarray
+    dUW_SS: np.ndarray
+    dVW_SS: np.ndarray
+
+
+class BLParams(TypedDict):
+    """Definition of profile Reynolds stress."""
+    DELTA: float
+    U_E: float
+    DELTA_STAR: float
+    THETA: float
+
+
+class BLMethods(TypedDict):
+    """Definition of profile Reynolds stress."""
+    GRIFFIN: BLParams
+    VINUESA: BLParams
+
+
+class ProfileProperties(TypedDict):
+    """Definition of profile Reynolds stress."""
+    NU: float
+    RHO: float
+    U_REF: float
+    U_INF: Optional[float]
+    U_TAU: Optional[float]
+    X_CORRECTION: Optional[float]
+    Y_CORRECTION: Optional[float]
+    Y_SS_CORRECTION: Optional[float]
+    ANGLE_SS_DEG: Optional[float]
+    BL_PARAMS: Optional[BLMethods]
+
+
+class ProfileReynoldsStress(TypedDict):
+    """Definition of profile Reynolds stress."""
+
+    UU: np.ndarray
+    VV: np.ndarray
+    WW: np.ndarray
+    UV: np.ndarray
+    UW: np.ndarray
+    VW: np.ndarray
+    UU_SS: Optional[np.ndarray]
+    VV_SS: Optional[np.ndarray]
+    WW_SS: Optional[np.ndarray]
+    UV_SS: Optional[np.ndarray]
+    UW_SS: Optional[np.ndarray]
+    VW_SS: Optional[np.ndarray]
+    UU_SS_PLUS: Optional[np.ndarray]
+    VV_SS_PLUS: Optional[np.ndarray]
+    WW_SS_PLUS: Optional[np.ndarray]
+    UV_SS_PLUS: Optional[np.ndarray]
+    UW_SS_PLUS: Optional[np.ndarray]
+    VW_SS_PLUS: Optional[np.ndarray]
+
+
+class ProfileMeanVelocity(TypedDict):
+    """Definition of profile mean velocity."""
+
+    U: np.ndarray
+    V: np.ndarray
+    W: np.ndarray
+    U_SS: Optional[np.ndarray]
+    V_SS: Optional[np.ndarray]
+    W_SS: Optional[np.ndarray]
+    U_SS_PLUS: Optional[np.ndarray]
+    V_SS_PLUS: Optional[np.ndarray]
+    W_SS_PLUS: Optional[np.ndarray]
+    U_SS_MODELED: Optional[np.ndarray]
+
+
+class ProfileCoordinates(TypedDict):
+    """Definition of profile coordinates."""
+
+    X: np.ndarray
+    Y: np.ndarray
+    Y_SS: Optional[np.ndarray]
+    Y_SS_PLUS: Optional[np.ndarray]
+    Y_SS_MODELED: Optional[np.ndarray]
+    Y_W: Optional[np.ndarray]
+
+
+class ProfileTurbulenceScales(TypedDict):
+    """Definition of profile turbulence scales."""
+
+    NUT: np.ndarray
+
+
+class ProfileData(TypedDict):
+    """Definition of experimental profile."""
+
+    coordinates: ProfileCoordinates
+    mean_velocity: ProfileMeanVelocity
+    reynolds_stress: Optional[ProfileReynoldsStress]
+    strain_tensor: Optional[StrainTensor]
+    rotation_tensor: Optional[RotationTensor]
+    normalized_rotation_tensor: Optional[NormalizedRotationTensor]
+    turbulence_scales: Optional[ProfileTurbulenceScales]
+    uncertainty: Optional[Uncertainty]
+    properties: ProfileProperties
+
+
+class Profile(TypedDict):
+    """Definition of single profile."""
+
+    exp: ProfileData
+    cfd: Optional[ProfileData]
+
+
+class PressureInterpolants(TypedDict):
+    """Interpolants types."""
+
+    P_THIRD_ORDER: Interp1DCallable
+    CP_THIRD_ORDER: Interp1DCallable
+    CP_FIRST_ORDER: Interp1DCallable
+
+
+class PressureProperties(TypedDict):
+    """Pressure propeties."""
+
+    P_INF: float
+    U_INF: float
+    P_0: float
+
+
+class CenterlinePressure(TypedDict):
+    """Centerline Pressure type."""
+
+    interpolants: PressureInterpolants
+    properties: PressureProperties
