@@ -5,4 +5,5 @@ Pillow==11.2.1
 plotly==6.1.1
 pytecplot==1.6.3
 scipy==1.15.3
+tkmacosx==1.0.5
 trimesh[all]==4.5.3

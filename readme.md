@@ -1,4 +1,4 @@
-# Mac installation
+# Quick Start 
 
 1) If you are running on an ARM64 machine, install an Intel-based Python version
 
