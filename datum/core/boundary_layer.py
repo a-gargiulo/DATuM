@@ -1,6 +1,7 @@
 """This module defines functions for the computation of integral boundary layer parameters from profile data."""
+import pdb
 import re
-from typing import cast, Dict, Union
+from typing import cast, Dict, Union, Optional
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -223,27 +224,43 @@ def calculate_boundary_layer_integral_parameters(profile: ProfileData, ui: PRInp
             "THETA": 0.0,
         }
     }
+
     # Local Reconstruction Method, Griffin et al. (2021)
-    delta_threshold = 0.99
-    # assuming dpdy = 0
-    u_griffin2 = (
-        (2 / rho) *
-        (p_0 - p_ctrline(profile["coordinates"]["X"][0])) - v_ss ** 2
-    )
+    def is_invalid(d: Optional[float]) -> bool:
+        if (d is None) or np.isnan(d) or np.isinf(d) or (d < 0.0):
+            return True
+        return False
 
-    velocity_ratio_interpolant = interp1d(
-        u_ss[~np.isnan(u_ss)] ** 2 / u_griffin2[~np.isnan(u_ss)],
-        y_ss[~np.isnan(u_ss)] - y_0_ss,
-        kind="linear",
-        fill_value="extrapolate",  # type: ignore
-    )
+    delta_threshold = [0.99, 0.95]
+    delta_griffin = None
+    cc = 0
+    threshold = 0.0
+    while is_invalid(delta_griffin):
+        if cc > len(delta_threshold) - 1:
+            logger.warning("Griffin calculation out of bounds.")
+            break
 
-    delta_griffin = velocity_ratio_interpolant(
-        delta_threshold**2
-    )
-    if np.isnan(delta_griffin) or np.isinf(delta_griffin):
-        logger.warning("Griffin calculation out of bounds.")
-    integral_parameters["GRIFFIN"]["DELTA"] = delta_griffin
+        threshold = delta_threshold[cc]
+
+        # assuming dpdy = 0
+        u_griffin2 = (
+            (2 / rho) *
+            (p_0 - p_ctrline(profile["coordinates"]["X"][0])) - v_ss ** 2
+        )
+
+        velocity_ratio_interpolant = interp1d(
+            u_ss[~np.isnan(u_ss)] ** 2 / u_griffin2[~np.isnan(u_ss)],
+            y_ss[~np.isnan(u_ss)] - y_0_ss,
+            kind="linear",
+            fill_value="extrapolate",  # type: ignore
+        )
+
+        delta_griffin = velocity_ratio_interpolant(threshold**2)
+
+        cc += 1
+
+    integral_parameters["GRIFFIN"]["DELTA"] = cast(float, delta_griffin)
+    integral_parameters["GRIFFIN"]["THRESHOLD"] = threshold
     integral_parameters["GRIFFIN"]["U_E"] = exp_velocity_interpolant(
         integral_parameters["GRIFFIN"]["DELTA"]
     )
@@ -306,6 +323,7 @@ def calculate_boundary_layer_integral_parameters(profile: ProfileData, ui: PRInp
 
     logger.info(f"Griffin U_E: {integral_parameters['GRIFFIN']['U_E']}")
     logger.info(f"Griffin DELTA: {integral_parameters['GRIFFIN']['DELTA']}")
+    logger.info(f"Griffin THRESHOLD: {integral_parameters['GRIFFIN']['THRESHOLD']}")
     logger.info(f"Griffin DELTA_STAR: {integral_parameters['GRIFFIN']['DELTA_STAR']}")
     logger.info(f"Griffin THETA: {integral_parameters['GRIFFIN']['THETA']}")
 

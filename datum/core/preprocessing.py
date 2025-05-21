@@ -1,5 +1,4 @@
 """BeVERLI Hill stereo PIV data preprocessing core functionalities."""
-
 from typing import TYPE_CHECKING, Dict, cast
 
 import numpy as np

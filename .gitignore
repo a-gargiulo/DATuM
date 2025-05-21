@@ -3,5 +3,5 @@
 __pycache__
 .DS_Store
 run.py
-outputs/
 run.sh
+outputs/

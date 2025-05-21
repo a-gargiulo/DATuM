@@ -1,0 +1,71 @@
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+#   NASA-VT Blind CFD Validation Challenge DATA SUBMITTAL FORM (Version 1 - June 5, 2024)
+#
+#       Due July 9, 2024 to Chris Roy: cjroy@vt.edu
+#
+#	BeVERLI Hill Simulations
+#
+#              TITLE:	First-author participant's last name & first initial + date + geometry + turb model + solver + etc.
+#                       EXAMPLE:   RoyC-2024-July9-AsDesigned-SST-Fluent
+#                                  
+#       NOMENCLATURE:
+#                          X = streamwise location in tunnel in meters (X = 0 m is the center of the hill, positive downstream)
+#                          Y = vertical location in tunnel in meters (Y = 0 m is inside the hill on the tunnel port wall, positive into tunnel)
+#                          Z = spanwise location in tunnel in meters (Z = 0 m is the center of the hill and in the spanwise direction)
+#                          u/u_ref = normalized X velocity (dimensionless)
+#                          v/u_ref = normalized Y velocity (dimensionless)
+#                          w/u_ref = normalized Z velocity (dimensionless)
+#                          TKE/(u_ref)^2 = normalized turbulent kinetic energy (dimensionless)
+#                          omega/(u_ref/H) = normalized turbulent frequency (dimensionless)
+#                          <rho u''u''>/(rho*u_ref^2) = normalized Reynolds normal stress component (dimensionless)
+#                          <rho v''v''>/(rho*u_ref^2) = normalized Reynolds normal stress component (dimensionless)
+#                          <rho w''w''>/(rho*u_ref^2) = normalized Reynolds normal stress component (dimensionless)
+#                          <rho u''v''>/(rho*u_ref^2) = normalized Reynolds shear stress component (dimensionless)
+#                          <rho v''w''>/(rho*u_ref^2) = normalized Reynolds shear stress component (dimensionless)
+#                          <rho u''w''>/(rho*u_ref^2) = normalized Reynolds shear stress component (dimensionless)
+#                          u_tau/u_ref = normalized wall friction velocity (dimensionless) [NOTE: can be entered just at the wall 
+#                                           point, with -999.9 elsewhere]
+#                          nu_wall/(u_ref*H) = normalized laminar kinematic viscosity (nu) at the wall (dimensionless) [NOTE: can 
+#                                                 be entered just at the wall point, with -999.9 elsewhere]
+#
+#                          Extract using the following begin and end points (with enough resolution to resolve the viscous sublayer): 
+#                             As-Designed Geometry Start: X = -0.0233 m, Y =0.186943822651748748 m, Z = -0.0404 m
+#                             As-Built Geometry Start: X = -0.0233 m, Y = 0.187827092969610282 m, Z = -0.0404 m
+#                             End:  X = -0.0233 m, Y = 0.337827092969610 m, Z = -0.0404 m
+#
+#
+#   BOUNDARY CONDITIONS & REFERENCE VALUES (VERY IMPORTANT):
+#      * The outflow static pressure should be adjusted to match the reference pressures as closely as possible (to match Reynolds number)
+#      * Each CFD simulation MUST be referenced to its own reference conditions, which are found by averaging the 7 wall static pressure
+#           values (locations below) to get the reference pressure; other reference values (e.g., reference velocity, density) are found from 
+#           the specified stagnation conditions, the reference pressure, and isentropic relations
+#      * The reference pressure location is at X = -2.228 m and Y = 1.85 m
+#      * The seven Z locations for reference pressure are: Z = -0.6858, -0.4572, -0.2286, 0.0000, 0.2286, 0.4572, and 0.6858 m
+#      * The nominal hill height is: H = 0.186944 m
+#      * Stagnation conditions: 
+#           Re_H = 250,000, Stag. Temperature = 297.0 K, Stag. Pressure = 94,220 Pa, Outlet Static Pressure = 93,961 Pa (just a starting value)
+#           Re_H = 650,000, Stag. Temperature = 297.0 K, Stag. Pressure = 94,450 Pa, Outlet Static Pressure = 92,692 Pa (just a starting value)
+#      * Reference conditions, etc. (again, adjust back pressure to match this reference pressure as closely as possible): 
+#           Re_H = 250,000, Reference Pressure = 93,974 Pa, Mach = 0.06, Outlet Static Press = 93,961 Pa (just a starting value)
+#           Re_H = 650,000, Reference Pressure = 92,771 Pa, Mach = 0.16, Outlet Static Press = 92,692 Pa (just a starting value)
+#
+#
+#   ADDITIONAL NOTES: 
+#      * Double precision values are preferred (~14 significant digits), but the minimum required is single precision (~7 significant digits)
+#      * The AUXDATA variable "ID" refers to the ID found in the participant Google Sheet spreadsheet found at:
+#           https://docs.google.com/spreadsheets/d/1x7g8Be1p9AnvDzHc6H2SgZvDjvcPr3Gu1AYhG9suUSQ/edit?usp=sharing
+#      * Fill fields with a value of -999.9 for data that are not available (e.g., turbulent kinetic energy for Spalart-Allmaras)
+#      * Only include one solver, turb model, etc per form
+#      * The AUXDATA variable "RelIterConvLevel" refers to the relative iterative convergence level for whichever governing equation had the 
+#           smallest reduction, usually measured from the first few iterations to the final one
+#      * The AUXDATA variable "Miscellaneous" can be used to provide any other information you deem important that was not requested
+#      * Give the exact total for N, the total number of cells/elements in the grid
+#      * For the supplied grids (both as-built and as-designed), these N and h values are:
+#                       Grid Name      #Cells, N          h
+#                       Level 1:       75153408      0.0023696476
+#                       Level 2:       37354304      0.0029914824
+#                       Level 3:       18480000      0.0037823874
+#                       Level 4:        9394176      0.0047392953
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -119,6 +119,7 @@ def extract_profiles(
                 cfd_ref,
             )
 
+        # TODO: Clean-up None/empty values before writing
         apputils.write_pickle(PROFILES_OUTFILE, profiles)
     except Exception as e:
         raise RuntimeError(f"Profile extraction failed: {e}")
@@ -314,8 +315,8 @@ def _select_profile_locations(
         "colormap": "jet",
         "contour_range": {"start": 0, "end": 25, "num_of_contours": 100},
         "zpos": x_3_m,
-        "xlim": [x_1_m - 0.15, x_1_m + 0.15],
-        "ylim": [x_2_m - 0.02, x_2_m + 0.02],
+        "xlim": [x_1_m - 0.075, x_1_m + 0.075],
+        "ylim": [x_2_m - 0.02, x_2_m + 0.05],
         "xmajor_locator": 0.05,
         "ymajor_locator": None,
         "cbar_range": {"start": 0, "end": 25, "num_of_ticks": 6},
@@ -498,12 +499,14 @@ def profile_init(add_cfd: bool, add_gradients: bool) -> Profile:
             "BL_PARAMS": {
                 "GRIFFIN": {
                     "DELTA": 0.0,
+                    "THRESHOLD": 0.0,
                     "U_E": 0.0,
                     "DELTA_STAR": 0.0,
                     "THETA": 0.0,
                 },
                 "VINUESA": {
                     "DELTA": 0.0,
+                    "THRESHOLD": None,
                     "U_E": 0.0,
                     "DELTA_STAR": 0.0,
                     "THETA": 0.0,

@@ -267,15 +267,24 @@ def set_rotated_tensor_planar(
     :param rotated_tensor: Rotated tensor as :py:type:`np.ndarray` of shape
         (3, 3, m, n)
     """
-    processed_keys = set()
-    for component, rotated_tensor_component in zip(
-        components, (i for sublist in rotated_tensor for i in sublist)
-    ):
-        if component not in processed_keys:
+    if len(components) == 6:
+        # Must be used with (0, 0), (1, 1), (2, 2), (0, 1), (0, 2), (1, 2) arrangement of DAT2ROT
+        n_diag = 3
+
+        for i in range(n_diag):
+            piv.data[quantity][components[i]] = rotated_tensor[i, i]
+
+        k = n_diag
+        for i in range(n_diag):
+            for j in range(i + 1, n_diag):
+                piv.data[quantity][components[k]] = rotated_tensor[i, j]
+                k += 1
+    else:
+        # Must be used with (0, 0), (0, 1), (0, 2), (1, 1), ... arrangement of DAT2ROT
+        for component, rotated_tensor_component in zip(
+            components, (i for sublist in rotated_tensor for i in sublist)
+        ):
             piv.data[quantity][component] = rotated_tensor_component
-            processed_keys.add(component)
-        else:
-            continue
 
 
 def rotate_profile(

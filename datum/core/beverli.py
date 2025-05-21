@@ -64,6 +64,11 @@ class Beverli:
         for i in range(n_pts):
             x2[i] = self.probe_hill(x1[i], x3)
 
+        x1 = np.append(x1, [6.0])
+        x2 = np.append(x2, [0.0])
+        x1 = np.concatenate(([-6.0], x1))
+        x2 = np.concatenate(([0.0], x2))
+
         return x1, x2
 
     def probe_hill(self, x1: float, x3: float) -> float:

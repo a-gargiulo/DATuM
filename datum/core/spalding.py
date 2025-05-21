@@ -36,6 +36,7 @@ def spalding_fit_profile(profile: Profile, add_cfd: bool):
     :param add_cfd: A boolean value indicating whether to plot the CFD data alongside the experimental data for
         reference. If the value is true, the CFD data will be added.
     """
+    submit_flag = {"submitted": True}
     in_to_m = 0.0254
     hill_top_width_in = 3.68
 
@@ -180,34 +181,39 @@ def spalding_fit_profile(profile: Profile, add_cfd: bool):
     axs_1.set_ylim(0, 25)
 
     def submit(event):
-        plt.close()
+        submit_flag["submitted"] = True
+        plt.close(fig_1)
+        plt.close(fig_2)
 
     submit_button.on_clicked(submit)
 
     plt.show()
-    fig_1.clear()
-    fig_2.clear()
 
-    # Set values
-    profile["exp"]["properties"]["U_TAU"] = u_tau_slider.val
-    profile["exp"]["properties"]["Y_SS_CORRECTION"] = x_2_ss_0_slider.val
+    if submit_flag["submitted"]:
+        # Set values
+        profile["exp"]["properties"]["U_TAU"] = u_tau_slider.val
+        profile["exp"]["properties"]["Y_SS_CORRECTION"] = x_2_ss_0_slider.val
 
-    # Correction in tunnel coordinates
-    phi_ss = cast(float, profile["exp"]["properties"]["ANGLE_SS_DEG"])
-    if x_1_m < hill_top_width_in * in_to_m / 2:
-        profile["exp"]["properties"]["X_CORRECTION"] = x_2_ss_0_slider.val * np.cos(
-            np.pi / 2 - np.deg2rad(phi_ss)
-        )
-        profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val * np.sin(
-            np.pi / 2 - np.deg2rad(phi_ss)
-        )
-    elif x_1_m > hill_top_width_in * in_to_m / 2:
-        profile["exp"]["properties"]["X_CORRECTION"] = x_2_ss_0_slider.val * np.cos(
-            np.pi / 2 + np.deg2rad(phi_ss)
-        )
-        profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val * np.sin(
-            np.pi / 2 + np.deg2rad(phi_ss)
-        )
-    else:
-        profile["exp"]["properties"]["X_CORRECTION"] = 0
-        profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val
+        # Correction in tunnel coordinates
+        phi_ss = cast(float, profile["exp"]["properties"]["ANGLE_SS_DEG"])
+        if x_1_m < hill_top_width_in * in_to_m / 2:
+            profile["exp"]["properties"]["X_CORRECTION"] = x_2_ss_0_slider.val * np.cos(
+                np.pi / 2 - np.deg2rad(phi_ss)
+            )
+            profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val * np.sin(
+                np.pi / 2 - np.deg2rad(phi_ss)
+            )
+        elif x_1_m > hill_top_width_in * in_to_m / 2:
+            profile["exp"]["properties"]["X_CORRECTION"] = x_2_ss_0_slider.val * np.cos(
+                np.pi / 2 + np.deg2rad(phi_ss)
+            )
+            profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val * np.sin(
+                np.pi / 2 + np.deg2rad(phi_ss)
+            )
+        else:
+            profile["exp"]["properties"]["X_CORRECTION"] = 0
+            profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val
+
+
+    # fig_1.clear()
+    # fig_2.clear()

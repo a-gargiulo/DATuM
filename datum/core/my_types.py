@@ -347,6 +347,7 @@ class Uncertainty(TypedDict):
 class BLParams(TypedDict):
     """Definition of profile Reynolds stress."""
     DELTA: float
+    THRESHOLD: Optional[float]
     U_E: float
     DELTA_STAR: float
     THETA: float
