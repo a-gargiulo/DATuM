@@ -1,4 +1,4 @@
-# Table of Contents
+# DATuM - Direct Analysis of Turbulence Models
 
 - [Quick Start](#quick-start)
     - [Prerequisites](#prerequisites)
