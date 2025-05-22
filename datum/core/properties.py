@@ -135,6 +135,9 @@ def _obtain_run_conditions(ui: PRInputs) -> StatFileData:
                     + sd_run["p_atm"]
                 )
             )
+            # !!! NEW CORRECTION !!!
+            delta_pref = _get_pref_correction(ui["reynolds_number"])
+            sd_run["p_ref"] = sd_run["p_ref"] + delta_pref
 
             # Isentropic flow
             gamma = ui["gamma"] if ui["gamma"] is not None else 1.4
@@ -209,6 +212,16 @@ def _retrieve_ref_ports_and_cp(
             f"An error occured while retrieving the "
             f"reference pressure port numbers: {e}"
         )
+
+
+def _get_pref_correction(reynolds_number: float) -> float:
+    delta_pref = 0.0
+    if reynolds_number == 250000:
+        delta_pref = -2.97
+    elif reynolds_number == 650000:
+        delta_pref = -22.48
+
+    return delta_pref
 
 
 def _extract_and_save_properties(

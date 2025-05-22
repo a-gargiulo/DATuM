@@ -251,9 +251,9 @@ def _extract_profile(
         phi_ss = float(phi_ss)
         if x_1_m < 0:
             phi_ss *= -1
-        phi_ss_deg = phi_ss * 180.0 * np.pi
+        phi_ss_deg = phi_ss * 180.0 / np.pi
 
-        rotmat_ss = rotation.get_rotation_matrix(phi_ss * 180.0 / np.pi, 'z')
+        rotmat_ss = rotation.get_rotation_matrix(phi_ss_deg, 'z')
         rotdat = rotation.rotate_profile(
             profile["exp"], rotmat_ss, ui["add_gradients"]
         )

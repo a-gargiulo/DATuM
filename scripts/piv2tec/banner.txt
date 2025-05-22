@@ -1,15 +1,20 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #
-#   NASA-VT Blind CFD Validation Challenge DATA SUBMITTAL FORM (Version 1 - June 5, 2024)
+#    NASA-VT Benchmark Validation Experiment for RANS/LES Investigations (BeVERLI) 
 #
-#       Due July 9, 2024 to Chris Roy: cjroy@vt.edu
+#    Date (lastly modified): May 22, 2025
 #
-#	BeVERLI Hill Simulations
+#    BeVERLI Hill PIV One-Dimensional (1D) Profile Data 
+#    --------------------------------------------------
 #
-#              TITLE:	First-author participant's last name & first initial + date + geometry + turb model + solver + etc.
-#                       EXAMPLE:   RoyC-2024-July9-AsDesigned-SST-Fluent
+#       TYPE (Wall Normal / Hill Normal):       Hill Normal 
+#       PROFILE ORIGIN (X, Y, Z) [m]:           (xx, yy, zz)    
+#           P:   xyz
+#                       xyz
+#                       xyz
+#       ORIENTATION:  
 #                                  
-#       NOMENCLATURE:
+#        NOMENCLATURE:
 #                          X = streamwise location in tunnel in meters (X = 0 m is the center of the hill, positive downstream)
 #                          Y = vertical location in tunnel in meters (Y = 0 m is inside the hill on the tunnel port wall, positive into tunnel)
 #                          Z = spanwise location in tunnel in meters (Z = 0 m is the center of the hill and in the spanwise direction)
