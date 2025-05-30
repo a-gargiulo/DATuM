@@ -249,17 +249,17 @@ def _extract_profile(
     if is_shear:
         phi_ss = np.arccos(nvec @ np.array([0, 1, 0]))
         phi_ss = float(phi_ss)
-        if x_1_m < 0:
+        if x_1_m > 0:
             phi_ss *= -1
         phi_ss_deg = phi_ss * 180.0 / np.pi
 
-        rotmat_ss = rotation.get_rotation_matrix(phi_ss_deg, 'z')
+        rotmat_ss = rotation.get_rotation_matrix(-phi_ss_deg, 'z')
         rotdat = rotation.rotate_profile(
             profile["exp"], rotmat_ss, ui["add_gradients"]
         )
         #
         rotation.set_rotated_profile_shear(profile["exp"], rotdat)
-        profile["exp"]["properties"]["ANGLE_SS_DEG"] = phi_ss_deg
+        profile["exp"]["properties"]["ANGLE_SS_DEG"] = abs(phi_ss_deg)
 
         # ---------- SPALDING FIT --> U_TAU, Y_0 ----------
         #
