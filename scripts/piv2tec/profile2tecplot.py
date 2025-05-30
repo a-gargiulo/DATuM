@@ -13,12 +13,12 @@ from numpy.typing import NDArray
 H = 0.186944
 
 # Inputs
-profiles_file: str = "./outputs/plane3/plane3_pr.pkl"
-properties_file: str = "./outputs/plane3/fluid_and_flow_properties.json"
-transform_file: str = "./outputs/plane3/plane3_tp.json"
+profiles_file: str = "../../outputs/plane3/plane3_pr.pkl"
+properties_file: str = "../../outputs/plane3/fluid_and_flow_properties.json"
+transform_file: str = "../../outputs/plane3/plane3_tp.json"
 hill_orientation: float = 45.0
 reynolds_number: float = 250000.0
-description: str = (
+loc_description: str = (
     "Maximum pressure region along the centerline of the BeVERLI Hill"
 )
 coordinate_system: str = "Shear"
@@ -316,9 +316,10 @@ def write_banner(
         f"Z = {tp['translation']['x_3_glob_ref_m']:.4f} m"
     )
     f.write(f"#{tab()}SOURCE:".ljust(33) + f"Stereo PIV plane at {source}\n")
-    f.write(f"#{tab(8)}{description}\n")
+    f.write(f"#{tab(8)}{loc_description}\n")
     f.write("#\n")
-    # f.write(f"#{tab()}COORDINATE coordinate_system:\n")
+    f.write(f"#{tab()}NUMBER OF PROFILES:".ljust(33) + f"{len(profile_numbers)}\n")
+    # f.write(f"#{tab()}CARTESIAN (X, Y, Z) COORDINATE SYSTEM:\n")
     # f.write(f"#{tab(2)}* Type:".ljust(32) + "Cartesian, (X, Y, Z)\n")
     # f.write(f"#{tab(2)}* Units:".ljust(32) + "Meters, m\n")
     # f.write(f"#{tab(2)}* Origin:".ljust(32) + "Interior center of the BeVERLI Hill on the tunnel port wall\n")
