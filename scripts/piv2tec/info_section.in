@@ -10,38 +10,38 @@
 #    One-dimensional (1D) PIV profiles
 #    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#    NUMBER OF PROFILES:        1
+#    NUMBER OF PROFILES:        <NumOfProfiles>
 #
-#    SOURCE:                    Stereo PIV plane at X = -0.4348 m, Y = 0.0283 m, Z = 0.0000 m
-#                               Maximum pressure region along the centerline of the BeVERLI Hill 
+#    SOURCE:                    Stereo PIV plane at X = <Xsrc> m, Y = <Ysrc> m, Z = <Zsrc> m
+#                               <SourceDescription> 
 #
-#    ORIENTATION:               Locally normal to the surface of the BeVERLI Hill or tunnel port wall. 
+#    ORIENTATION:               <Orientation> 
 #
 #
 #    GEOMETRY, REFERENCE, FLOW, AND FLUID CONDITIONS:
 #       
 #        QUANTITY                                   UNITS               VALUE
 #        ----------------------------------------------------------------------
-#        * Hill height, H                           [m]         =       0.186944
-#        * Hill orientation, phi                    [deg]       =       45.0
-#        * Hill-height-based Reynolds number, ReH   [-]         =       250000.0
-#        * Reference Velocity, U_ref                [m/s]       =       22.81 
-#        * Reference Pressure, p_ref                [Pa]        =       94167.2 
-#        * Reference Temperature, T_ref             [K]         =       301.7
-#        * Reference Mach Number, M_ref             [-]         =       0.07 
-#        * Reference Density, rho_ref               [kg/m^3]    =       1.087 
-#        * Reference Dynamic viscoisty, mu_ref      [Pa*s]      =       1.85414e-05 
-#        * Stagnation Pressure, p_0                 [Pa]        =       94450.4 
-#        * Stagnation Temperature, T0               [K]         =       302.0 
-#        * Free-Stream Velocity, U_inf              [m/s]       =       23.03 
-#        * Free-Stream Pressure, p_inf              [Pa]        =       94162.9 
-#        * Ambient Pressure, p_amb                  [Pa]        =       94141.6
-#        * Density, rho                             [kg/m^3]    =       1.103 
-#        * Dynamic Viscosity, mu                    [Pa*s]      =       1.85594e-05
+#        * Hill height, H                           [m]         =       <H>
+#        * Hill orientation, phi                    [deg]       =       <phi>
+#        * Hill-height-based Reynolds number, ReH   [-]         =       <ReH>
+#        * Reference Velocity, U_ref                [m/s]       =       <uref> 
+#        * Reference Pressure, p_ref                [Pa]        =       <pref> 
+#        * Reference Temperature, T_ref             [K]         =       <Tref>
+#        * Reference Mach Number, M_ref             [-]         =       <Mref> 
+#        * Reference Density, rho_ref               [kg/m^3]    =       <rhoref> 
+#        * Reference Dynamic viscoisty, mu_ref      [Pa*s]      =       <muref> 
+#        * Stagnation Pressure, p_0                 [Pa]        =       <p0> 
+#        * Stagnation Temperature, T0               [K]         =       <T0> 
+#        * Free-Stream Velocity, U_inf              [m/s]       =       <uinf> 
+#        * Free-Stream Pressure, p_inf              [Pa]        =       <pinf> 
+#        * Ambient Pressure, p_amb                  [Pa]        =       <pamb>
+#        * Density, rho                             [kg/m^3]    =       <rho> 
+#        * Dynamic Viscosity, mu                    [Pa*s]      =       <mu>
 #
 #    PIV INFORMATION:
-#        * SAMPLING RATE:       12.5 kHz
-#        * SAMPLES:             10000
+#        * SAMPLING RATE:       <PivSamplingRate> kHz
+#        * SAMPLES:             <PivNumOfSamples>
 #
 #
 #    ~~~~~~
@@ -106,7 +106,7 @@
 #          U_e, depending on which yielded a more robust estimate. In the Vinuesa method, delta is based on 2.0% of
 #          the turbulence intensity.
 #
-#          ** [2] Vinuesa, R., Bobke, A., Ã–rlÃ¼, R., & Schlatter, P. (2016). On determining characteristic length scales
+#          ** [2] Vinuesa, R., Bobke, A., Örlü, R., & Schlatter, P. (2016). On determining characteristic length scales
 #                 in pressure-gradient turbulent boundary layers. Physics of fluids, 28(5).
 #          ** [3] Griffin, K. P., Fu, L., & Moin, P. (2021). General method for determining the boundary layer thickness
 #                 in nonequilibrium flows. Physical Review Fluids, 6(2), 024608.

@@ -10,6 +10,7 @@ from numpy.typing import NDArray
 
 
 # Constant
+INFO_SECTION_TEMPLATE = "info_section.in"
 H = 0.186944
 
 # Inputs
@@ -27,6 +28,9 @@ location = (
 profiles_orientation: str = "Shear"
 profiles_IDs: tuple[int, ...] = (1,)
 nan_val = -999.9
+
+piv_rate = 12.5
+piv_samp = 10000
 
 # "ZONE": "Plane1_x=neg1p8288m_Re=250k",
 # "DESCRIPTION": "Highest pressure point on the BeVERLI Hill at Re_H = 250,000 and 45 deg hill orientation",
@@ -289,242 +293,48 @@ def write_banner(f: io.IOBase, properties: dict) -> None:
 
     tp = load_json(path_transformation)
 
-    f.write("#" + 120 * "+" + "\n")
-    f.write("#\n")
-    f.write(f"#{tab()}Last modified: May 22, 2025)\n")
-    f.write(f"#{tab()}\n")
-    f.write("#" + tab() + "+" + 79 * "-" + "+" + "\n")
-    f.write(
-        f"#{tab()}| NASA-VT Benchmark Validation Experiment "
-        "for RANS/LES Investigations (BeVERLI) |\n"
-    )
-    f.write("#" + tab() + "+" + 79 * "-" + "+" + "\n")
-    f.write("#\n")
-    f.write("#" + tab() + 33 * "~" + "\n")
-    f.write(f"#{tab()}One-dimensional (1D) PIV profiles\n")
-    f.write("#" + tab() + 33 * "~" + "\n")
-    f.write("#\n")
-    f.write(
-        f"#{tab()}NUMBER OF PROFILES:".ljust(33) + f"{len(profiles_IDs)}\n"
-    )
-    f.write("#\n")
-    source = (
-        f"X = {tp['translation']['x_1_glob_ref_m']:.4f} m, "
-        f"Y = {tp['translation']['x_2_glob_ref_m']:.4f} m, "
-        f"Z = {tp['translation']['x_3_glob_ref_m']:.4f} m"
-    )
-    f.write(f"#{tab()}SOURCE:".ljust(33) + f"Stereo PIV plane at {source}\n")
-    f.write(f"#{tab(8)}{location}\n")
-    f.write("#\n")
     if profiles_orientation == "Shear":
-        f.write(
-            f"#{tab()}ORIENTATION:".ljust(33) +
-            "Locally normal to the surface of the BeVERLI Hill\n"
-        )
+        orientation = "Locally normal to the surface of the BeVERLI Hill or tunnel port wall."
     elif profiles_orientation == "Tunnel":
-        f.write(
-            f"#{tab()}ORIENTATION:".ljust(33) +
-            "Normal to the tunnel port wall\n"
-        )
-    f.write("#\n")
-    f.write(f"#{tab()}COORDINATE SYSTEM:\n")
-    f.write(f"#{tab(2)}* Type:".ljust(33) + "Cartesian; X, Y, Z\n")
-    f.write(f"#{tab(2)}* Units:".ljust(33) + "Meters, m\n")
-    f.write(
-        f"#{tab(2)}* Origin:".ljust(33) +
-        "Interior center of the BeVERLI Hill on the tunnel port wall\n"
-    )
-    f.write(
-        f"#{tab(2)}* X-axis:".ljust(33) +
-        "Positive in the dowstream direction\n"
-    )
-    f.write(
-        f"#{tab(2)}* Y-axis:".ljust(33) +
-        "Normal to the tunnel port wall and positive inside of the tunnel\n"
-    )
-    f.write(
-        f"#{tab(2)}* Z-axis:".ljust(33) +
-        "Spanwise direction, completing the "
-        "coordinate system in the right-handed sense\n"
-    )
-    f.write("#\n")
-    f.write(f"#{tab()}BOUNDARY & REFERENCE CONDITIONS:\n")
-    f.write(
-        f"#{tab(2)}* Density, rho (kg/m^3):".ljust(60) +
-        f"{properties['fluid']['density']}\n")
-    f.write(
-        f"#{tab(2)}* Dynamic (molecular) viscosity, mu (Pa*s):".ljust(60) +
-        f"{properties['fluid']['dynamic_viscosity']:.4e}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Free-stream velocity, u_inf (m/s):".ljust(60) +
-        f"{properties['flow']['U_inf']:.2f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Free-stream pressure, p_inf (Pa):".ljust(60) +
-        f"{properties['flow']['p_inf']:.1f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Ambient pressure, p_amb (Pa):".ljust(60) +
-        f"{properties['flow']['p_atm']:.1f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Stagnation pressure, p_0 (Pa):".ljust(60) +
-        f"{properties['flow']['p_0']:.1f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Stagnation temperature, T_0 (K):".ljust(60) +
-        f"{properties['flow']['T_0']:.1f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Reference velocity, u_ref (m/s):".ljust(60) +
-        f"{properties['reference']['U_ref']:.2f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Reference pressure, p_ref, (m/s):".ljust(60) +
-        f"{properties['reference']['p_ref']:.1f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Reference temperature, T_ref (K):".ljust(60) +
-        f"{properties['reference']['T_ref']:.1f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Reference Mach number, M_ref (dimensionless):".ljust(60) +
-        f"{properties['reference']['M_ref']:.2f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Reference density, rho_ref (kg/m^3):".ljust(60) +
-        f"{properties['reference']['density_ref']:.3f}\n"
-    )
-    f.write(
-        f"#{tab(2)}* Reference dynamic viscoisty, mu_ref (Pa*s):".ljust(60) +
-        f"{properties['reference']['dynamic_viscosity_ref']:.4e}\n"
-    )
-    f.write("#\n")
-    f.write(f"#{tab()}NOMENCLATURE:\n")
-    f.write(
-        f"#{tab(2)}* X = streamwise location in tunnel in meters "
-        "(X = 0 m is the center of the hill, positive downstream)\n"
-    )
-    f.write(
-        f"#{tab(2)}* Y = vertical location in tunnel in meters "
-        "(Y = 0 m is inside the hill on the tunnel port wall, "
-        "positive into tunnel)\n"
-    )
-    f.write(
-        f"#{tab(2)}* Z = spanwise location in tunnel in meters "
-        "(Z = 0 m is the center of the hill and in the spanwise direction)\n"
-    )
-    f.write(
-        f"#{tab(2)}* u/u_ref = normalized X velocity (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* v/u_ref = normalized Y velocity (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* w/u_ref = normalized Z velocity (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* TKE/(u_ref)^2 = normalized turbulent kinetic energy "
-        "(dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* omega/(u_ref/H) = normalized turbulent frequency "
-        "(dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* <rho u''u''>/(rho*u_ref^2) = normalized Reynolds normal "
-        "stress component (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* <rho v''v''>/(rho*u_ref^2) = normalized Reynolds normal "
-        "stress component (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* <rho w''w''>/(rho*u_ref^2) = normalized Reynolds "
-        "normal stress component (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* <rho u''v''>/(rho*u_ref^2) = normalized Reynolds "
-        "shear stress component (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* <rho v''w''>/(rho*u_ref^2) = normalized Reynolds "
-        "shear stress component (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* <rho u''w''>/(rho*u_ref^2) = normalized Reynolds "
-        "shear stress component (dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* u_tau/u_ref = normalized wall friction velocity "
-        "(dimensionless)\n"
-    )
-    f.write(
-        f"#{tab(2)}* nu_wall/(u_ref*H) = normalized laminar kinematic "
-        "viscosity (nu) at the wall (dimensionless)\n"
-    )
-    f.write("#\n")
-    f.write("#\n")
-    f.write(f"#{tab()}+" + 24 * "-" + "+\n")
-    f.write(f"#{tab()}| Additional Information |\n")
-    f.write(f"#{tab()}+" + 24 * "-" + "+\n")
-    f.write("#\n")
-    f.write(f"#{tab()}PROFILES' ORIENTATION\n")
-    f.write(
-        f"#{tab(2)}* PIV profiles are extracted either in a direction normal "
-        "to the tunnel port wall or locally normal to the\n"
-    )
-    f.write(
-        f"#{tab(2)}  surface of the BeVERLI Hill, as specified above "
-        "under 'ORIENTATION'. For profiles taken normal to the hill\n"
-    )
-    f.write(
-        f"#{tab(2)}  surface, additional parameters such as the Spalding fit"
-        "and integral boundary layer parameters are reported\n"
-    )
-    f.write(
-        f"#{tab(2)}   below for each profile in the 'AUXDATA' section. The methods used to calculate these parameters are detailed below within this section.\n"
-    )
-    f.write("#\n")
-    f.write(f"#{tab()}SPALDING FIT PARAMETERS:\n")
-    f.write(
-        f"#{tab(2)}* Where appropriate, i.e., for profiles that or normal "
-        "to their local surface, the data was fitted to the\n"
-    )
-    f.write(f"#{tab(2)}  Spalding [1] composite profile to determine corrections to the profile's distance from the surface, X_0 and\n")
-    f.write(f"#{tab(2)}  Y_0, and the friction velocity, u_tau. In such cases, these parameters are reported above.\n")
-    f.write("#\n")
-    f.write(f"#{tab(2)}  ** [1] Spalding, D. B. (1961). A single formula for the law of the wall. Journal of Applied mechanics, 28(3),\n")
-    f.write(f"#{tab(2)}         455-458.\n")
-    f.write("#\n")
-    f.write(f"#{tab()}BOUNDARY LAYER PARAMETERS:\n")
-    f.write(f"#{tab(2)}* Where available, boundary layer parameters computed using two methods, Griffin et al. [2] and Vinuesa et al. [3],\n")
-    f.write(f"#{tab(2)}  are provided above. The boundary layer thickness, delta, is reported based on either\n")
-    f.write(f"#{tab(2)}  99% or 95% of the edge velocity, U_e, depending on which yielded a more robust estimate, or\n")
-    f.write(f"#{tab(2)}  based on 2.0% of the turbulence intensity.\n")
-    f.write("#\n")
-    f.write(f"#{tab(2)}  ** [2] Vinuesa, R., Bobke, A., Örlü, R., & Schlatter, P. (2016). On determining characteristic length scales\n")
-    f.write(f"#{tab(2)}         in pressure-gradient turbulent boundary layers. Physics of fluids, 28(5).\n")
-    f.write(f"#{tab(2)}  ** [3] Griffin, K. P., Fu, L., & Moin, P. (2021). General method for determining the boundary layer thickness\n")
-    f.write(f"#{tab(2)}         in nonequilibrium flows. Physical Review Fluids, 6(2), 024608.\n")
-    f.write("#\n")
-    f.write(f"#{tab()}UNCERTAINTY QUANTIFICATION (UQ):\n")
-    f.write(f"#{tab(2)}* The reported uncertainties represent 95% confidence intervals and account for both epistemic and aleatory\n")
-    f.write(f"#{tab(2)}  sources of uncertainty. The epistemic component arises from the rotation angles used to transform the raw PIV\n")
-    f.write(f"#{tab(2)}  data from the local measurement coordinate system to the present Cartesian coordinate system. The aleatory\n")
-    f.write(f"#{tab(2)}  component reflects random sampling variability inherent to the measurements. In the dataset, the uncertainties\n")
-    f.write(f"#{tab(2)}  are labeled by prefixing quantities with the letter 'd'.\n")
-    f.write(f"#{tab()}\n")
-    f.write(f"#{tab()}UNAVAILABLE VALUES:\n")
-    f.write(f"#{tab(2)}* Fields with a value of -999.9 represent unavailable data points\n")
-    f.write("#\n")
-    f.write(f"#{tab()}AUXDATA:\n")
-    f.write(f"#{tab(2)}* HillOrientation:".ljust(36) +  "BeVERLI Hill orientation in degrees\n")
-    f.write(f"#{tab(2)}* ReynoldsNumber:".ljust(36) +  "Reynolds number (dimensionless)\n")
-    f.write(f"#{tab(2)}* NumberOfPoints:".ljust(36) +  "Number of profile points\n")
-    f.write(f"#{tab(2)}* ProfileNumber:".ljust(36) +  "Profile index\n")
-    f.write("#\n")
+        orientation = "Normal to the surface of the tunnel port wall."
+    else:
+        raise ValueError("Coordinate system must be 'Shear' or 'Tunnel'.")
+
+    replacements = {
+        "NumOfProfiles": (len(profiles_IDs), "{:d}"),
+        "H": (H, "{:.6f}"),
+        "Xsrc": (tp["translation"]["x_1_glob_ref_m"], "{:.4f}"),
+        "Ysrc": (tp["translation"]["x_2_glob_ref_m"], "{:.4f}"),
+        "Zsrc": (tp["translation"]["x_3_glob_ref_m"], "{:.4f}"),
+        "SourceDescription": (location, "{}"),
+        "Orientation": (orientation, "{}"),
+        "phi": (hill_orientation, "{:.1f}"),
+        "ReH": (reynolds_number, "{}"),
+        "uref": (properties["reference"]["U_ref"], "{:.2f}"),
+        "pref": (properties["reference"]["p_ref"], "{:.1f}"),
+        "Tref": (properties["reference"]["T_ref"], "{:.1f}"),
+        "Mref": (properties["reference"]["M_ref"], "{:.2f}"),
+        "rhoref": (properties["reference"]["density_ref"], "{:.3f}"),
+        "muref": (properties["reference"]["dynamic_viscosity_ref"], "{:.5e}"),
+        "p0": (properties["flow"]["p_0"], "{:.1f}"),
+        "T0": (properties["flow"]["T_0"], "{:.1f}"),
+        "uinf": (properties["flow"]["U_inf"], "{:.2f}"),
+        "pinf": (properties["flow"]["p_inf"], "{:.1f}"),
+        "pamb": (properties["flow"]["p_atm"], "{:.1f}"),
+        "rho": (properties["fluid"]["density"], "{:.3f}"),
+        "mu": (properties["fluid"]["dynamic_viscosity"], "{:.5e}"),
+        "PivSamplingRate": (piv_rate, "{}"),
+        "PivNumOfSamples": (piv_samp, "{:d}"),
+    }
+
+    with open(INFO_SECTION_TEMPLATE, "r") as t:
+        info = t.read()
+
+    for key, (value, fmt) in replacements.items():
+        formatted = fmt.format(value)
+        info = info.replace(f"<{key}>", formatted)
+
+    f.write(info)
 
 
 def prof2tec(
