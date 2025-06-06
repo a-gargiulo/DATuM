@@ -1,0 +1,147 @@
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+#    Last modified: May 22, 2025)
+#    
+#    +-------------------------------------------------------------------------------+
+#    | NASA-VT Benchmark Validation Experiment for RANS/LES Investigations (BeVERLI) |
+#    +-------------------------------------------------------------------------------+
+#
+#    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#    One-dimensional (1D) PIV profiles
+#    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#    NUMBER OF PROFILES:        1
+#
+#    SOURCE:                    Stereo PIV plane at X = -0.4348 m, Y = 0.0283 m, Z = 0.0000 m
+#                               Maximum pressure region along the centerline of the BeVERLI Hill 
+#
+#    ORIENTATION:               Locally normal to the surface of the BeVERLI Hill or tunnel port wall. 
+#
+#
+#    GEOMETRY, REFERENCE, FLOW, AND FLUID CONDITIONS:
+#       
+#        QUANTITY                                   UNITS               VALUE
+#        ----------------------------------------------------------------------
+#        * Hill height, H                           [m]         =       0.186944
+#        * Hill orientation, phi                    [deg]       =       45.0
+#        * Hill-height-based Reynolds number, ReH   [-]         =       250000.0
+#        * Reference Velocity, U_ref                [m/s]       =       22.81 
+#        * Reference Pressure, p_ref                [Pa]        =       94167.2 
+#        * Reference Temperature, T_ref             [K]         =       301.7
+#        * Reference Mach Number, M_ref             [-]         =       0.07 
+#        * Reference Density, rho_ref               [kg/m^3]    =       1.087 
+#        * Reference Dynamic viscoisty, mu_ref      [Pa*s]      =       1.85414e-05 
+#        * Stagnation Pressure, p_0                 [Pa]        =       94450.4 
+#        * Stagnation Temperature, T0               [K]         =       302.0 
+#        * Free-Stream Velocity, U_inf              [m/s]       =       23.03 
+#        * Free-Stream Pressure, p_inf              [Pa]        =       94162.9 
+#        * Ambient Pressure, p_amb                  [Pa]        =       94141.6
+#        * Density, rho                             [kg/m^3]    =       1.103 
+#        * Dynamic Viscosity, mu                    [Pa*s]      =       1.85594e-05
+#
+#    PIV INFORMATION:
+#        * SAMPLING RATE:       12.5 kHz
+#        * SAMPLES:             10000
+#
+#
+#    ~~~~~~
+#    README
+#    ~~~~~~
+#
+#    COORDINATE SYSTEM:
+#        * Type:                Cartesian; X, Y, Z
+#        * Units:               Meters, m
+#        * Origin:              Interior center of the BeVERLI Hill on the tunnel port wall
+#        * X-axis:              Positive in the dowstream direction
+#        * Y-axis:              Normal to the tunnel port wall and positive inside of the tunnel
+#        * Z-axis:              Spanwise direction, completing the coordinate system in the right-handed sense
+#
+#
+#    NOMENCLATURE:
+#
+#        QUANTITY                                   UNITS               VALUE
+#        ----------------------------------------------------------------------
+#        * X                                        [m]         =       streamwise location in tunnel
+#        * Y                                        [m]         =       vertical location in tunnel
+#        * Z                                        [m]         =       spanwise location in tunnel
+#        * u/u_ref                                  [-]         =       normalized X velocity
+#        * v/u_ref                                  [-]         =       normalized Y velocity
+#        * w/u_ref                                  [-]         =       normalized Z velocity
+#        * TKE/(u_ref)^2                            [-]         =       normalized turbulent kinetic energy
+#        * omega/(u_ref/H)                          [-]         =       normalized turbulent frequency
+#        * <rho u''u''>/(rho*u_ref^2)               [-]         =       normalized Reynolds normal stress component
+#        * <rho v''v''>/(rho*u_ref^2)               [-]         =       normalized Reynolds normal stress component
+#        * <rho w''w''>/(rho*u_ref^2)               [-]         =       normalized Reynolds normal stress component
+#        * <rho u''v''>/(rho*u_ref^2)               [-]         =       normalized Reynolds shear stress component
+#        * <rho v''w''>/(rho*u_ref^2)               [-]         =       normalized Reynolds shear stress component
+#        * <rho u''w''>/(rho*u_ref^2)               [-]         =       normalized Reynolds shear stress component
+#        * u_tau/u_ref                              [-]         =       normalized wall friction velocity
+#        * nu_wall/(u_ref*H)                        [-]         =       normalized laminar kinematic viscosity at the wall
+#
+#
+#
+#    PROFILES' ORIENTATION:
+#        PIV profiles are extracted either in a direction normal to the tunnel port wall or locally normal to the
+#        surface of the BeVERLI Hill, as specified above under 'ORIENTATION'. For profiles taken normal to the hill
+#        surface, additional parameters such as Spalding fit and integral boundary layer parameters are reported
+#        in the 'AUXDATA' section for each profile. The methods used to calculate the latter parameters are detailed
+#        next. 
+#
+#
+#    SPALDING FIT:
+#        * Where appropriate, i.e., for profiles extracted locally normal to their surface, the profile data was fitted 
+#          to the Spalding [1] composite profile to determine corrections to the profile's distance from the surface,
+#          X_0 and Y_0, and the friction velocity, u_tau. Where applicable, these parameters are reported as 'AUXDATA'.
+#        * !IMPORTANT! The profile data provided, where applicable, is already accounts for the Spalding fi
+#          corrections. The reported Spalding fit parameters are just provided for reference.
+#
+#          ** [1] Spalding, D. B. (1961). A single formula for the law of the wall. Journal of Applied mechanics, 28(3),
+#                 455-458.
+#
+#
+#    INTEGRAL BOUNDARY LAYER PARAMETERS:
+#        * Where available, integral boundary layer parameters computed using two methods, Griffin et al. [2] and
+#          Vinuesa et al. [3], are provided in the 'AUXDATA' section for each profile. The boundary layer thickness,
+#          delta, from Griffin's method, is reported based on either 99% or 95% of the boundary layer's edge velocity,
+#          U_e, depending on which yielded a more robust estimate. In the Vinuesa method, delta is based on 2.0% of
+#          the turbulence intensity.
+#
+#          ** [2] Vinuesa, R., Bobke, A., Örlü, R., & Schlatter, P. (2016). On determining characteristic length scales
+#                 in pressure-gradient turbulent boundary layers. Physics of fluids, 28(5).
+#          ** [3] Griffin, K. P., Fu, L., & Moin, P. (2021). General method for determining the boundary layer thickness
+#                 in nonequilibrium flows. Physical Review Fluids, 6(2), 024608.
+#
+#
+#    UNCERTAINTY QUANTIFICATION (UQ):
+#        * The reported uncertainties represent 95% confidence intervals and account for both epistemic and aleatory
+#          sources of uncertainty. The epistemic component arises from the rotation angles used to transform the raw PIV
+#          data from its local measurement coordinate system to the Cartesian coordinate system of the present data.
+#          The aleatory component reflects random sampling variability inherent to the measurements. In the dataset,
+#          the uncertainties are labeled by prefixing quantities with the letter 'd'.
+#        * Across all the presented PIV datasets, a systematic bias that most significantly affects statistics involving
+#          the wall-normal velocity component (e.g., <v'v'>, <u'v'>, <v'w'>) is observable. This is primarily due to the
+#          limited spatial resolution and spatial averaging inherent to the PIV interrogation window, especially in
+#          regions with strong velocity gradients or near-wall flows. Additional bias error is added to the affected
+#          components, where appropriate, according to the findings discussed by Gargiulo et al. in [4].
+#
+#          ** [4] Gargiulo, A., Duetsch-Patel, J. E., Borgoltz, A., Devenport, W. J., Roy, C. J., & Lowe, K. T. (2023).
+#                 Strategies for computational fluid dynamics validation experiments. Journal of Verification,
+#                 Validation and Uncertainty Quantification, 8(3).
+#    
+#    UNAVAILABLE VALUES:
+#        * Fields with a value of -999.9 represent unavailable data points.
+#
+#    AUXDATA:
+#        * NumberOfPoints:          Number of profile points
+#        * ProfileNumber:           Profile index
+#        * X0:                      Spalding fit wall correction in the X direction
+#        * Y0:                      Spalding fit wall correction in the Y direction
+#        * UeGriffin:               Boundary layer edge velocity, Ue [m/s], according to [3]
+#        * DeltaXXGriffin:          Boundary layer thickness, delta [m], according to [3], with XX = 99 or 95
+#        * Delta*Griffin:           Boundary layer displacement thickness, delta* [m], according to [3]
+#        * ThetaGriffin:            Boundary layer momentum thickness, theta [m], according to [3]
+#        * UeVinuesa:               Boundary layer edge velocity, Ue [m/s], according to [2]
+#        * Delta02Vinuesa:          Boundary layer thickness, delta [m], according to [2]
+#        * Delta*Vinuesa:           Boundary layer displacement thickness, delta*, according to [2]
+#        * ThetaVinuesa:            Boundary layer momentum thickness, theta, according to [2]
+#

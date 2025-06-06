@@ -1,40 +1,38 @@
+"""Write PIV profile data to Tecplot format."""
 import sys
 import io
 import json
 import pickle as pkl
-from collections.abc import Mapping
 from typing import Any, Literal, Optional
 
 import numpy as np
 from numpy.typing import NDArray
 
 
-# Constant
-INFO_SECTION_TEMPLATE = "info_section.in"
+# Inputs
 H = 0.186944
 
-# Inputs
-path_profiles = "../../outputs/plane3/plane3_pr.pkl"
-path_properties = "../../outputs/plane3/fluid_and_flow_properties.json"
-path_transformation = "../../outputs/plane3/plane3_tp.json"
-
-outfile_name = "Plane3_Re=250k"
-
-hill_orientation = 45.0
-reynolds_number = 250000.0
-location = (
-    "Maximum pressure region along the centerline of the BeVERLI Hill"
-)
-profiles_orientation: str = "Shear"
-profiles_IDs: tuple[int, ...] = (1,)
-nan_val = -999.9
-
-piv_rate = 12.5
-piv_samp = 10000
-
 # "ZONE": "Plane1_x=neg1p8288m_Re=250k",
-# "DESCRIPTION": "Highest pressure point on the BeVERLI Hill at Re_H = 250,000 and 45 deg hill orientation",
 # "TITLE": "Plane1_x=neg1p8288m_Re=250k",
+
+
+def get_flag_value(flag: str, default: Any) -> Any:
+    """Return the command-line argument value that follows a given flag.
+
+    :param flag: Command-line flag
+    :param default: Default value if the flag is not used.
+
+    :return: Flag value or a default
+    :rtype: Any
+    """
+    if flag in sys.argv:
+        flag_idx = sys.argv.index(flag)
+        if flag_idx + 1 < len(sys.argv):
+            return sys.argv[flag_idx + 1]
+        else:
+            raise RuntimeError(f"{flag} flag provided but no value provided.")
+    return default
+
 
 def load_pkl(pkl_file: str) -> dict:
     """Load data from a .pkl file.
@@ -236,7 +234,7 @@ def extract_profile_quantities(
 
         vrs["tke"] = 0.5 * (vrs["uu"] + vrs["vv"] + vrs["ww"])
 
-        NaN = float(nan_val)
+        NaN = nan_val
 
         data = np.array([
             vrs["x"] - vrs["x0"] if pr_orientation == "Shear" else vrs["x"],
@@ -276,7 +274,7 @@ def extract_profile_quantities(
     return pq
 
 
-def write_banner(f: io.IOBase, properties: dict) -> None:
+def write_info(f: io.IOBase, properties: dict) -> None:
     """Write the file's information banner.
 
     :param f: File handle.
@@ -291,7 +289,7 @@ def write_banner(f: io.IOBase, properties: dict) -> None:
         else:
             return 4 * " "
 
-    tp = load_json(path_transformation)
+    tp = load_json(transformation_path)
 
     if profiles_orientation == "Shear":
         orientation = "Locally normal to the surface of the BeVERLI Hill or tunnel port wall."
@@ -306,7 +304,7 @@ def write_banner(f: io.IOBase, properties: dict) -> None:
         "Xsrc": (tp["translation"]["x_1_glob_ref_m"], "{:.4f}"),
         "Ysrc": (tp["translation"]["x_2_glob_ref_m"], "{:.4f}"),
         "Zsrc": (tp["translation"]["x_3_glob_ref_m"], "{:.4f}"),
-        "SourceDescription": (location, "{}"),
+        "SourceDescription": (src_description, "{}"),
         "Orientation": (orientation, "{}"),
         "phi": (hill_orientation, "{:.1f}"),
         "ReH": (reynolds_number, "{}"),
@@ -324,10 +322,10 @@ def write_banner(f: io.IOBase, properties: dict) -> None:
         "rho": (properties["fluid"]["density"], "{:.3f}"),
         "mu": (properties["fluid"]["dynamic_viscosity"], "{:.5e}"),
         "PivSamplingRate": (piv_rate, "{}"),
-        "PivNumOfSamples": (piv_samp, "{:d}"),
+        "PivNumOfSamples": (piv_samples, "{:d}"),
     }
 
-    with open(INFO_SECTION_TEMPLATE, "r") as t:
+    with open(info_template, "r") as t:
         info = t.read()
 
     for key, (value, fmt) in replacements.items():
@@ -350,8 +348,8 @@ def prof2tec(
     :param properties: Data properties.
     :param bl: Boundary layer and Spalding parameters.
     """
-    with open(outfile_name + ".dat", "w", encoding="utf-8") as f:
-        write_banner(f, properties)
+    with open(output_file + ".dat", "w", encoding="utf-8") as f:
+        write_info(f, properties)
         # f.write("\n")
         # f.write(f'TITLE = "{info["TITLE"]}"\n')
         # f.write(f'''VARIABLES = {' '.join([f'"{item}"' for item in info["VARIABLE_NAMES"]])}\n''')
@@ -370,11 +368,29 @@ def prof2tec(
 
 
 if __name__ == "__main__":
-    profiles_pkl = load_pkl(path_profiles)
+    config = {
+        "info_template": "../../datum/resources/piv2tec/info_section.in",
+        "profiles_path": "../../outputs/plane3/plane3_pr.pkl",
+        "properties_path":
+            "../../outputs/plane3/fluid_and_flow_properties.json",
+        "transformation_path": "../../outputs/plane3/plane3_tp.json",
+        "output_file": get_flag_value("-o", "Plane3_Profiles.dat"),
+        "hill_orientation": 45.0,
+        "reynolds_number": 250000.0,
+        "src_description":
+            "Maximum pressure region along the centerline of the BeVERLI Hill",
+        "profiles_orientation": "Shear",
+        "profiles_IDs": (1,),
+        "nan_val": -999.9,
+        "piv_rate": 12.5,
+        "piv_samples": 10000,
+    }
+
+    profiles_pkl = load_pkl(profiles_path)
     bl_parameters = get_bl_parameters(
         profiles_pkl, profiles_IDs, profiles_orientation
     )
-    properties = load_json(path_properties)
+    properties = load_json(properties_path)
     profiles_data = extract_profile_quantities(
         profiles_pkl, profiles_IDs, profiles_orientation
     )
