@@ -1,5 +1,7 @@
 """Write PIV profile data to Tecplot format."""
 import sys
+from colorama import Fore, Style, init
+import traceback
 import io
 import json
 import pickle as pkl
@@ -8,6 +10,8 @@ from typing import Any, Literal, Optional
 import numpy as np
 from numpy.typing import NDArray
 
+
+init()
 
 # Inputs
 H = 0.186944
@@ -105,7 +109,7 @@ def get_bl_parameters(
     return bl_parameters
 
 
-def get_varnames() -> list[str]:
+def get_varnames(orientation: str) -> list[str]:
     varnames = [
         "X (m)",
         "Y (m)",
@@ -134,7 +138,7 @@ def get_varnames() -> list[str]:
         "TKE/(u_ref)^2_UQ"
     ]
 
-    if profiles_orientation == "Tunnel":
+    if orientation == "Tunnel":
         values_to_remove = {"u_tau/u_ref"}
         varnames = [x for x in varnames if x not in values_to_remove]
 
@@ -210,6 +214,7 @@ def extract_profile_quantities(
     pr_pkl: dict,
     pr_IDs: tuple[int, ...],
     pr_orientation: Literal["Shear", "Tunnel"],
+    nan_val: float,
 ) -> list[NDArray[np.float64]]:
     """Extract quantities from the profile data.
 
@@ -225,7 +230,7 @@ def extract_profile_quantities(
 
     varmap = get_varmap(pr_orientation)
 
-    for pn in profiles_IDs:
+    for pn in pr_IDs:
         pr = pr_pkl[f"p{pn}"]["exp"]
 
         vrs = {}
@@ -266,19 +271,20 @@ def extract_profile_quantities(
                 ) / vrs["u_ref"]**2, nan=NaN),
         ])
         if pr_orientation == "Shear":
-            np.insert(
-                data, 13, np.ones_like(vrs["x"]) * vrs["u_tau"] / vrs["u_ref"]
+            data = np.insert(
+                data, 13, np.ones_like(vrs["x"]) * vrs["u_tau"] / vrs["u_ref"], axis=0
             )
         pq.append(data)
 
     return pq
 
 
-def write_info(f: io.IOBase, properties: dict) -> None:
+def write_info(f: io.IOBase, properties: dict, config: dict) -> None:
     """Write the file's information banner.
 
     :param f: File handle.
     :param properties: Profile properties.
+    :param config: Input parameters
 
     :return: Info text.
     :rtype: list[str]
@@ -289,25 +295,25 @@ def write_info(f: io.IOBase, properties: dict) -> None:
         else:
             return 4 * " "
 
-    tp = load_json(transformation_path)
+    tp = load_json(config["transformation_path"])
 
-    if profiles_orientation == "Shear":
+    if config["profiles_orientation"] == "Shear":
         orientation = "Locally normal to the surface of the BeVERLI Hill or tunnel port wall."
-    elif profiles_orientation == "Tunnel":
+    elif config["profiles_orientation"] == "Tunnel":
         orientation = "Normal to the surface of the tunnel port wall."
     else:
         raise ValueError("Coordinate system must be 'Shear' or 'Tunnel'.")
 
     replacements = {
-        "NumOfProfiles": (len(profiles_IDs), "{:d}"),
+        "NumOfProfiles": (len(config["profiles_IDs"]), "{:d}"),
         "H": (H, "{:.6f}"),
         "Xsrc": (tp["translation"]["x_1_glob_ref_m"], "{:.4f}"),
         "Ysrc": (tp["translation"]["x_2_glob_ref_m"], "{:.4f}"),
         "Zsrc": (tp["translation"]["x_3_glob_ref_m"], "{:.4f}"),
-        "SourceDescription": (src_description, "{}"),
+        "SourceDescription": (config["src_description"], "{}"),
         "Orientation": (orientation, "{}"),
-        "phi": (hill_orientation, "{:.1f}"),
-        "ReH": (reynolds_number, "{}"),
+        "phi": (config["hill_orientation"], "{:.1f}"),
+        "ReH": (config["reynolds_number"], "{}"),
         "uref": (properties["reference"]["U_ref"], "{:.2f}"),
         "pref": (properties["reference"]["p_ref"], "{:.1f}"),
         "Tref": (properties["reference"]["T_ref"], "{:.1f}"),
@@ -321,11 +327,11 @@ def write_info(f: io.IOBase, properties: dict) -> None:
         "pamb": (properties["flow"]["p_atm"], "{:.1f}"),
         "rho": (properties["fluid"]["density"], "{:.3f}"),
         "mu": (properties["fluid"]["dynamic_viscosity"], "{:.5e}"),
-        "PivSamplingRate": (piv_rate, "{}"),
-        "PivNumOfSamples": (piv_samples, "{:d}"),
+        "PivSamplingRate": (config["piv_rate"], "{}"),
+        "PivNumOfSamples": (config["piv_samples"], "{:d}"),
     }
 
-    with open(info_template, "r") as t:
+    with open(config["info_template"], "r") as t:
         info = t.read()
 
     for key, (value, fmt) in replacements.items():
@@ -337,80 +343,130 @@ def write_info(f: io.IOBase, properties: dict) -> None:
 
 def prof2tec(
     pr_data: list[NDArray[np.float64]],
-    pr_IDs: tuple[int, ...],
     properties: dict,
     bl: list[dict],
+    config: dict,
 ) -> None:
     """Write profiles to Tecplot format.
 
     :param pr_data: Profile data.
-    :param pr_IDs: Identification numbers of profiles.
     :param properties: Data properties.
     :param bl: Boundary layer and Spalding parameters.
+    :param config: Input parameters
     """
-    with open(output_file + ".dat", "w", encoding="utf-8") as f:
-        write_info(f, properties)
-        # f.write("\n")
-        # f.write(f'TITLE = "{info["TITLE"]}"\n')
-        # f.write(f'''VARIABLES = {' '.join([f'"{item}"' for item in info["VARIABLE_NAMES"]])}\n''')
-        # f.write("\n")
-        # f.write("#-----------------------------------------------------------------------------------------\n")
-        # f.write("#   EACH ZONE REFERS TO A DIFFERENT REYNOLDS NUMBER (and possibly grid level)\n")
-        # f.write("#-----------------------------------------------------------------------------------------\n")
-        # f.write("\n")
-        # f.write(f'ZONE T ="{info["ZONE"]}"\n')
-        # for key, val in info["AUXDATA"].items():
-        #     f.write(f'AUXDATA {key.ljust(16)} = "{val}"\n')
-        #     if key == "RelIterConvLevel":
-        #         f.write("#  NOTE: the AUXDATA variables below should be the same for every zone\n")
-        # f.write("\n")
-        # np.savetxt(f, profile.T, fmt="%14.9f")
+    varnames = get_varnames(config["profiles_orientation"])
 
+    with open(config["output_file"], "w", encoding="utf-8") as f:
+        write_info(f, properties, config)
+        f.write("\n")
+        f.write(f'TITLE = "{config["title"]}"\n')
+        f.write(f'''VARIABLES = {' '.join([f'"{item}"' for item in varnames])}\n''')
+        f.write("\n")
+
+
+        for pp in range(len(config["profiles_IDs"])):
+            indices = []
+            for ii in range(pr_data[pp].shape[0]):
+                row = pr_data[pp][ii, :]
+                mask = row == config["nan_val"]
+                rev_mask = mask[::-1]
+                first_false = np.where(~rev_mask)[0][0]
+                if first_false.size > 0:
+                    last_valid_idx = len(row) - 1 - first_false
+                    indices.append(last_valid_idx)
+                else:
+                    indices.append(pr_data[pp].shape[1])
+            LX = min(indices)
+            xw = f"{pr_data[pp][0, 0] + bl[pp]['spalding']['X_0']:.4e}"
+            yw = f"{pr_data[pp][1, 0] + bl[pp]['spalding']['Y_0']:.4e}"
+            zw = f"{pr_data[pp][2, 0]:.4e}"
+            f.write(f'ZONE T'.ljust(29) + f'= "Profile_{config["profiles_IDs"][pp]}_X={xw}_Y={yw}_Z={zw}"\n')
+            f.write(f'AUXDATA {"number_of_points".ljust(20)} = "{pr_data[pp][:, 0:LX+1].shape[1]}"\n')
+            f.write(f"AUXDATA {'profile_number'.ljust(20)} = \"{config['profiles_IDs'][pp]}\"\n")
+            f.write(f"AUXDATA {'X_0'.ljust(20)} = \"{bl[pp]['spalding']['X_0']:.4e}\"\n")
+            f.write(f"AUXDATA {'Y_0'.ljust(20)} = \"{bl[pp]['spalding']['Y_0']:.4e}\"\n")
+            f.write(f"AUXDATA {'U_e_griffin'.ljust(20)} = \"{bl[pp]['griffin']['u_e']:.2f}\"\n")
+            threshold = bl[pp]["griffin"]["threshold"]
+            f.write(f"AUXDATA {f'delta{int(threshold*100)}_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta']:.3f}\"\n")
+            f.write(f"AUXDATA {f'delta_star_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta_star']:.3f}\"\n")
+            f.write(f"AUXDATA {f'theta_griffin'.ljust(20)} = \"{bl[pp]['griffin']['theta']:.3f}\"\n")
+            f.write(f"AUXDATA {'U_e_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['u_e']:.2f}\"\n")
+            f.write(f"AUXDATA {f'delta02_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta']:.3f}\"\n")
+            f.write(f"AUXDATA {f'delta_star_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta_star']:.3f}\"\n")
+            f.write(f"AUXDATA {f'theta_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['theta']:.3f}\"\n")
+            f.write("\n")
+            np.savetxt(f, pr_data[pp][:, 0:LX+1].T, fmt="%14.9f")
+            f.write("\n")
+
+
+def validate_config(config) -> None:
+    types = {
+        "info_template": str,
+        "profiles_path": str,
+        "properties_path": str,
+        "transformation_path": str,
+        "output_file": str,
+        "title": str,
+        "zone_names": tuple,
+        "hill_orientation": float,
+        "reynolds_number": float,
+        "src_description": str,
+        "profiles_orientation": str,
+        "profiles_IDs": tuple,
+        "nan_val": float,
+        "piv_rate": float,
+        "piv_samples": int,
+    }
+
+    for key in config.keys():
+        if not isinstance(config[key], types[key]):
+            raise ValueError(f"Expected {types[key]} type for '{key}' in 'config', got {type(config[key])} instead.")
+
+    for name in config["zone_names"]:
+        if not isinstance(name, str):
+            raise ValueError(f"Expected str type for zone name in 'config['zone_names']', got {type(name)} instead.")
+
+    for ID in config["profiles_IDs"]:
+        if not isinstance(ID, int):
+            raise ValueError(f"Expected int type for id in 'config['profiles_IDs']', got {type(ID)} instead.")
+
+    if len(config["zone_names"]) != len(config["profiles_IDs"]):
+        raise ValueError("Length of 'zone_names' and 'profiles_IDs' in 'config' must match.")
 
 if __name__ == "__main__":
     config = {
         "info_template": "../../datum/resources/piv2tec/info_section.in",
-        "profiles_path": "../../outputs/plane3/plane3_pr.pkl",
+        "profiles_path": "../../outputs/plane1_650k/plane1_pr.pkl",
         "properties_path":
-            "../../outputs/plane3/fluid_and_flow_properties.json",
-        "transformation_path": "../../outputs/plane3/plane3_tp.json",
-        "output_file": get_flag_value("-o", "Plane3_Profiles.dat"),
+            "../../outputs/plane1_650k/fluid_and_flow_properties.json",
+        "transformation_path": "../../outputs/plane1_250k/plane1_tp.json",
+        "output_file": get_flag_value("-o", "Plane1_Profiles.dat"),
+        "title": "Inflow_Profiles_FastPiv_ReH=650k_Phi=45",
+        "zone_names": ("Profile 1", "Profile 2", "Profile 3"),
         "hill_orientation": 45.0,
-        "reynolds_number": 250000.0,
+        "reynolds_number": 650000.0,
         "src_description":
-            "Maximum pressure region along the centerline of the BeVERLI Hill",
+            "Tunnel inflow profiles",
         "profiles_orientation": "Shear",
-        "profiles_IDs": (1,),
+        "profiles_IDs": (1, 2, 3),
         "nan_val": -999.9,
         "piv_rate": 12.5,
         "piv_samples": 10000,
     }
 
-    profiles_pkl = load_pkl(profiles_path)
-    bl_parameters = get_bl_parameters(
-        profiles_pkl, profiles_IDs, profiles_orientation
-    )
-    properties = load_json(properties_path)
-    profiles_data = extract_profile_quantities(
-        profiles_pkl, profiles_IDs, profiles_orientation
-    )
-    prof2tec(profiles_data, profiles_IDs, properties, bl_parameters)
+    try:
+        validate_config(config)
+        profiles_pkl = load_pkl(config["profiles_path"])
+        bl_parameters = get_bl_parameters(
+            profiles_pkl, config["profiles_IDs"], config["profiles_orientation"]
+        )
+        properties = load_json(config["properties_path"])
+        profiles_data = extract_profile_quantities(
+            profiles_pkl, config["profiles_IDs"], config["profiles_orientation"], config["nan_val"]
+        )
+        prof2tec(profiles_data, properties, bl_parameters, config)
+    except Exception as e:
+        print("[" + Style.BRIGHT + Fore.RED + "ERROR" + Style.RESET_ALL + f"]: {e}")
+        traceback.print_exc()
+        sys.exit(1)
 
-# f.write(f"#{tab()}SPALDING FIT:\n")
-# f.write(f"#{tab(2)}* Friction velocity, u_tau (m/s):".ljust(68) + f"{bl['spalding']['u_tau']:.2f}\n")
-# f.write(f"#{tab(2)}* Profile distance to wall correction in X, X_0 (m):".ljust(68) + f"{bl['spalding']['X_0']:.4e}\n")
-# f.write(f"#{tab(2)}* Profile distance to wall correction in Y, Y_0 (m):".ljust(68) + f"{bl['spalding']['X_0']:.4e}\n")
-# f.write("#\n")
-# f.write(f"#{tab()}BOUNDARY LAYER PARAMETERS:\n")
-# f.write(f"#{tab(2)}* Griffin:\n")
-# f.write(f"#{tab(3)}** Edge velocity, U_e (m/s):".ljust(60) + f"{bl['griffin']['u_e']:.2f}\n")
-# f.write(f"#{tab(3)}** Thickness, delta_{bl['griffin']['threshold']} (m):".ljust(60) + f"{bl['griffin']['delta']:.4f}\n")
-# f.write(f"#{tab(3)}** Displacement thickness, delta* (m):".ljust(60) + f"{bl['griffin']['delta_star']:.4f}\n")
-# f.write(f"#{tab(3)}** Momentum thickness, theta (m):".ljust(60) + f"{bl['griffin']['theta']:.4f}\n")
-# f.write("#\n")
-# f.write(f"#{tab(2)}* Vinuesa:\n")
-# f.write(f"#{tab(3)}** Edge velocity, U_e (m/s):".ljust(60) + f"{bl['vinuesa']['u_e']:.2f}\n")
-# f.write(f"#{tab(3)}** Thickness, delta_2.0% (m):".ljust(60) + f"{bl['vinuesa']['delta']:.4f}\n")
-# f.write(f"#{tab(3)}** Displacement thickness, delta* (m):".ljust(60) + f"{bl['vinuesa']['delta_star']:.4f}\n")
-# f.write(f"#{tab(3)}** Momentum thickness, theta (m):".ljust(60) + f"{bl['vinuesa']['theta']:.4f}\n")
-# f.write("#\n")

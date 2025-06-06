@@ -75,7 +75,10 @@ class Beverli:
         """Find x2 at a specific (x1, x3) point."""
         if self.use_cad:
             try:
-                return self._probe_cad_hill(x1, x3)
+                if x1 < -1:
+                    return 0
+                else:
+                    return self._probe_cad_hill(x1, x3)
             except ValueError as e:
                 print(f"[ERROR]: {e}")
                 sys.exit(-1)

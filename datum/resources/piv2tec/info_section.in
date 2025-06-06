@@ -105,6 +105,9 @@
 #          delta, from Griffin's method, is reported based on either 99% or 95% of the boundary layer's edge velocity,
 #          U_e, depending on which yielded a more robust estimate. In the Vinuesa method, delta is based on 2.0% of
 #          the turbulence intensity.
+#        * !IMPORTANT! For zero-curvature, zero-pressure-gradient data, where the use of the Griffin or Vinuesa methods
+#          is unnecessary, U_e is directly extracted from the profile data at U_inf, and the boundary layer parameters
+#          are based on 99% of U_e.
 #
 #          ** [2] Vinuesa, R., Bobke, A., Örlü, R., & Schlatter, P. (2016). On determining characteristic length scales
 #                 in pressure-gradient turbulent boundary layers. Physics of fluids, 28(5).
@@ -132,16 +135,19 @@
 #        * Fields with a value of -999.9 represent unavailable data points.
 #
 #    AUXDATA:
-#        * NumberOfPoints:          Number of profile points
-#        * ProfileNumber:           Profile index
-#        * X0:                      Spalding fit wall correction in the X direction
-#        * Y0:                      Spalding fit wall correction in the Y direction
-#        * UeGriffin:               Boundary layer edge velocity, Ue [m/s], according to [3]
-#        * DeltaXXGriffin:          Boundary layer thickness, delta [m], according to [3], with XX = 99 or 95
-#        * Delta*Griffin:           Boundary layer displacement thickness, delta* [m], according to [3]
-#        * ThetaGriffin:            Boundary layer momentum thickness, theta [m], according to [3]
-#        * UeVinuesa:               Boundary layer edge velocity, Ue [m/s], according to [2]
-#        * Delta02Vinuesa:          Boundary layer thickness, delta [m], according to [2]
-#        * Delta*Vinuesa:           Boundary layer displacement thickness, delta*, according to [2]
-#        * ThetaVinuesa:            Boundary layer momentum thickness, theta, according to [2]
+#        * number_of_points:        Number of profile points
+#        * profile_number:          Profile index
+#        * X_0:                     Spalding fit wall correction in the X direction
+#        * Y_0:                     Spalding fit wall correction in the Y direction
+#        * U_e_griffin:             Boundary layer edge velocity, Ue [m/s], according to [3]
+#        * deltaXX_griffin:         Boundary layer thickness, delta [m], according to [3], with XX = 99 or 95
+#        * delta_star_griffin:      Boundary layer displacement thickness, delta* [m], according to [3]
+#        * theta_griffin:           Boundary layer momentum thickness, theta [m], according to [3]
+#        * U_e_vinuesa:             Boundary layer edge velocity, Ue [m/s], according to [2]
+#        * delta02_vinuesa:         Boundary layer thickness, delta [m], according to [2]
+#        * delta_star_vinuesa:      Boundary layer displacement thickness, delta*, according to [2]
+#        * theta_vinuesa:           Boundary layer momentum thickness, theta, according to [2]
+#
+#          ** For zero-curvature, zero-pressure-gradient data, the integral boundary layer parameters are reported as
+#             U_e, delta99, delta_star, and theta.
 #

@@ -15,15 +15,16 @@ S = 3.68 * IN2M
 
 
 # Inputs
-PIV_FILE = "../outputs/plane1/plane1_pp_interp.pkl"
-TRANS_PARAMS = "../outputs/plane1/plane1_tp.pkl"
+PIV_FILE = "../../outputs/plane1_650k/plane1_pp_interp.pkl"
+TRANS_PARAMS = "../../outputs/plane1_250k/plane1_tp.pkl"
 
 DAT2LOAD = {
         "coordinates": ("X", "Y", "Z"),
         "mean_velocity": ("U", "V", "W"),
         "reynolds_stress": ("UU", "VV", "WW", "UV", "UW", "VW"),
-        "velocity_snapshot": ("U", "V", "W"),
-        "turbulence_scales": ("TKE", "NUT"),
+        # "velocity_snapshot": ("U", "V", "W"),
+        # "turbulence_scales": ("TKE", "NUT"),
+        "turbulence_scales": ("TKE",),
         "mean_velocity_gradient": (
             "dUdX", "dUdY", "dUdZ",
             "dVdX", "dVdY", "dVdZ",
