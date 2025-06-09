@@ -1,17 +1,17 @@
 """Write PIV profile data to Tecplot format."""
-import sys
-from colorama import Fore, Style, init
-import traceback
+
 import io
 import json
 import pickle as pkl
+import sys
+import traceback
 from typing import Any, Literal, Optional
 
 import numpy as np
+from colorama import Fore, Style, init
 from numpy.typing import NDArray
 
-
-init()
+init()  # colorama
 
 # Inputs
 H = 0.186944
@@ -67,7 +67,7 @@ def load_json(json_file: str) -> dict:
 def get_bl_parameters(
     pr_pkl: dict,
     pr_IDs: tuple[int, ...],
-    orientation: Literal["Shear", "Tunnel"]
+    orientation: Literal["Shear", "Tunnel"],
 ) -> list[dict]:
     """Extract boundary layer parameters from .pkl profile data.
 
@@ -135,7 +135,7 @@ def get_varnames(orientation: str) -> list[str]:
         "<rho u''v''>/(rho*u_ref^2)_UQ",
         "<rho v''w''>/(rho*u_ref^2)_UQ",
         "<rho u''w''>/(rho*u_ref^2)_UQ",
-        "TKE/(u_ref)^2_UQ"
+        "TKE/(u_ref)^2_UQ",
     ]
 
     if orientation == "Tunnel":
@@ -241,38 +241,53 @@ def extract_profile_quantities(
 
         NaN = nan_val
 
-        data = np.array([
-            vrs["x"] - vrs["x0"] if pr_orientation == "Shear" else vrs["x"],
-            vrs["y"] - vrs["y0"] if pr_orientation == "Shear" else vrs["y"],
-            np.zeros_like(vrs["x"]),
-            np.nan_to_num(vrs["u"] / vrs["u_ref"], nan=NaN),
-            np.nan_to_num(vrs["v"] / vrs["u_ref"], nan=NaN),
-            np.nan_to_num(vrs["w"] / vrs["u_ref"], nan=NaN),
-            np.nan_to_num(vrs["tke"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["uu"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["vv"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["ww"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["uv"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["vw"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["uw"] / vrs["u_ref"]**2, nan=NaN),
-            np.ones_like(vrs["x"]) * vrs["nu"] / H / vrs["u_ref"],
-            np.nan_to_num(vrs["du"] / abs(vrs["u_ref"]), nan=NaN),
-            np.nan_to_num(vrs["dv"] / abs(vrs["u_ref"]), nan=NaN),
-            np.nan_to_num(vrs["dw"] / abs(vrs["u_ref"]), nan=NaN),
-            np.nan_to_num(vrs["duu"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["dvv"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["dww"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["duv"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["dvw"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(vrs["duw"] / vrs["u_ref"]**2, nan=NaN),
-            np.nan_to_num(
-                0.5 * np.sqrt(
-                    (vrs["duu"] + vrs["dvv"] + vrs["dww"]) / 1.96**2
-                ) / vrs["u_ref"]**2, nan=NaN),
-        ])
+        data = np.array(
+            [
+                (
+                    vrs["x"] - vrs["x0"]
+                    if pr_orientation == "Shear"
+                    else vrs["x"]
+                ),
+                (
+                    vrs["y"] - vrs["y0"]
+                    if pr_orientation == "Shear"
+                    else vrs["y"]
+                ),
+                np.zeros_like(vrs["x"]),
+                np.nan_to_num(vrs["u"] / vrs["u_ref"], nan=NaN),
+                np.nan_to_num(vrs["v"] / vrs["u_ref"], nan=NaN),
+                np.nan_to_num(vrs["w"] / vrs["u_ref"], nan=NaN),
+                np.nan_to_num(vrs["tke"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["uu"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["vv"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["ww"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["uv"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["vw"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["uw"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.ones_like(vrs["x"]) * vrs["nu"] / H / vrs["u_ref"],
+                np.nan_to_num(vrs["du"] / abs(vrs["u_ref"]), nan=NaN),
+                np.nan_to_num(vrs["dv"] / abs(vrs["u_ref"]), nan=NaN),
+                np.nan_to_num(vrs["dw"] / abs(vrs["u_ref"]), nan=NaN),
+                np.nan_to_num(vrs["duu"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["dvv"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["dww"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["duv"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["dvw"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(vrs["duw"] / vrs["u_ref"] ** 2, nan=NaN),
+                np.nan_to_num(
+                    0.5
+                    * np.sqrt((vrs["duu"] + vrs["dvv"] + vrs["dww"]) / 1.96**2)
+                    / vrs["u_ref"] ** 2,
+                    nan=NaN,
+                ),
+            ]
+        )
         if pr_orientation == "Shear":
             data = np.insert(
-                data, 13, np.ones_like(vrs["x"]) * vrs["u_tau"] / vrs["u_ref"], axis=0
+                data,
+                13,
+                np.ones_like(vrs["x"]) * vrs["u_tau"] / vrs["u_ref"],
+                axis=0,
             )
         pq.append(data)
 
@@ -289,6 +304,7 @@ def write_info(f: io.IOBase, properties: dict, config: dict) -> None:
     :return: Info text.
     :rtype: list[str]
     """
+
     def tab(n: Optional[int] = None) -> str:
         if n:
             return n * 4 * " "
@@ -360,9 +376,10 @@ def prof2tec(
         write_info(f, properties, config)
         f.write("\n")
         f.write(f'TITLE = "{config["title"]}"\n')
-        f.write(f'''VARIABLES = {' '.join([f'"{item}"' for item in varnames])}\n''')
+        f.write(
+            f"""VARIABLES = {' '.join([f'"{item}"' for item in varnames])}\n"""
+        )
         f.write("\n")
-
 
         for pp in range(len(config["profiles_IDs"])):
             indices = []
@@ -380,22 +397,49 @@ def prof2tec(
             xw = f"{pr_data[pp][0, 0] + bl[pp]['spalding']['X_0']:.4e}"
             yw = f"{pr_data[pp][1, 0] + bl[pp]['spalding']['Y_0']:.4e}"
             zw = f"{pr_data[pp][2, 0]:.4e}"
-            f.write(f'ZONE T'.ljust(29) + f'= "Profile_{config["profiles_IDs"][pp]}_X={xw}_Y={yw}_Z={zw}"\n')
-            f.write(f'AUXDATA {"number_of_points".ljust(20)} = "{pr_data[pp][:, 0:LX+1].shape[1]}"\n')
-            f.write(f"AUXDATA {'profile_number'.ljust(20)} = \"{config['profiles_IDs'][pp]}\"\n")
-            f.write(f"AUXDATA {'X_0'.ljust(20)} = \"{bl[pp]['spalding']['X_0']:.4e}\"\n")
-            f.write(f"AUXDATA {'Y_0'.ljust(20)} = \"{bl[pp]['spalding']['Y_0']:.4e}\"\n")
-            f.write(f"AUXDATA {'U_e_griffin'.ljust(20)} = \"{bl[pp]['griffin']['u_e']:.2f}\"\n")
+            f.write(
+                f"ZONE T".ljust(29)
+                + f'= "Profile_{config["profiles_IDs"][pp]}_X={xw}_Y={yw}_Z={zw}"\n'
+            )
+            f.write(
+                f'AUXDATA {"number_of_points".ljust(20)} = "{pr_data[pp][:, 0:LX+1].shape[1]}"\n'
+            )
+            f.write(
+                f"AUXDATA {'profile_number'.ljust(20)} = \"{config['profiles_IDs'][pp]}\"\n"
+            )
+            f.write(
+                f"AUXDATA {'X_0'.ljust(20)} = \"{bl[pp]['spalding']['X_0']:.4e}\"\n"
+            )
+            f.write(
+                f"AUXDATA {'Y_0'.ljust(20)} = \"{bl[pp]['spalding']['Y_0']:.4e}\"\n"
+            )
+            f.write(
+                f"AUXDATA {'U_e_griffin'.ljust(20)} = \"{bl[pp]['griffin']['u_e']:.2f}\"\n"
+            )
             threshold = bl[pp]["griffin"]["threshold"]
-            f.write(f"AUXDATA {f'delta{int(threshold*100)}_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta']:.3f}\"\n")
-            f.write(f"AUXDATA {f'delta_star_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta_star']:.3f}\"\n")
-            f.write(f"AUXDATA {f'theta_griffin'.ljust(20)} = \"{bl[pp]['griffin']['theta']:.3f}\"\n")
-            f.write(f"AUXDATA {'U_e_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['u_e']:.2f}\"\n")
-            f.write(f"AUXDATA {f'delta02_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta']:.3f}\"\n")
-            f.write(f"AUXDATA {f'delta_star_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta_star']:.3f}\"\n")
-            f.write(f"AUXDATA {f'theta_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['theta']:.3f}\"\n")
+            f.write(
+                f"AUXDATA {f'delta{int(threshold*100)}_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta']:.3f}\"\n"
+            )
+            f.write(
+                f"AUXDATA {f'delta_star_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta_star']:.3f}\"\n"
+            )
+            f.write(
+                f"AUXDATA {f'theta_griffin'.ljust(20)} = \"{bl[pp]['griffin']['theta']:.3f}\"\n"
+            )
+            f.write(
+                f"AUXDATA {'U_e_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['u_e']:.2f}\"\n"
+            )
+            f.write(
+                f"AUXDATA {f'delta02_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta']:.3f}\"\n"
+            )
+            f.write(
+                f"AUXDATA {f'delta_star_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta_star']:.3f}\"\n"
+            )
+            f.write(
+                f"AUXDATA {f'theta_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['theta']:.3f}\"\n"
+            )
             f.write("\n")
-            np.savetxt(f, pr_data[pp][:, 0:LX+1].T, fmt="%14.9f")
+            np.savetxt(f, pr_data[pp][:, 0 : LX + 1].T, fmt="%14.9f")
             f.write("\n")
 
 
@@ -420,33 +464,40 @@ def validate_config(config) -> None:
 
     for key in config.keys():
         if not isinstance(config[key], types[key]):
-            raise ValueError(f"Expected {types[key]} type for '{key}' in 'config', got {type(config[key])} instead.")
+            raise ValueError(
+                f"Expected {types[key]} type for '{key}' in 'config', got {type(config[key])} instead."
+            )
 
     for name in config["zone_names"]:
         if not isinstance(name, str):
-            raise ValueError(f"Expected str type for zone name in 'config['zone_names']', got {type(name)} instead.")
+            raise ValueError(
+                f"Expected str type for zone name in 'config['zone_names']', got {type(name)} instead."
+            )
 
     for ID in config["profiles_IDs"]:
         if not isinstance(ID, int):
-            raise ValueError(f"Expected int type for id in 'config['profiles_IDs']', got {type(ID)} instead.")
+            raise ValueError(
+                f"Expected int type for id in 'config['profiles_IDs']', got {type(ID)} instead."
+            )
 
     if len(config["zone_names"]) != len(config["profiles_IDs"]):
-        raise ValueError("Length of 'zone_names' and 'profiles_IDs' in 'config' must match.")
+        raise ValueError(
+            "Length of 'zone_names' and 'profiles_IDs' in 'config' must match."
+        )
+
 
 if __name__ == "__main__":
     config = {
         "info_template": "../../datum/resources/piv2tec/info_section.in",
         "profiles_path": "../../outputs/plane1_650k/plane1_pr.pkl",
-        "properties_path":
-            "../../outputs/plane1_650k/fluid_and_flow_properties.json",
+        "properties_path": "../../outputs/plane1_650k/fluid_and_flow_properties.json",
         "transformation_path": "../../outputs/plane1_250k/plane1_tp.json",
         "output_file": get_flag_value("-o", "Plane1_Profiles.dat"),
         "title": "Inflow_Profiles_FastPiv_ReH=650k_Phi=45",
         "zone_names": ("Profile 1", "Profile 2", "Profile 3"),
         "hill_orientation": 45.0,
         "reynolds_number": 650000.0,
-        "src_description":
-            "Tunnel inflow profiles",
+        "src_description": "Tunnel inflow profiles",
         "profiles_orientation": "Shear",
         "profiles_IDs": (1, 2, 3),
         "nan_val": -999.9,
@@ -458,15 +509,26 @@ if __name__ == "__main__":
         validate_config(config)
         profiles_pkl = load_pkl(config["profiles_path"])
         bl_parameters = get_bl_parameters(
-            profiles_pkl, config["profiles_IDs"], config["profiles_orientation"]
+            profiles_pkl,
+            config["profiles_IDs"],
+            config["profiles_orientation"],
         )
         properties = load_json(config["properties_path"])
         profiles_data = extract_profile_quantities(
-            profiles_pkl, config["profiles_IDs"], config["profiles_orientation"], config["nan_val"]
+            profiles_pkl,
+            config["profiles_IDs"],
+            config["profiles_orientation"],
+            config["nan_val"],
         )
         prof2tec(profiles_data, properties, bl_parameters, config)
     except Exception as e:
-        print("[" + Style.BRIGHT + Fore.RED + "ERROR" + Style.RESET_ALL + f"]: {e}")
+        print(
+            "["
+            + Style.BRIGHT
+            + Fore.RED
+            + "ERROR"
+            + Style.RESET_ALL
+            + f"]: {e}"
+        )
         traceback.print_exc()
         sys.exit(1)
-
