@@ -13,7 +13,6 @@ import numpy as np
 from matplotlib.widgets import Cursor
 
 
-BL_THRESHOLD = 0.99
 
 
 def load_pkl(pkl_file: str) -> dict:
@@ -28,20 +27,23 @@ def load_pkl(pkl_file: str) -> dict:
     return data
 
 
-if len(sys.argv) < 2:
+if len(sys.argv) < 3:
     print(
-        "[ERROR] Missing input: please provide the path to the PIV profile "
-        "`.pkl` file as a command-line argument."
+        "[ERROR] Missing inputs: please provide the path to the PIV profile "
+        "`.pkl` file and the velocity threshold as a command-line argument."
     )
     sys.exit(1)
 
 data = load_pkl(sys.argv[1])
 
+BL_THRESHOLD = float(sys.argv[2])
+
 for pp in data.keys():
     pr = data[pp]["exp"]
 
-    u = pr["mean_velocity"]["U"]
-    y = pr["coordinates"]["Y"] - pr["properties"]["Y_CORRECTION"]
+    u = pr["mean_velocity"]["U_SS_MODELED"]
+    # y = pr["coordinates"]["Y"] - pr["properties"]["Y_CORRECTION"]
+    y = pr["coordinates"]["Y_SS_MODELED"]
 
     fig, ax = plt.subplots()
     plt.plot(u, y)
@@ -68,14 +70,14 @@ for pp in data.keys():
             )
             print(
                 "Boundary layer thickness, delta [m]: ".ljust(60) +
-                f"{delta:.3f}")
+                f"{delta:.4f}")
             print(
                 "Boundary layer displacement thickness, delta* [m]: ".ljust(60) +
-                f"{delta_star:.3f}"
+                f"{delta_star:.4f}"
             )
             print(
                 "Boundary layer momentum thickness, theta [m] : ".ljust(60) +
-                f"{theta:.3f}"
+                f"{theta:.4f}"
             )
             plt.close(fig)
 

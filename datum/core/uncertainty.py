@@ -13,7 +13,7 @@ def calculate_random_and_rotation_uncertainty(
     piv: "Piv", profile: ProfileData, n_eff: int, coordinate_system_type: str
 ):
     prefactor = 1
-    if piv.pose.angle1 == 0:
+    if piv.pose.angle1 <= 1:
         prefactor = 0
 
     velocities = ["dU", "dV", "dW"]

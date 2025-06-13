@@ -293,7 +293,9 @@ def _extract_profile(
     #
     # TODO: It would be nice to add some bias error too.
     # TODO: Rotation uncertainty could be fancyfied.
-    if is_shear:
+    # TODO: Inflow plane on the flat wall with rotation correction
+    # must currently be handeled separately.
+    if is_shear and ui["add_gradients"]:
         uq_obj = cast("Piv", piv_interp)
     else:
         uq_obj = piv
