@@ -10,7 +10,6 @@ from typing import Any, Literal, Optional
 import numpy as np
 from colorama import Fore, Style, init
 from numpy.typing import NDArray
-
 init()  # colorama
 
 # Inputs
@@ -418,25 +417,25 @@ def prof2tec(
             )
             threshold = bl[pp]["griffin"]["threshold"]
             f.write(
-                f"AUXDATA {f'delta{int(threshold*100)}_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta']:.3f}\"\n"
+                f"AUXDATA {f'delta{int(threshold*100)}_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta']:.4f}\"\n"
             )
             f.write(
-                f"AUXDATA {f'delta_star_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta_star']:.3f}\"\n"
+                f"AUXDATA {f'delta_star_griffin'.ljust(20)} = \"{bl[pp]['griffin']['delta_star']:.4f}\"\n"
             )
             f.write(
-                f"AUXDATA {f'theta_griffin'.ljust(20)} = \"{bl[pp]['griffin']['theta']:.3f}\"\n"
+                f"AUXDATA {f'theta_griffin'.ljust(20)} = \"{bl[pp]['griffin']['theta']:.4f}\"\n"
             )
             f.write(
                 f"AUXDATA {'U_e_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['u_e']:.2f}\"\n"
             )
             f.write(
-                f"AUXDATA {f'delta02_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta']:.3f}\"\n"
+                f"AUXDATA {f'delta02_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta']:.4f}\"\n"
             )
             f.write(
-                f"AUXDATA {f'delta_star_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta_star']:.3f}\"\n"
+                f"AUXDATA {f'delta_star_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['delta_star']:.4f}\"\n"
             )
             f.write(
-                f"AUXDATA {f'theta_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['theta']:.3f}\"\n"
+                f"AUXDATA {f'theta_vinuesa'.ljust(20)} = \"{bl[pp]['vinuesa']['theta']:.4f}\"\n"
             )
             f.write("\n")
             np.savetxt(f, pr_data[pp][:, 0 : LX + 1].T, fmt="%14.9f")
@@ -489,14 +488,14 @@ def validate_config(config) -> None:
 if __name__ == "__main__":
     config = {
         "info_template": "../../datum/resources/piv2tec/info_section.in",
-        "profiles_path": "../../outputs/plane1_250k_rotCorrected/plane1_pr_0p35.pkl",
-        "properties_path": "../../outputs/plane1_250k_rotCorrected/fluid_and_flow_properties.json",
-        "transformation_path": "../../outputs/plane1_250k_rotCorrected/transformation_parameters_0p35.json",
-        "output_file": get_flag_value("-o", "Plane1_Profiles.dat"),
-        "title": "Inflow_Profiles_FastPiv_ReH=250k_Phi=45",
+        "profiles_path": "../../outputs/plane1_650k_rotCorrected/plane1_pr.pkl",
+        "properties_path": "../../outputs/plane1_650k_rotCorrected/fluid_and_flow_properties.json",
+        "transformation_path": "../../outputs/plane1_650k_rotCorrected/transformation_parameters_0p35.json",
+        "output_file": get_flag_value("-o", "Plane1_Profiles_650.dat"),
+        "title": "Inflow_Profiles_FastPiv_ReH=650k_Phi=45",
         "zone_names": ("Profile 1", "Profile 2", "Profile 3"),
         "hill_orientation": 45.0,
-        "reynolds_number": 250000.0,
+        "reynolds_number": 650000.0,
         "src_description": "Tunnel inflow profiles",
         "profiles_orientation": "Shear",
         "profiles_IDs": (1, 2, 3),

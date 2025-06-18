@@ -73,15 +73,14 @@ class Beverli:
 
     def probe_hill(self, x1: float, x3: float) -> float:
         """Find x2 at a specific (x1, x3) point."""
+        x1_p, x3_p = self.calculate_perimeter()
+        x1_ip = self._find_perimeter_intersection_points(x1_p, x3_p, x3)
+        if x1 < x1_ip[0]:
+            return 0.0
+
         if self.use_cad:
-            try:
-                if x1 < -1:
-                    return 0
-                else:
-                    return self._probe_cad_hill(x1, x3)
-            except ValueError as e:
-                print(f"[ERROR]: {e}")
-                sys.exit(-1)
+            return self._probe_cad_hill(x1, x3)
+
         return self._probe_analytic_hill(x1, x3)
 
     def get_surface_normal_symmetric_hill_centerline(self, x1: float) -> np.ndarray:

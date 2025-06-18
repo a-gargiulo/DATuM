@@ -56,11 +56,11 @@ for pp in data.keys():
             Ue = event.xdata
             idx = np.where(u >= BL_THRESHOLD * Ue)[0][0]
             delta = y[idx]
-            delta_star = np.trapezoid(
+            delta_star = np.trapz(
                 1 - u[~np.isnan(u)] / Ue,
                 y[~np.isnan(u)]
             )
-            theta = np.trapezoid(
+            theta = np.trapz(
                 (1 - u[~np.isnan(u)] / Ue) * (u[~np.isnan(u)] / Ue),
                 y[~np.isnan(u)],
             )

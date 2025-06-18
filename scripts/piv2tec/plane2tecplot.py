@@ -6,35 +6,36 @@ import matlab.engine
 
 
 # Inputs
-PIV_FILE = "../../outputs/plane1_250k/plane1_pp_interp.pkl"
-TRANS_PARAMS = "../../outputs/plane1_250k/plane1_tp.json"
+PIV_FILE = "../../outputs/plane1_650k_rotCorrected/plane1_pp_interp.pkl"
+TRANS_PARAMS = "../../outputs/plane1_650k_rotCorrected/transformation_parameters_0p35.json"
 ZONE_NAME = "Plane 1"
-OUTNAME = "Plane1_250.plt"
+OUTNAME = "Plane1_650.plt"
 DAT2LOAD = {
         "mean_velocity": ("U", "V", "W"),
         "reynolds_stress": ("UU", "VV", "WW", "UV", "UW", "VW"),
-        "velocity_snapshot": ("U", "V", "W"),
-        "turbulence_scales": ("TKE", "EPSILON", "NUT"),
-        "mean_velocity_gradient": (
-            "dUdX", "dUdY", "dUdZ",
-            "dVdX", "dVdY", "dVdZ",
-            "dWdX", "dWdY", "dWdZ",
-        ),
-        "strain_tensor": (
-            "S_11", "S_12", "S_13",
-            "S_21", "S_22", "S_23",
-            "S_31", "S_32", "S_33",
-        ),
-        "rotation_tensor": (
-            "W_11", "W_12", "W_13",
-            "W_21", "W_22", "W_23",
-            "W_31", "W_32", "W_33",
-        ),
-        "normalized_rotation_tensor": (
-            "O_11", "O_12", "O_13",
-            "O_21", "O_22", "O_23",
-            "O_31", "O_32", "O_33",
-        )
+        # "velocity_snapshot": ("U", "V", "W"),
+        # "turbulence_scales": ("TKE", "EPSILON", "NUT"),
+        "turbulence_scales": ("TKE",),
+        # "mean_velocity_gradient": (
+        #     "dUdX", "dUdY", "dUdZ",
+        #     "dVdX", "dVdY", "dVdZ",
+        #     "dWdX", "dWdY", "dWdZ",
+        # ),
+        # "strain_tensor": (
+        #     "S_11", "S_12", "S_13",
+        #     "S_21", "S_22", "S_23",
+        #     "S_31", "S_32", "S_33",
+        # ),
+        # "rotation_tensor": (
+        #     "W_11", "W_12", "W_13",
+        #     "W_21", "W_22", "W_23",
+        #     "W_31", "W_32", "W_33",
+        # ),
+        # "normalized_rotation_tensor": (
+        #     "O_11", "O_12", "O_13",
+        #     "O_21", "O_22", "O_23",
+        #     "O_31", "O_32", "O_33",
+        # )
 }
 
 with open(PIV_FILE, "rb") as f:

@@ -199,19 +199,27 @@ def spalding_fit_profile(profile: Profile, add_cfd: bool):
         profile["exp"]["properties"]["X_CORRECTION"] = x_2_ss_0_slider.val * np.sin(np.deg2rad(phi_ss))
         profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val * np.cos(np.deg2rad(phi_ss))
         if x_1_m < hill_top_width_in * in_to_m / 2:
-            if x_2_ss_0_slider.val > 0:
-                profile["exp"]["properties"]["X_CORRECTION"] *= -1
-                profile["exp"]["properties"]["Y_CORRECTION"] *= 1
-            else:
-                profile["exp"]["properties"]["X_CORRECTION"] *= 1
-                profile["exp"]["properties"]["Y_CORRECTION"] *= -1
+            # if x_2_ss_0_slider.val > 0:
+            #     profile["exp"]["properties"]["X_CORRECTION"] *= -1
+            #     profile["exp"]["properties"]["Y_CORRECTION"] *= 1
+            # else:
+                # Here the mistake happened!
+                # profile["exp"]["properties"]["X_CORRECTION"] *= 1
+                # profile["exp"]["properties"]["Y_CORRECTION"] *= -1
+            # Corrected!
+            profile["exp"]["properties"]["X_CORRECTION"] *= -1
+            profile["exp"]["properties"]["Y_CORRECTION"] *= 1
         elif x_1_m > hill_top_width_in * in_to_m / 2:
-            if x_2_ss_0_slider.val > 0:
-                profile["exp"]["properties"]["X_CORRECTION"] *= 1
-                profile["exp"]["properties"]["Y_CORRECTION"] *= 1
-            else:
-                profile["exp"]["properties"]["X_CORRECTION"] *= -1
-                profile["exp"]["properties"]["Y_CORRECTION"] *= -1
+            # if x_2_ss_0_slider.val > 0:
+                # profile["exp"]["properties"]["X_CORRECTION"] *= 1
+                # profile["exp"]["properties"]["Y_CORRECTION"] *= 1
+            # else:
+                # Here the mistake happened!
+                # profile["exp"]["properties"]["X_CORRECTION"] *= -1
+                # profile["exp"]["properties"]["Y_CORRECTION"] *= -1
+            # Corrected!
+            profile["exp"]["properties"]["X_CORRECTION"] *= 1
+            profile["exp"]["properties"]["Y_CORRECTION"] *= 1
         else:
             profile["exp"]["properties"]["X_CORRECTION"] = 0
             profile["exp"]["properties"]["Y_CORRECTION"] = x_2_ss_0_slider.val
